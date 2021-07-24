@@ -1,7 +1,6 @@
 #![feature(test)]
+#![feature(async_closure)]
 extern crate test;
-
-use rayon::prelude::*;
 
 #[cfg(test)]
 mod tests;
@@ -9,32 +8,52 @@ mod tests;
 #[cfg(test)]
 mod benches;
 mod radix_key;
+// mod arbitrary_chunks;
 
 pub use radix_key::RadixKey;
+use rayon::prelude::*;
 
-fn radix_sort_bucket<T>(mut bucket: Vec<T>, level: usize, max_level: usize) -> Vec<T>
+fn radix_sort_bucket<T>(bucket: &mut [T], level: usize, max_level: usize)
 where
-    T: RadixKey + Sized + Send + PartialOrd + Ord,
+    T: RadixKey + Sized + Send + PartialOrd + Ord + Copy + Clone + Sync,
 {
     if level >= max_level || bucket.len() < 2 {
-        bucket
-    } else if bucket.len() < 32 {
+        return;
+    } else if bucket.len() < 256 {
         bucket.sort_unstable();
-
-        bucket
     } else {
-        let mut tmp_buckets: Vec<Vec<T>> = Vec::with_capacity(256);
-        tmp_buckets.resize_with(256, || Vec::new());
+        let mut new_bucket = bucket.to_vec();
+        let mut counts = Vec::with_capacity(256);
+        counts.resize(256, 0);
 
-        bucket.into_iter().for_each(|d| {
+        bucket.iter().for_each(|d| {
             let val = d.get_level(level) as usize;
-            tmp_buckets[val].push(d);
+            counts[val] += 1;
         });
 
-        tmp_buckets
-            .into_iter()
-            .flat_map(|bucket| radix_sort_bucket(bucket, level + 1, max_level))
-            .collect()
+        let mut count_offsets = Vec::with_capacity(256);
+
+        let mut running_total = 0;
+        for c in counts.iter() {
+            count_offsets.push(running_total);
+            running_total += c;
+        }
+
+        for val in bucket.iter() {
+            let bucket = val.get_level(level) as usize;
+            new_bucket[count_offsets[bucket]] = *val;
+            count_offsets[bucket] += 1;
+        }
+
+        bucket.copy_from_slice(&new_bucket[..]);
+
+        let mut rem = bucket;
+
+        for c in counts {
+            let (chunk, r) = rem.split_at_mut(c);
+            rem = r;
+            radix_sort_bucket(chunk, level + 1, max_level);
+        }
     }
 }
 
@@ -43,23 +62,12 @@ pub struct RadixSort {}
 impl RadixSort {
     pub fn sort<T>(data: &mut Vec<T>)
     where
-        T: RadixKey + Sized + Send + Copy + PartialOrd + Ord,
+        T: RadixKey + Sized + Send + Copy + PartialOrd + Ord + Clone + Sync,
     {
         if T::LEVELS == 0 {
             panic!("RadixKey must have at least 1 level");
         }
 
-        let mut buckets: Vec<Vec<T>> = Vec::with_capacity(256);
-        buckets.resize_with(256, || Vec::new());
-
-        data.iter().for_each(|d| {
-            let val = d.get_level(0) as usize;
-            buckets[val].push(*d);
-        });
-
-        *data = buckets
-            .into_par_iter()
-            .flat_map(|bucket| radix_sort_bucket(bucket, 1, T::LEVELS))
-            .collect()
+        radix_sort_bucket(data, 0, T::LEVELS);
     }
 }
