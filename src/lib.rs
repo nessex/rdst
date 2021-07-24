@@ -15,19 +15,53 @@ use rayon::prelude::*;
 use crate::arbitrary_chunks::*;
 
 #[inline]
+fn get_count_vec() -> Vec<usize> {
+    let mut v: Vec<usize> = Vec::with_capacity(256);
+    v.resize(256, 0);
+
+    v
+}
+
+#[inline]
 fn get_counts<T>(data: &[T], level: usize) -> Vec<usize>
 where
-    T: RadixKey
+    T: RadixKey + Sync
 {
-    let mut counts = Vec::with_capacity(256);
-    counts.resize(256, 0);
+    if level == 0 && data.len() > 100000 {
+        data
+            .par_chunks(16384)
+            .fold_with(
+                get_count_vec(),
+                |mut store, items| {
 
-    data.iter().for_each(|d| {
-        let val = d.get_level(level) as usize;
-        counts[val] += 1;
-    });
+                    items.iter().for_each(|d| {
+                        let val = d.get_level(level) as usize;
+                        store[val] += 1;
+                    });
 
-    counts
+                    store
+                }
+            )
+            .reduce(
+                || get_count_vec(),
+                |mut store, d| {
+                    for (i, c) in d.iter().enumerate() {
+                        store[i] += c;
+                    }
+
+                    store
+                }
+            )
+    } else {
+        let mut counts = get_count_vec();
+
+        data.iter().for_each(|d| {
+            let val = d.get_level(level) as usize;
+            counts[val] += 1;
+        });
+
+        counts
+    }
 }
 
 #[inline]
