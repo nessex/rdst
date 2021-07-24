@@ -33,7 +33,7 @@ pub fn bench_series_level_4(bench: &mut Bencher) {
     let mut inputs = Vec::new();
     let mut rng = thread_rng();
 
-    for _ in 0..10000000 {
+    for _ in 0..1000000 {
         inputs.push(BenchLevel4 {
             key: rng.next_u64(),
         })
@@ -51,7 +51,7 @@ pub fn bench_base_sort(bench: &mut Bencher) {
     let mut inputs = Vec::new();
     let mut rng = thread_rng();
 
-    for _ in 0..10000000 {
+    for _ in 0..1000000 {
         inputs.push(BenchLevel4 {
             key: rng.next_u64(),
         })
@@ -69,7 +69,7 @@ pub fn bench_base_par_sort(bench: &mut Bencher) {
     let mut inputs = Vec::new();
     let mut rng = thread_rng();
 
-    for _ in 0..10000000 {
+    for _ in 0..1000000 {
         inputs.push(BenchLevel4 {
             key: rng.next_u64(),
         })

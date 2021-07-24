@@ -8,10 +8,11 @@ mod tests;
 #[cfg(test)]
 mod benches;
 mod radix_key;
-// mod arbitrary_chunks;
+mod arbitrary_chunks;
 
 pub use radix_key::RadixKey;
 use rayon::prelude::*;
+use crate::arbitrary_chunks::*;
 
 fn radix_sort_bucket<T>(bucket: &mut [T], level: usize, max_level: usize)
 where
@@ -19,7 +20,7 @@ where
 {
     if level >= max_level || bucket.len() < 2 {
         return;
-    } else if bucket.len() < 256 {
+    } else if bucket.len() < 64 {
         bucket.sort_unstable();
     } else {
         let mut new_bucket = bucket.to_vec();
@@ -47,13 +48,10 @@ where
 
         bucket.copy_from_slice(&new_bucket[..]);
 
-        let mut rem = bucket;
-
-        for c in counts {
-            let (chunk, r) = rem.split_at_mut(c);
-            rem = r;
-            radix_sort_bucket(chunk, level + 1, max_level);
-        }
+        bucket
+            .arbitrary_chunks_mut(counts)
+            .par_bridge()
+            .for_each(|s| radix_sort_bucket(s, level + 1, max_level));
     }
 }
 
