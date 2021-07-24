@@ -1,7 +1,7 @@
 use crate::{RadixKey, RadixSort};
 use rand::{thread_rng, RngCore};
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Clone, Copy)]
 struct TestLevel1 {
     key: u8,
 }
@@ -15,7 +15,7 @@ impl RadixKey for TestLevel1 {
     }
 }
 
-#[derive(Debug, Eq, PartialEq, Clone)]
+#[derive(Debug, Eq, PartialEq, Clone, Copy)]
 struct TestLevel4 {
     key: u32,
 }
@@ -38,17 +38,17 @@ impl RadixKey for TestLevel4 {
 
 #[test]
 pub fn test_1_level() {
-    let inputs = vec![
+    let mut inputs = vec![
         TestLevel1 { key: 5 },
         TestLevel1 { key: 2 },
         TestLevel1 { key: 7 },
         TestLevel1 { key: 3 },
     ];
 
-    let output = RadixSort::sort(inputs);
+    RadixSort::sort(&mut inputs);
 
     assert_eq!(
-        output,
+        inputs,
         vec![
             TestLevel1 { key: 2 },
             TestLevel1 { key: 3 },
@@ -60,7 +60,7 @@ pub fn test_1_level() {
 
 #[test]
 pub fn test_4_level() {
-    let inputs = vec![
+    let mut inputs = vec![
         TestLevel4 { key: 4294967295 },
         TestLevel4 { key: 4294967294 },
         TestLevel4 { key: 543 },
@@ -68,10 +68,10 @@ pub fn test_4_level() {
         TestLevel4 { key: 0 },
     ];
 
-    let output = RadixSort::sort(inputs);
+    RadixSort::sort(&mut inputs);
 
     assert_eq!(
-        output,
+        inputs,
         vec![
             TestLevel4 { key: 0 },
             TestLevel4 { key: 543 },
@@ -95,7 +95,7 @@ pub fn test_random_4_level() {
 
     let mut inputs_clone = inputs[..].to_vec();
 
-    let inputs = RadixSort::sort(inputs);
+    RadixSort::sort(&mut inputs);
     inputs_clone.sort_by_key(|i| i.key);
 
     assert_eq!(inputs, inputs_clone);
@@ -111,7 +111,7 @@ pub fn test_series_4_level() {
 
     let mut inputs_clone = inputs[..].to_vec();
 
-    let inputs = RadixSort::sort(inputs);
+    RadixSort::sort(&mut inputs);
     inputs_clone.sort_by_key(|i| i.key);
 
     assert_eq!(inputs, inputs_clone);

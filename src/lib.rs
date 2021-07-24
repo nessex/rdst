@@ -40,9 +40,9 @@ where
 pub struct RadixSort {}
 
 impl RadixSort {
-    pub fn sort<T>(data: Vec<T>) -> Vec<T>
+    pub fn sort<T>(data: &mut Vec<T>)
     where
-        T: RadixKey + Sized + Send,
+        T: RadixKey + Sized + Send + Copy,
     {
         if T::LEVELS == 0 {
             panic!("RadixKey must have at least 1 level");
@@ -51,12 +51,12 @@ impl RadixSort {
         let mut buckets: Vec<Vec<T>> = Vec::with_capacity(256);
         buckets.resize_with(256, || Vec::new());
 
-        data.into_iter().for_each(|d| {
+        data.iter().for_each(|d| {
             let val = d.get_level(0) as usize;
-            buckets[val].push(d);
+            buckets[val].push(*d);
         });
 
-        buckets
+        *data = buckets
             .into_par_iter()
             .flat_map(|bucket| radix_sort_bucket(bucket, 1, T::LEVELS))
             .collect()

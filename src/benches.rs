@@ -39,8 +39,8 @@ pub fn bench_series_level_4(bench: &mut Bencher) {
     }
 
     bench.iter(|| {
-        let inputs_clone = inputs[..].to_vec();
-        let outputs = RadixSort::sort(inputs_clone);
-        black_box(outputs);
+        let mut inputs_clone = inputs[..].to_vec();
+        RadixSort::sort(&mut inputs_clone);
+        black_box(inputs_clone);
     });
 }
