@@ -1,8 +1,9 @@
 use crate::{RadixKey, RadixSort};
 use rand::{thread_rng, RngCore};
 use test::{black_box, Bencher};
+use rayon::prelude::*;
 
-#[derive(Debug, Eq, PartialEq, Clone, Copy)]
+#[derive(Debug, Eq, PartialEq, Clone, Copy, PartialOrd, Ord)]
 struct BenchLevel4 {
     key: u64,
 }
@@ -32,7 +33,7 @@ pub fn bench_series_level_4(bench: &mut Bencher) {
     let mut inputs = Vec::new();
     let mut rng = thread_rng();
 
-    for _ in 0..100000 {
+    for _ in 0..10000000 {
         inputs.push(BenchLevel4 {
             key: rng.next_u64(),
         })
@@ -41,6 +42,42 @@ pub fn bench_series_level_4(bench: &mut Bencher) {
     bench.iter(|| {
         let mut inputs_clone = inputs[..].to_vec();
         RadixSort::sort(&mut inputs_clone);
+        black_box(inputs_clone);
+    });
+}
+
+#[bench]
+pub fn bench_base_sort(bench: &mut Bencher) {
+    let mut inputs = Vec::new();
+    let mut rng = thread_rng();
+
+    for _ in 0..10000000 {
+        inputs.push(BenchLevel4 {
+            key: rng.next_u64(),
+        })
+    }
+
+    bench.iter(|| {
+        let mut inputs_clone = inputs[..].to_vec();
+        inputs_clone.sort_unstable();
+        black_box(inputs_clone);
+    });
+}
+
+#[bench]
+pub fn bench_base_par_sort(bench: &mut Bencher) {
+    let mut inputs = Vec::new();
+    let mut rng = thread_rng();
+
+    for _ in 0..10000000 {
+        inputs.push(BenchLevel4 {
+            key: rng.next_u64(),
+        })
+    }
+
+    bench.iter(|| {
+        let mut inputs_clone = inputs[..].to_vec();
+        inputs_clone.par_sort_unstable();
         black_box(inputs_clone);
     });
 }

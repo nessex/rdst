@@ -1,7 +1,7 @@
 use crate::{RadixKey, RadixSort};
 use rand::{thread_rng, RngCore};
 
-#[derive(Debug, Eq, PartialEq, Clone, Copy)]
+#[derive(Debug, Eq, PartialEq, Clone, Copy, Ord, PartialOrd)]
 struct TestLevel1 {
     key: u8,
 }
@@ -15,7 +15,7 @@ impl RadixKey for TestLevel1 {
     }
 }
 
-#[derive(Debug, Eq, PartialEq, Clone, Copy)]
+#[derive(Debug, Eq, PartialEq, Clone, Copy, Ord, PartialOrd)]
 struct TestLevel4 {
     key: u32,
 }
