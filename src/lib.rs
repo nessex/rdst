@@ -19,11 +19,11 @@ fn get_counts<T>(data: &[T], level: usize) -> Vec<usize>
 where
     T: RadixKey + Sync
 {
-    if level == 0 && data.len() > 100000 {
+    if level == 0 && data.len() > 16384 {
         data
-            .par_chunks(16384)
-            .fold_with(
-                vec![0; 256],
+            .par_chunks(4096)
+            .fold(
+                || vec![0; 256],
                 |mut store, items| {
 
                     items.iter().for_each(|d| {
@@ -57,7 +57,7 @@ where
 }
 
 #[inline]
-fn get_count_offsets(counts: &Vec<usize>) -> Vec<usize> {
+fn get_prefix_sums(counts: &Vec<usize>) -> Vec<usize> {
     let mut count_offsets = Vec::with_capacity(256);
 
     let mut running_total = 0;
@@ -87,7 +87,7 @@ where
             new_bucket.set_len(bucket.len());
         }
         let counts = get_counts(bucket, level);
-        let mut count_offsets = get_count_offsets(&counts);
+        let mut count_offsets = get_prefix_sums(&counts);
 
         for val in bucket.iter() {
             let bucket = val.get_level(level) as usize;
