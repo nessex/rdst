@@ -77,28 +77,31 @@ where
     } else if bucket.len() < 32 {
         bucket.sort_unstable();
     } else {
-        let mut new_bucket = Vec::with_capacity(bucket.len());
-        unsafe {
-            // This will leave the vec with garbage data
-            // however as we account for every value when placing things
-            // into new_bucket, this is "safe". This is used because it provides a
-            // very significant speed improvement over resize, to_vec etc.
-            new_bucket.set_len(bucket.len());
-        }
         let counts = get_counts(bucket, level);
-        let mut count_offsets = get_prefix_sums(&counts);
+        let initial_offsets = get_prefix_sums(&counts);
+        let mut count_offsets = initial_offsets.to_vec();
 
-        for val in bucket.iter() {
-            let bucket = val.get_level(level) as usize;
-            new_bucket[count_offsets[bucket]] = *val;
-            count_offsets[bucket] += 1;
+        for current_loc in 0..bucket.len() {
+            loop {
+                let val = bucket[current_loc];
+                let new_bucket = val.get_level(level) as usize;
+                let new_loc = count_offsets[new_bucket];
+
+                if current_loc == count_offsets[new_bucket] {
+                    count_offsets[new_bucket] += 1;
+                    break;
+                } else if current_loc >= initial_offsets[new_bucket] && current_loc < count_offsets[new_bucket] {
+                    break;
+                } else {
+                    let tmp = bucket[new_loc];
+                    bucket[new_loc] = val;
+                    bucket[current_loc] = tmp;
+                    count_offsets[new_bucket] += 1;
+                }
+            }
         }
 
         drop(count_offsets);
-
-        bucket.copy_from_slice(new_bucket.as_slice());
-
-        drop(new_bucket);
 
         bucket
             .arbitrary_chunks_mut(counts)
