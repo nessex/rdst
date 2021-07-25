@@ -14,18 +14,17 @@ pub use radix_key::RadixKey;
 use rayon::prelude::*;
 use crate::arbitrary_chunks::*;
 
-#[inline]
 fn get_counts<T>(data: &[T], level: usize) -> Vec<usize>
 where
     T: RadixKey + Sync
 {
-    if level == 0 && data.len() > 16384 {
+    if data.len() > 8192 {
+        let chunk_size = (data.len() / num_cpus::get()) + 1;
         data
-            .par_chunks(4096)
+            .par_chunks(chunk_size)
             .fold(
                 || vec![0; 256],
                 |mut store, items| {
-
                     items.iter().for_each(|d| {
                         let val = d.get_level(level) as usize;
                         store[val] += 1;
