@@ -1,8 +1,8 @@
 use crate::{RadixKey, RadixSort};
 use rand::{thread_rng, RngCore};
-use test::{black_box, Bencher};
 use rayon::prelude::*;
-use voracious_radix_sort::{Radixable, RadixSort as VoraciousRadixSort};
+use test::{black_box, Bencher};
+use voracious_radix_sort::{RadixSort as VoraciousRadixSort, Radixable};
 
 #[derive(Debug, Eq, PartialEq, Clone, Copy, PartialOrd, Ord)]
 struct BenchLevel8 {
