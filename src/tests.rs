@@ -87,7 +87,7 @@ pub fn test_random_4_level() {
     let mut inputs = Vec::new();
     let mut rng = thread_rng();
 
-    for _ in 0..2000 {
+    for _ in 0..1000000 {
         inputs.push(TestLevel4 {
             key: rng.next_u32(),
         })
@@ -105,7 +105,7 @@ pub fn test_random_4_level() {
 pub fn test_series_4_level() {
     let mut inputs = Vec::new();
 
-    for i in 0..500000 {
+    for i in 0..1000000 {
         inputs.push(TestLevel4 { key: i })
     }
 
