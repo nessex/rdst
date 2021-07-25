@@ -38,61 +38,34 @@ impl Radixable<u64> for BenchLevel8 {
 }
 
 #[bench]
-pub fn bench_series_level_4(bench: &mut Bencher) {
-    let mut inputs = Vec::new();
-    let mut rng = thread_rng();
+pub fn bench_base_radix_sort(bench: &mut Bencher) {
+    let f = |v: &mut Vec<BenchLevel8>| RadixSort::sort(v);
 
-    for _ in 0..1000000 {
-        inputs.push(BenchLevel8 {
-            key: rng.next_u64(),
-        })
-    }
-
-    bench.iter(|| {
-        let mut inputs_clone = inputs[..].to_vec();
-        RadixSort::sort(&mut inputs_clone);
-        black_box(inputs_clone);
-    });
+    bench_cmp_base(bench, f);
 }
 
 #[bench]
-pub fn bench_base_sort(bench: &mut Bencher) {
-    let mut inputs = Vec::new();
-    let mut rng = thread_rng();
+pub fn bench_base_sort_unstable(bench: &mut Bencher) {
+    let f = |v: &mut Vec<BenchLevel8>| v.sort_unstable();
 
-    for _ in 0..1000000 {
-        inputs.push(BenchLevel8 {
-            key: rng.next_u64(),
-        })
-    }
-
-    bench.iter(|| {
-        let mut inputs_clone = inputs[..].to_vec();
-        inputs_clone.sort_unstable();
-        black_box(inputs_clone);
-    });
+    bench_cmp_base(bench, f);
 }
 
 #[bench]
-pub fn bench_base_par_sort(bench: &mut Bencher) {
-    let mut inputs = Vec::new();
-    let mut rng = thread_rng();
+pub fn bench_base_par_sort_unstable(bench: &mut Bencher) {
+    let f = |v: &mut Vec<BenchLevel8>| v.par_sort_unstable();
 
-    for _ in 0..1000000 {
-        inputs.push(BenchLevel8 {
-            key: rng.next_u64(),
-        })
-    }
-
-    bench.iter(|| {
-        let mut inputs_clone = inputs[..].to_vec();
-        inputs_clone.par_sort_unstable();
-        black_box(inputs_clone);
-    });
+    bench_cmp_base(bench, f);
 }
 
 #[bench]
 pub fn bench_base_voracious_mt_sort(bench: &mut Bencher) {
+    let f = |v: &mut Vec<BenchLevel8>| v.voracious_mt_sort(num_cpus::get());
+
+    bench_cmp_base(bench, f);
+}
+
+fn bench_cmp_base(bench: &mut Bencher, f: fn(&mut Vec<BenchLevel8>)) {
     let mut inputs = Vec::new();
     let mut rng = thread_rng();
 
@@ -104,7 +77,7 @@ pub fn bench_base_voracious_mt_sort(bench: &mut Bencher) {
 
     bench.iter(|| {
         let mut inputs_clone = inputs[..].to_vec();
-        inputs_clone.voracious_mt_sort(num_cpus::get());
+        f(&mut inputs_clone);
         black_box(inputs_clone);
     });
 }
