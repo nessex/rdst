@@ -23,8 +23,8 @@ In the simplest case, you can use this sort by simply calling `my_vec.radix_sort
 
 To be able to sort custom types, implement `RadixKey` as below.
 
- * `LEVELS` should be set to the total number of bytes you will sort
- * `get_level` should return the corresponding bytes in the order you would like them to be sorted
+ * `LEVELS` should be set to the total number of bytes you will consider for each item being sorted
+ * `get_level` should return the corresponding bytes in the order you would like them to be sorted. This library is intended to be used starting from the MSB (most significant bits).
 
 Note that this also allows you to implement radix keys that span multiple values.
 

@@ -188,7 +188,7 @@ dependencies = [
 
 [[package]]
 name = "rdst"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "num_cpus",
  "rand",
