@@ -2,13 +2,14 @@ use crate::{RadixKey, RadixSort};
 use rand::{thread_rng, RngCore};
 use test::{black_box, Bencher};
 use rayon::prelude::*;
+use voracious_radix_sort::{Radixable, RadixSort as VoraciousRadixSort};
 
 #[derive(Debug, Eq, PartialEq, Clone, Copy, PartialOrd, Ord)]
-struct BenchLevel4 {
+struct BenchLevel8 {
     key: u64,
 }
 
-impl RadixKey for BenchLevel4 {
+impl RadixKey for BenchLevel8 {
     const LEVELS: usize = 8;
 
     #[inline]
@@ -28,13 +29,21 @@ impl RadixKey for BenchLevel4 {
     }
 }
 
+impl Radixable<u64> for BenchLevel8 {
+    type Key = u64;
+
+    fn key(&self) -> Self::Key {
+        self.key
+    }
+}
+
 #[bench]
 pub fn bench_series_level_4(bench: &mut Bencher) {
     let mut inputs = Vec::new();
     let mut rng = thread_rng();
 
     for _ in 0..1000000 {
-        inputs.push(BenchLevel4 {
+        inputs.push(BenchLevel8 {
             key: rng.next_u64(),
         })
     }
@@ -52,7 +61,7 @@ pub fn bench_base_sort(bench: &mut Bencher) {
     let mut rng = thread_rng();
 
     for _ in 0..1000000 {
-        inputs.push(BenchLevel4 {
+        inputs.push(BenchLevel8 {
             key: rng.next_u64(),
         })
     }
@@ -70,7 +79,7 @@ pub fn bench_base_par_sort(bench: &mut Bencher) {
     let mut rng = thread_rng();
 
     for _ in 0..1000000 {
-        inputs.push(BenchLevel4 {
+        inputs.push(BenchLevel8 {
             key: rng.next_u64(),
         })
     }
@@ -78,6 +87,24 @@ pub fn bench_base_par_sort(bench: &mut Bencher) {
     bench.iter(|| {
         let mut inputs_clone = inputs[..].to_vec();
         inputs_clone.par_sort_unstable();
+        black_box(inputs_clone);
+    });
+}
+
+#[bench]
+pub fn bench_base_voracious_mt_sort(bench: &mut Bencher) {
+    let mut inputs = Vec::new();
+    let mut rng = thread_rng();
+
+    for _ in 0..1000000 {
+        inputs.push(BenchLevel8 {
+            key: rng.next_u64(),
+        })
+    }
+
+    bench.iter(|| {
+        let mut inputs_clone = inputs[..].to_vec();
+        inputs_clone.voracious_mt_sort(num_cpus::get());
         black_box(inputs_clone);
     });
 }
