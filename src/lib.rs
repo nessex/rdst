@@ -83,7 +83,7 @@ where
 {
     if level >= max_level || bucket.len() < 2 {
         return;
-    } else if bucket.len() < 64 {
+    } else if bucket.len() < 32 {
         bucket.sort_unstable();
     } else {
         let mut new_bucket = Vec::with_capacity(bucket.len());
