@@ -58,15 +58,15 @@ where
 
 #[inline]
 fn get_prefix_sums(counts: &Vec<usize>) -> Vec<usize> {
-    let mut count_offsets = Vec::with_capacity(256);
+    let mut sums = Vec::with_capacity(256);
 
     let mut running_total = 0;
     for c in counts.iter() {
-        count_offsets.push(running_total);
+        sums.push(running_total);
         running_total += c;
     }
 
-    count_offsets
+    sums
 }
 
 fn radix_sort_bucket<T>(bucket: &mut [T], level: usize, max_level: usize)
