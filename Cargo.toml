@@ -1,13 +1,13 @@
 [package]
 name = "rdst"
 description = "A flexible parallel unstable radix sort that supports sorting by any arbitrarily defined sequence of bytes."
-version = "0.2.1"
+version = "0.2.2"
 authors = ["Nathan Essex <nathan@essex.id.au>"]
 edition = "2018"
 license = "Apache-2.0 OR MIT"
 repository = "https://github.com/Nessex/rdst"
 homepage = "https://github.com/Nessex/rdst"
-categories = ["sort","algorithms"]
+categories = ["algorithms"]
 keywords = ["radix","sort","rayon","parallel","multithreaded"]
 documentation = "https://docs.rs/rdst/"
 
