@@ -108,17 +108,35 @@ where
     }
 }
 
-pub struct RadixSort {}
+fn radix_sort_inner<T>(bucket: &mut [T])
+where
+    T: RadixKey + Sized + Send + Ord + Copy + Sync
+{
+    if T::LEVELS == 0 {
+        panic!("RadixKey must have at least 1 level");
+    }
 
-impl RadixSort {
-    pub fn sort<T>(data: &mut Vec<T>)
-    where
-        T: RadixKey + Sized + Send + Ord + Copy + Sync,
-    {
-        if T::LEVELS == 0 {
-            panic!("RadixKey must have at least 1 level");
-        }
+    radix_sort_bucket(bucket, 0, T::LEVELS);
+}
 
-        radix_sort_bucket(data, 0, T::LEVELS);
+pub trait RadixSort {
+    fn radix_sort_unstable(&mut self);
+}
+
+impl<T> RadixSort for Vec<T>
+where
+    T: RadixKey + Sized + Send + Ord + Copy + Sync,
+{
+    fn radix_sort_unstable(&mut self) {
+        radix_sort_inner(self);
+    }
+}
+
+impl<T> RadixSort for [T]
+where
+    T: RadixKey + Sized + Send + Ord + Copy + Sync,
+{
+    fn radix_sort_unstable(&mut self) {
+        radix_sort_inner(self);
     }
 }

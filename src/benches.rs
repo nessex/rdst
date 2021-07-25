@@ -37,9 +37,26 @@ impl Radixable<u64> for BenchLevel8 {
     }
 }
 
+fn bench_cmp_base(bench: &mut Bencher, f: fn(&mut Vec<BenchLevel8>)) {
+    let mut inputs = Vec::new();
+    let mut rng = thread_rng();
+
+    for _ in 0..1000000 {
+        inputs.push(BenchLevel8 {
+            key: rng.next_u64(),
+        })
+    }
+
+    bench.iter(|| {
+        let mut inputs_clone = inputs[..].to_vec();
+        f(&mut inputs_clone);
+        black_box(inputs_clone);
+    });
+}
+
 #[bench]
 pub fn bench_base_radix_sort(bench: &mut Bencher) {
-    let f = |v: &mut Vec<BenchLevel8>| RadixSort::sort(v);
+    let f = |v: &mut Vec<BenchLevel8>| v.radix_sort_unstable();
 
     bench_cmp_base(bench, f);
 }
@@ -63,21 +80,4 @@ pub fn bench_base_voracious_mt_sort(bench: &mut Bencher) {
     let f = |v: &mut Vec<BenchLevel8>| v.voracious_mt_sort(num_cpus::get());
 
     bench_cmp_base(bench, f);
-}
-
-fn bench_cmp_base(bench: &mut Bencher, f: fn(&mut Vec<BenchLevel8>)) {
-    let mut inputs = Vec::new();
-    let mut rng = thread_rng();
-
-    for _ in 0..1000000 {
-        inputs.push(BenchLevel8 {
-            key: rng.next_u64(),
-        })
-    }
-
-    bench.iter(|| {
-        let mut inputs_clone = inputs[..].to_vec();
-        f(&mut inputs_clone);
-        black_box(inputs_clone);
-    });
 }

@@ -45,7 +45,7 @@ pub fn test_1_level() {
         TestLevel1 { key: 3 },
     ];
 
-    RadixSort::sort(&mut inputs);
+    inputs.radix_sort_unstable();
 
     assert_eq!(
         inputs,
@@ -68,7 +68,7 @@ pub fn test_4_level() {
         TestLevel4 { key: 0 },
     ];
 
-    RadixSort::sort(&mut inputs);
+    inputs.radix_sort_unstable();
 
     assert_eq!(
         inputs,
@@ -95,7 +95,7 @@ pub fn test_random_4_level() {
 
     let mut inputs_clone = inputs[..].to_vec();
 
-    RadixSort::sort(&mut inputs);
+    inputs.radix_sort_unstable();
     inputs_clone.sort_by_key(|i| i.key);
 
     assert_eq!(inputs, inputs_clone);
@@ -111,7 +111,7 @@ pub fn test_series_4_level() {
 
     let mut inputs_clone = inputs[..].to_vec();
 
-    RadixSort::sort(&mut inputs);
+    inputs.radix_sort_unstable();
     inputs_clone.sort_by_key(|i| i.key);
 
     assert_eq!(inputs, inputs_clone);
