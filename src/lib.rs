@@ -75,7 +75,6 @@ mod radix_key;
 use crate::arbitrary_chunks::*;
 pub use radix_key::RadixKey;
 use rayon::prelude::*;
-use rayon::ThreadPoolBuilder;
 
 fn get_counts<T>(data: &[T], level: usize) -> Vec<usize>
 where
