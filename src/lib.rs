@@ -59,7 +59,7 @@
 
 // XXX: Required by benches
 // uncomment to run `cargo bench`
-#![feature(test)]
+// #![feature(test)]
 
 #[cfg(all(test, feature = "bench"))]
 extern crate test;
