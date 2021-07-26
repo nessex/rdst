@@ -1,5 +1,6 @@
 use crate::{RadixKey, RadixSort};
 use rand::{thread_rng, RngCore};
+use std::time::Instant;
 
 #[derive(Debug, Eq, PartialEq, Clone, Copy, Ord, PartialOrd)]
 struct TestLevel1 {
@@ -92,6 +93,23 @@ pub fn test_random_4_level() {
     inputs_clone.sort_by_key(|i| i.key);
 
     assert_eq!(inputs, inputs_clone);
+}
+
+#[test]
+pub fn test_random_4_level_solo() {
+    let mut inputs = Vec::new();
+    let mut rng = thread_rng();
+    let n = 200_000_000;
+
+    for _ in 0..n {
+        inputs.push(TestLevel4 {
+            key: rng.next_u32(),
+        })
+    }
+
+    let start = Instant::now();
+    inputs.radix_sort_unstable();
+    println!("tts 200,000,000 random u32 structs: {}ms", start.elapsed().as_millis());
 }
 
 #[test]
