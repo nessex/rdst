@@ -14,18 +14,7 @@ impl RadixKey for BenchLevel8 {
 
     #[inline]
     fn get_level(&self, level: usize) -> u8 {
-        let b = self.key.to_le_bytes();
-
-        match level {
-            0 => b[7],
-            1 => b[6],
-            2 => b[5],
-            3 => b[4],
-            4 => b[3],
-            5 => b[2],
-            6 => b[1],
-            _ => b[0],
-        }
+        ((self.key >> ((Self::LEVELS - 1 - level) * 8)) as u8) & 0xff
     }
 }
 
@@ -41,7 +30,7 @@ fn bench_cmp_base(bench: &mut Bencher, f: fn(&mut Vec<BenchLevel8>)) {
     let mut inputs = Vec::new();
     let mut rng = thread_rng();
 
-    for _ in 0..1000000 {
+    for _ in 0..1_000_000 {
         inputs.push(BenchLevel8 {
             key: rng.next_u64(),
         })

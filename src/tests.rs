@@ -25,14 +25,7 @@ impl RadixKey for TestLevel4 {
 
     #[inline]
     fn get_level(&self, level: usize) -> u8 {
-        let b = self.key.to_le_bytes();
-
-        match level {
-            0 => b[3],
-            1 => b[2],
-            2 => b[1],
-            _ => b[0],
-        }
+        ((self.key >> ((Self::LEVELS - 1 - level) * 8)) as u8) & 0xff
     }
 }
 
@@ -87,7 +80,7 @@ pub fn test_random_4_level() {
     let mut inputs = Vec::new();
     let mut rng = thread_rng();
 
-    for _ in 0..1000000 {
+    for _ in 0..1_000_000 {
         inputs.push(TestLevel4 {
             key: rng.next_u32(),
         })
@@ -105,7 +98,7 @@ pub fn test_random_4_level() {
 pub fn test_series_4_level() {
     let mut inputs = Vec::new();
 
-    for i in 0..1000000 {
+    for i in 0..1_000_000 {
         inputs.push(TestLevel4 { key: i })
     }
 

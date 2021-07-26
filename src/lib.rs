@@ -59,7 +59,7 @@
 
 // XXX: Required by benches
 // uncomment to run `cargo bench`
-//#![feature(test)]
+#![feature(test)]
 
 #[cfg(all(test, feature = "bench"))]
 extern crate test;
@@ -75,6 +75,7 @@ mod radix_key;
 use crate::arbitrary_chunks::*;
 pub use radix_key::RadixKey;
 use rayon::prelude::*;
+use rayon::ThreadPoolBuilder;
 
 fn get_counts<T>(data: &[T], level: usize) -> Vec<usize>
 where
@@ -129,8 +130,13 @@ fn get_prefix_sums(counts: &Vec<usize>) -> Vec<usize> {
     sums
 }
 
-fn radix_sort_bucket<T>(bucket: &mut [T], level: usize, max_level: usize)
-where
+fn radix_sort_bucket<T>(
+    bucket: &mut [T],
+    tmp_bucket: &mut [T],
+    level: usize,
+    max_level: usize,
+    is_first: bool,
+) where
     T: RadixKey + Sized + Send + Ord + Copy + Sync,
 {
     if level >= max_level || bucket.len() < 2 {
@@ -138,33 +144,34 @@ where
     } else if bucket.len() < 32 {
         bucket.sort_unstable();
     } else {
-        let mut new_bucket = Vec::with_capacity(bucket.len());
-        unsafe {
-            // This will leave the vec with garbage data
-            // however as we account for every value when placing things
-            // into new_bucket, this is "safe". This is used because it provides a
-            // very significant speed improvement over resize, to_vec etc.
-            new_bucket.set_len(bucket.len());
-        }
         let counts = get_counts(bucket, level);
-        let mut count_offsets = get_prefix_sums(&counts);
+        let mut prefix_sums = get_prefix_sums(&counts);
 
-        for val in bucket.iter() {
+        bucket.iter().for_each(|val| {
             let bucket = val.get_level(level) as usize;
-            new_bucket[count_offsets[bucket]] = *val;
-            count_offsets[bucket] += 1;
+            tmp_bucket[prefix_sums[bucket]] = *val;
+            prefix_sums[bucket] += 1;
+        });
+
+        drop(prefix_sums);
+        bucket.copy_from_slice(tmp_bucket);
+
+        if is_first {
+            bucket
+                .arbitrary_chunks_mut(counts.clone())
+                .zip(tmp_bucket.arbitrary_chunks_mut(counts))
+                .par_bridge()
+                .for_each(|(c, t)| {
+                    radix_sort_bucket(c, t, level + 1, max_level, false);
+                });
+        } else {
+            bucket
+                .arbitrary_chunks_mut(counts.clone())
+                .zip(tmp_bucket.arbitrary_chunks_mut(counts))
+                .for_each(|(c, t)| {
+                    radix_sort_bucket(c, t, level + 1, max_level, false);
+                });
         }
-
-        drop(count_offsets);
-
-        bucket.copy_from_slice(new_bucket.as_slice());
-
-        drop(new_bucket);
-
-        bucket
-            .arbitrary_chunks_mut(counts)
-            .par_bridge()
-            .for_each(|s| radix_sort_bucket(s, level + 1, max_level));
     }
 }
 
@@ -176,7 +183,16 @@ where
         panic!("RadixKey must have at least 1 level");
     }
 
-    radix_sort_bucket(bucket, 0, T::LEVELS);
+    let mut tmp_bucket = Vec::with_capacity(bucket.len());
+    unsafe {
+        // This will leave the vec with garbage data
+        // however as we account for every value when placing things
+        // into tmp_bucket, this is "safe". This is used because it provides a
+        // very significant speed improvement over resize, to_vec etc.
+        tmp_bucket.set_len(bucket.len());
+    }
+
+    radix_sort_bucket(bucket, &mut tmp_bucket, 0, T::LEVELS, true);
 }
 
 pub trait RadixSort {
