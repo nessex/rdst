@@ -75,35 +75,42 @@ mod radix_key;
 use crate::arbitrary_chunks::*;
 pub use radix_key::RadixKey;
 use rayon::prelude::*;
+use rand::Rng;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 fn get_counts<T>(data: &[T], level: usize) -> Vec<usize>
 where
     T: RadixKey + Sync,
 {
-    if data.len() > 8192 {
+    if data.len() > 4096 {
+        let mut out = Vec::with_capacity(256);
+        out.resize_with(256, || AtomicUsize::new(0));
+
         let chunk_size = (data.len() / num_cpus::get()) + 1;
         data.par_chunks(chunk_size)
-            .fold(
-                || vec![0; 256],
-                |mut store, items| {
-                    items.iter().for_each(|d| {
-                        let val = d.get_level(level) as usize;
-                        store[val] += 1;
+            .for_each(|chunk| {
+                let mut store = vec![0; 256];
+
+                chunk.iter().for_each(|d| {
+                    let val = d.get_level(level) as usize;
+                    store[val] += 1;
+                });
+
+                let pivot: u8 = rand::thread_rng().gen();
+                let pivot = pivot as usize;
+                let (before, after) = store.split_at_mut(pivot);
+
+                after
+                    .into_iter()
+                    .enumerate()
+                    .map(|(i, v)| (i + pivot, v))
+                    .chain(before.into_iter().enumerate())
+                    .for_each(|(i, count)| {
+                        let _ = out[i].fetch_add(*count, Ordering::Relaxed);
                     });
+            });
 
-                    store
-                },
-            )
-            .reduce(
-                || vec![0; 256],
-                |mut store, d| {
-                    for (i, c) in d.iter().enumerate() {
-                        store[i] += c;
-                    }
-
-                    store
-                },
-            )
+        out.into_iter().map(|a| a.into_inner()).collect()
     } else {
         let mut counts = vec![0; 256];
 
