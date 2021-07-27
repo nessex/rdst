@@ -1,14 +1,12 @@
-use std::iter::Rev;
 use std::mem;
-use std::vec::IntoIter;
 
-pub struct ArbitraryChunkMut<'a, T: 'a>(&'a mut [T], Rev<IntoIter<usize>>);
+pub struct ArbitraryChunkMut<'a, T: 'a>(&'a mut [T], Vec<usize>);
 
 impl<'a, T> Iterator for ArbitraryChunkMut<'a, T> {
     type Item = &'a mut [T];
 
     fn next(&mut self) -> Option<Self::Item> {
-        let c = self.1.next()?;
+        let c = self.1.pop()?;
         if self.0.is_empty() {
             return None;
         }
@@ -26,7 +24,8 @@ pub trait ArbitraryChunks<T> {
 }
 
 impl<T> ArbitraryChunks<T> for [T] {
-    fn arbitrary_chunks_mut(&mut self, counts: Vec<usize>) -> ArbitraryChunkMut<T> {
-        ArbitraryChunkMut(self, counts.into_iter().rev())
+    fn arbitrary_chunks_mut(&mut self, mut counts: Vec<usize>) -> ArbitraryChunkMut<T> {
+        counts.reverse();
+        ArbitraryChunkMut(self, counts)
     }
 }

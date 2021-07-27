@@ -110,7 +110,7 @@ pub fn test_random_4_level_solo() {
     let start = Instant::now();
     inputs.radix_sort_unstable();
     println!(
-        "tts 200,000,000 random u32 structs: {}ms",
+        "time to sort 200,000,000 random u32 structs: {}ms",
         start.elapsed().as_millis()
     );
 }
