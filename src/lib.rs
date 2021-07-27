@@ -155,7 +155,7 @@ where
             get_counts(bucket, level)
         };
 
-        if bucket.len() < 1_000_000 {
+        if level != 0 || bucket.len() < 1_000_000 {
             let mut prefix_sums = get_prefix_sums(&counts);
 
             bucket.iter().for_each(|val| {
