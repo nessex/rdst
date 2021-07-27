@@ -149,7 +149,7 @@ where
         bucket.sort_unstable();
         return;
     } else {
-        if level != 0 || bucket.len() < 1_000_000 {
+        if level != 0 || bucket.len() < 65_000 {
             let counts = if level == 0 {
                 get_counts_parallel(bucket, level)
             } else {
