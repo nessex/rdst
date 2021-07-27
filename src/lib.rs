@@ -155,7 +155,7 @@ where
             get_counts(bucket, level)
         };
 
-        if level != 0 || bucket.len() < 1_000_000 {
+        if bucket.len() < 1_000_000 {
             let mut prefix_sums = get_prefix_sums(&counts);
 
             bucket.iter().for_each(|val| {
@@ -167,21 +167,32 @@ where
             drop(prefix_sums);
             bucket.copy_from_slice(tmp_bucket);
         } else {
-            let chunk_size = (bucket.len() / 2 / num_cpus::get()) + 1;
+            let chunk_size = (bucket.len() / num_cpus::get()) + 1;
             let bucket_size = (chunk_size / 256) + 1;
 
-            let mut tmp_bucket: Vec<RwLock<Vec<T>>> = Vec::new();
-            tmp_bucket.resize_with(256, || RwLock::new(Vec::with_capacity(bucket_size)));
+            let chuckets: Vec<Vec<Vec<T>>> = bucket
+                .par_chunks(chunk_size)
+                .map(|chunk| {
+                    let mut chucket: Vec<Vec<T>> = Vec::new();
+                    chucket.resize(256, Vec::with_capacity(bucket_size));
 
-            bucket.par_chunks(chunk_size).for_each(|chunk| {
-                let mut chucket: Vec<Vec<T>> = Vec::new();
-                chucket.resize(256, Vec::with_capacity(bucket_size));
+                    for v in chunk {
+                        let bucket = v.get_level(level) as usize;
+                        chucket[bucket].push(*v);
+                    }
 
-                for v in chunk {
-                    let bucket = v.get_level(level) as usize;
-                    chucket[bucket].push(*v);
-                }
+                    chucket
+                })
+                .collect();
 
+            let mut bucket_buckets: Vec<RwLock<(usize, &mut [T])>> = bucket
+                .arbitrary_chunks_mut(counts.clone())
+                .map(|chunk| RwLock::new((0usize, chunk)))
+                .collect();
+
+            bucket_buckets.resize_with(256, || RwLock::new((0, &mut [])));
+
+            chuckets.into_par_iter().for_each(|mut chucket| {
                 let mut rng = WyRand::new();
                 let pivot = rng.generate::<u8>() as usize;
                 let (before, after) = chucket.split_at_mut(pivot);
@@ -192,21 +203,14 @@ where
                     .map(|(i, v)| (i + pivot, v))
                     .chain(before.into_iter().enumerate())
                     .for_each(|(i, region)| {
-                        let mut b = tmp_bucket[i].write().unwrap();
-                        b.append(region);
+                        let mut b = bucket_buckets[i].write().unwrap();
+                        let write_start = b.0;
+                        b.1[write_start..(write_start + region.len())].copy_from_slice(region);
+                        b.0 += region.len();
                     });
             });
 
-            bucket
-                .arbitrary_chunks_mut(counts.clone())
-                .zip(tmp_bucket.iter())
-                .par_bridge()
-                .for_each(|(s, t)| {
-                    let c = t.read().unwrap();
-                    s.copy_from_slice(&c);
-                });
-
-            drop(tmp_bucket);
+            drop(bucket_buckets);
         }
 
         if level == 0 {
