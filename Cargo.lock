@@ -3,6 +3,12 @@
 version = 3
 
 [[package]]
+name = "arbitrary-chunks"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6af2a45d34466b51c85a7f33625e972cd151ebb07f9e03a5b145d144473594ce"
+
+[[package]]
 name = "autocfg"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -137,8 +143,9 @@ dependencies = [
 
 [[package]]
 name = "rdst"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
+ "arbitrary-chunks",
  "nanorand",
  "num_cpus",
  "rayon",

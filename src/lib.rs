@@ -67,16 +67,15 @@ extern crate test;
 #[cfg(test)]
 mod tests;
 
-mod arbitrary_chunks;
 #[cfg(all(test, feature = "bench"))]
 mod benches;
 mod radix_key;
 
-use crate::arbitrary_chunks::*;
 use nanorand::{Rng, WyRand};
 pub use radix_key::RadixKey;
 use rayon::prelude::*;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use arbitrary_chunks::ArbitraryChunks;
 
 fn get_counts_parallel<T>(data: &[T], level: usize) -> Vec<usize>
 where
