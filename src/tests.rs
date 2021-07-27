@@ -1,5 +1,5 @@
 use crate::{RadixKey, RadixSort};
-use rand::{thread_rng, RngCore};
+use nanorand::{Rng, WyRand};
 use std::time::Instant;
 
 #[derive(Debug, Eq, PartialEq, Clone, Copy, Ord, PartialOrd)]
@@ -79,11 +79,11 @@ pub fn test_4_level() {
 #[test]
 pub fn test_random_4_level() {
     let mut inputs = Vec::new();
-    let mut rng = thread_rng();
+    let mut rng = WyRand::new();
 
     for _ in 0..1_000_000 {
         inputs.push(TestLevel4 {
-            key: rng.next_u32(),
+            key: rng.generate::<u32>(),
         })
     }
 
@@ -98,18 +98,21 @@ pub fn test_random_4_level() {
 #[test]
 pub fn test_random_4_level_solo() {
     let mut inputs = Vec::new();
-    let mut rng = thread_rng();
+    let mut rng = WyRand::new();
     let n = 200_000_000;
 
     for _ in 0..n {
         inputs.push(TestLevel4 {
-            key: rng.next_u32(),
+            key: rng.generate::<u32>(),
         })
     }
 
     let start = Instant::now();
     inputs.radix_sort_unstable();
-    println!("tts 200,000,000 random u32 structs: {}ms", start.elapsed().as_millis());
+    println!(
+        "tts 200,000,000 random u32 structs: {}ms",
+        start.elapsed().as_millis()
+    );
 }
 
 #[test]

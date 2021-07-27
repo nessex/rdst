@@ -17,7 +17,7 @@ bench = []
 [dependencies]
 rayon = "1.5.1"
 num_cpus = "1.13.0"
+nanorand = "0.6.1"
 
 [dev-dependencies]
-rand = "0.8.4"
 voracious_radix_sort = { version = "1.1.0", features = ["voracious_multithread"] }

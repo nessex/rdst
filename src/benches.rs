@@ -1,5 +1,5 @@
 use crate::{RadixKey, RadixSort};
-use rand::{thread_rng, RngCore};
+use nanorand::{Rng, WyRand};
 use rayon::prelude::*;
 use test::{black_box, Bencher};
 use voracious_radix_sort::{RadixSort as VoraciousRadixSort, Radixable};
@@ -28,11 +28,11 @@ impl Radixable<u64> for BenchLevel8 {
 
 fn bench_cmp_base(bench: &mut Bencher, f: fn(&mut Vec<BenchLevel8>)) {
     let mut inputs = Vec::new();
-    let mut rng = thread_rng();
+    let mut rng = WyRand::new();
 
     for _ in 0..1_000_000 {
         inputs.push(BenchLevel8 {
-            key: rng.next_u64(),
+            key: rng.generate::<u64>(),
         })
     }
 

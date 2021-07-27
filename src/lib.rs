@@ -73,47 +73,57 @@ mod benches;
 mod radix_key;
 
 use crate::arbitrary_chunks::*;
+use nanorand::{Rng, WyRand};
 pub use radix_key::RadixKey;
 use rayon::prelude::*;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
-fn get_counts<T>(data: &[T], level: usize) -> Vec<usize>
+fn get_counts_parallel<T>(data: &[T], level: usize) -> Vec<usize>
 where
     T: RadixKey + Sync,
 {
-    if data.len() > 8192 {
-        let chunk_size = (data.len() / num_cpus::get()) + 1;
-        data.par_chunks(chunk_size)
-            .fold(
-                || vec![0; 256],
-                |mut store, items| {
-                    items.iter().for_each(|d| {
-                        let val = d.get_level(level) as usize;
-                        store[val] += 1;
-                    });
+    let mut out = Vec::with_capacity(256);
+    out.resize_with(256, || AtomicUsize::new(0));
 
-                    store
-                },
-            )
-            .reduce(
-                || vec![0; 256],
-                |mut store, d| {
-                    for (i, c) in d.iter().enumerate() {
-                        store[i] += c;
-                    }
+    let chunk_size = (data.len() / num_cpus::get()) + 1;
+    data.par_chunks(chunk_size).for_each(|chunk| {
+        let mut store = vec![0; 256];
 
-                    store
-                },
-            )
-    } else {
-        let mut counts = vec![0; 256];
-
-        data.iter().for_each(|d| {
+        chunk.iter().for_each(|d| {
             let val = d.get_level(level) as usize;
-            counts[val] += 1;
+            store[val] += 1;
         });
 
-        counts
-    }
+        let mut rng = WyRand::new();
+        let pivot = rng.generate::<u8>() as usize;
+        let (before, after) = store.split_at_mut(pivot);
+
+        after
+            .into_iter()
+            .enumerate()
+            .map(|(i, v)| (i + pivot, v))
+            .chain(before.into_iter().enumerate())
+            .for_each(|(i, count)| {
+                let _ = out[i].fetch_add(*count, Ordering::Relaxed);
+            });
+    });
+
+    out.into_iter().map(|a| a.into_inner()).collect()
+}
+
+#[inline]
+fn get_counts<T>(data: &[T], level: usize) -> Vec<usize>
+where
+    T: RadixKey,
+{
+    let mut counts = vec![0; 256];
+
+    data.iter().for_each(|d| {
+        let val = d.get_level(level) as usize;
+        counts[val] += 1;
+    });
+
+    counts
 }
 
 #[inline]
@@ -129,13 +139,8 @@ fn get_prefix_sums(counts: &Vec<usize>) -> Vec<usize> {
     sums
 }
 
-fn radix_sort_bucket<T>(
-    bucket: &mut [T],
-    tmp_bucket: &mut [T],
-    level: usize,
-    max_level: usize,
-    is_first: bool,
-) where
+fn radix_sort_bucket<T>(bucket: &mut [T], tmp_bucket: &mut [T], level: usize, max_level: usize)
+where
     T: RadixKey + Sized + Send + Ord + Copy + Sync,
 {
     if level >= max_level || bucket.len() < 2 {
@@ -143,7 +148,11 @@ fn radix_sort_bucket<T>(
     } else if bucket.len() < 32 {
         bucket.sort_unstable();
     } else {
-        let counts = get_counts(bucket, level);
+        let counts = if level == 0 {
+            get_counts_parallel(bucket, level)
+        } else {
+            get_counts(bucket, level)
+        };
         let mut prefix_sums = get_prefix_sums(&counts);
 
         bucket.iter().for_each(|val| {
@@ -155,20 +164,20 @@ fn radix_sort_bucket<T>(
         drop(prefix_sums);
         bucket.copy_from_slice(tmp_bucket);
 
-        if is_first {
+        if level == 0 {
             bucket
                 .arbitrary_chunks_mut(counts.clone())
                 .zip(tmp_bucket.arbitrary_chunks_mut(counts))
                 .par_bridge()
                 .for_each(|(c, t)| {
-                    radix_sort_bucket(c, t, level + 1, max_level, false);
+                    radix_sort_bucket(c, t, level + 1, max_level);
                 });
         } else {
             bucket
                 .arbitrary_chunks_mut(counts.clone())
                 .zip(tmp_bucket.arbitrary_chunks_mut(counts))
                 .for_each(|(c, t)| {
-                    radix_sort_bucket(c, t, level + 1, max_level, false);
+                    radix_sort_bucket(c, t, level + 1, max_level);
                 });
         }
     }
@@ -191,7 +200,7 @@ where
         tmp_bucket.set_len(bucket.len());
     }
 
-    radix_sort_bucket(bucket, &mut tmp_bucket, 0, T::LEVELS, true);
+    radix_sort_bucket(bucket, &mut tmp_bucket, 0, T::LEVELS);
 }
 
 pub trait RadixSort {
