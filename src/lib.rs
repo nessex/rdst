@@ -71,11 +71,12 @@ mod tests;
 mod benches;
 mod radix_key;
 
+use arbitrary_chunks::ArbitraryChunks;
 use nanorand::{Rng, WyRand};
 pub use radix_key::RadixKey;
 use rayon::prelude::*;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use arbitrary_chunks::ArbitraryChunks;
+use std::sync::RwLock;
 
 fn get_counts_parallel<T>(data: &[T], level: usize) -> Vec<usize>
 where
@@ -146,22 +147,67 @@ where
         return;
     } else if bucket.len() < 32 {
         bucket.sort_unstable();
+        return;
     } else {
         let counts = if level == 0 {
             get_counts_parallel(bucket, level)
         } else {
             get_counts(bucket, level)
         };
-        let mut prefix_sums = get_prefix_sums(&counts);
 
-        bucket.iter().for_each(|val| {
-            let bucket = val.get_level(level) as usize;
-            tmp_bucket[prefix_sums[bucket]] = *val;
-            prefix_sums[bucket] += 1;
-        });
+        if level != 0 || bucket.len() < 1_000_000 {
+            let mut prefix_sums = get_prefix_sums(&counts);
 
-        drop(prefix_sums);
-        bucket.copy_from_slice(tmp_bucket);
+            bucket.iter().for_each(|val| {
+                let bucket = val.get_level(level) as usize;
+                tmp_bucket[prefix_sums[bucket]] = *val;
+                prefix_sums[bucket] += 1;
+            });
+
+            drop(prefix_sums);
+            bucket.copy_from_slice(tmp_bucket);
+        } else {
+            let chunk_size = (bucket.len() / 2 / num_cpus::get()) + 1;
+            let bucket_size = (chunk_size / 256) + 1;
+
+            let mut tmp_bucket: Vec<RwLock<Vec<T>>> = Vec::new();
+            tmp_bucket.resize_with(256, || RwLock::new(Vec::with_capacity(bucket_size)));
+
+            bucket.par_chunks(chunk_size).for_each(|chunk| {
+                let mut chucket: Vec<Vec<T>> = Vec::new();
+                chucket.resize(256, Vec::with_capacity(bucket_size));
+
+                for v in chunk {
+                    let bucket = v.get_level(level) as usize;
+                    chucket[bucket].push(*v);
+                }
+
+                let mut rng = WyRand::new();
+                let pivot = rng.generate::<u8>() as usize;
+                let (before, after) = chucket.split_at_mut(pivot);
+
+                after
+                    .into_iter()
+                    .enumerate()
+                    .map(|(i, v)| (i + pivot, v))
+                    .chain(before.into_iter().enumerate())
+                    .for_each(|(i, region)| {
+                        let mut b = tmp_bucket[i].write().unwrap();
+                        b.append(region);
+                    });
+            });
+
+            bucket
+                .arbitrary_chunks_mut(counts.clone())
+                .zip(tmp_bucket.iter())
+                .par_bridge()
+                .for_each(|(s, t)| {
+                    let c = t.read().unwrap();
+                    s.copy_from_slice(&c);
+                });
+
+            drop(tmp_bucket);
+        }
 
         if level == 0 {
             bucket
