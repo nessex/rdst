@@ -97,9 +97,9 @@ pub fn test_random_4_level() {
 
 #[test]
 pub fn test_random_4_level_solo() {
-    let mut inputs = Vec::new();
-    let mut rng = WyRand::new();
     let n = 200_000_000;
+    let mut inputs = Vec::with_capacity(n);
+    let mut rng = WyRand::new();
 
     for _ in 0..n {
         inputs.push(TestLevel4 {

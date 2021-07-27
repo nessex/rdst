@@ -149,13 +149,12 @@ where
         bucket.sort_unstable();
         return;
     } else {
-        let counts = if level == 0 {
-            get_counts_parallel(bucket, level)
-        } else {
-            get_counts(bucket, level)
-        };
-
         if level != 0 || bucket.len() < 1_000_000 {
+            let counts = if level == 0 {
+                get_counts_parallel(bucket, level)
+            } else {
+                get_counts(bucket, level)
+            };
             let mut prefix_sums = get_prefix_sums(&counts);
 
             bucket.iter().for_each(|val| {
@@ -166,6 +165,23 @@ where
 
             drop(prefix_sums);
             bucket.copy_from_slice(tmp_bucket);
+
+            if level == 0 {
+                bucket
+                    .arbitrary_chunks_mut(counts.clone())
+                    .zip(tmp_bucket.arbitrary_chunks_mut(counts))
+                    .par_bridge()
+                    .for_each(|(c, t)| {
+                        radix_sort_bucket(c, t, level + 1, max_level);
+                    });
+            } else {
+                bucket
+                    .arbitrary_chunks_mut(counts.clone())
+                    .zip(tmp_bucket.arbitrary_chunks_mut(counts))
+                    .for_each(|(c, t)| {
+                        radix_sort_bucket(c, t, level + 1, max_level);
+                    });
+            }
         } else {
             let chunk_size = (bucket.len() / num_cpus::get()) + 1;
             let bucket_size = (chunk_size / 256) + 1;
@@ -184,6 +200,18 @@ where
                     chucket
                 })
                 .collect();
+
+            let mut counts = vec![0usize; 256];
+            chuckets
+                .iter()
+                .for_each(|chucket| {
+                    chucket
+                        .iter()
+                        .enumerate()
+                        .for_each(|(i, bucket)| {
+                            counts[i] += bucket.len();
+                        });
+                });
 
             let mut bucket_buckets: Vec<RwLock<(usize, &mut [T])>> = bucket
                 .arbitrary_chunks_mut(counts.clone())
@@ -211,23 +239,22 @@ where
             });
 
             drop(bucket_buckets);
-        }
-
-        if level == 0 {
-            bucket
-                .arbitrary_chunks_mut(counts.clone())
-                .zip(tmp_bucket.arbitrary_chunks_mut(counts))
-                .par_bridge()
-                .for_each(|(c, t)| {
-                    radix_sort_bucket(c, t, level + 1, max_level);
-                });
-        } else {
-            bucket
-                .arbitrary_chunks_mut(counts.clone())
-                .zip(tmp_bucket.arbitrary_chunks_mut(counts))
-                .for_each(|(c, t)| {
-                    radix_sort_bucket(c, t, level + 1, max_level);
-                });
+            if level == 0 {
+                bucket
+                    .arbitrary_chunks_mut(counts.clone())
+                    .zip(tmp_bucket.arbitrary_chunks_mut(counts))
+                    .par_bridge()
+                    .for_each(|(c, t)| {
+                        radix_sort_bucket(c, t, level + 1, max_level);
+                    });
+            } else {
+                bucket
+                    .arbitrary_chunks_mut(counts.clone())
+                    .zip(tmp_bucket.arbitrary_chunks_mut(counts))
+                    .for_each(|(c, t)| {
+                        radix_sort_bucket(c, t, level + 1, max_level);
+                    });
+            }
         }
     }
 }
