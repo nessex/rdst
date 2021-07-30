@@ -18,6 +18,7 @@ In the simplest case, you can use this sort by simply calling `my_vec.radix_sort
  * `u32`
  * `u64`
  * `u128`
+ * `usize`
  * `[u8; N]`
 
 ### Implementing `RadixKey`
