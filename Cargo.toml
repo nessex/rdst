@@ -12,7 +12,9 @@ keywords = ["radix","sort","rayon","parallel","multithreaded"]
 documentation = "https://docs.rs/rdst/"
 
 [features]
+default = ["default-implementations"]
 bench = []
+default-implementations = []
 
 [dependencies]
 rayon = "1.5.1"

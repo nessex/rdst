@@ -71,6 +71,8 @@ mod tests;
 #[cfg(all(test, feature = "bench"))]
 mod benches;
 mod radix_key;
+#[cfg(feature = "default-implementations")]
+mod radix_key_impl;
 
 use arbitrary_chunks::ArbitraryChunks;
 pub use radix_key::RadixKey;
