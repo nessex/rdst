@@ -1,6 +1,7 @@
 use crate::{RadixKey, RadixSort};
 use nanorand::{Rng, WyRand};
 use std::time::Instant;
+use voracious_radix_sort::{Radixable, RadixSort as Vor};
 
 #[derive(Debug, Eq, PartialEq, Clone, Copy, Ord, PartialOrd)]
 struct TestLevel1 {
@@ -26,7 +27,30 @@ impl RadixKey for TestLevel4 {
 
     #[inline]
     fn get_level(&self, level: usize) -> u8 {
-        ((self.key >> ((Self::LEVELS - 1 - level) * 8)) as u8) & 0xff
+        (self.key >> ((Self::LEVELS - 1 - level) * 8)) as u8
+    }
+}
+
+#[derive(Debug, Eq, PartialEq, Clone, Copy, Ord, PartialOrd)]
+struct TestComplex {
+    key: u64,
+    value: u128,
+}
+
+impl RadixKey for TestComplex {
+    const LEVELS: usize = 4;
+
+    #[inline]
+    fn get_level(&self, level: usize) -> u8 {
+        (self.key >> ((Self::LEVELS - 1 - level) * 8)) as u8
+    }
+}
+
+impl Radixable<u64> for TestComplex {
+    type Key = u64;
+
+    fn key(&self) -> Self::Key {
+        self.key
     }
 }
 
@@ -90,27 +114,59 @@ pub fn test_random_4_level() {
     let mut inputs_clone = inputs[..].to_vec();
 
     inputs.radix_sort_unstable();
-    inputs_clone.sort_by_key(|i| i.key);
+    inputs_clone.sort_unstable_by_key(|i| i.key);
 
     assert_eq!(inputs, inputs_clone);
 }
 
 #[test]
-pub fn test_random_4_level_solo() {
-    let mut inputs = Vec::new();
+pub fn test_complex_4_level_solo() {
+    let n = 10_000_000;
+    let mut inputs = Vec::with_capacity(n);
     let mut rng = WyRand::new();
-    let n = 200_000_000;
 
     for _ in 0..n {
-        inputs.push(TestLevel4 {
-            key: rng.generate::<u32>(),
-        })
+        inputs.push(TestComplex {
+            key: rng.generate::<u64>(),
+            value: 0,
+        });
+    }
+
+    inputs.radix_sort_unstable();
+}
+
+#[test]
+pub fn test_random_4_level_solo() {
+    let n = 100_000_000;
+    let mut inputs = Vec::with_capacity(n);
+    let mut rng = WyRand::new();
+
+    for _ in 0..n {
+        inputs.push(rng.generate::<u32>());
     }
 
     let start = Instant::now();
     inputs.radix_sort_unstable();
     println!(
         "time to sort 200,000,000 random u32 structs: {}ms",
+        start.elapsed().as_millis()
+    );
+}
+
+#[test]
+pub fn test_random_4_level_voracious() {
+    let n = 100_000_000;
+    let mut inputs = Vec::with_capacity(n);
+    let mut rng = WyRand::new();
+
+    for _ in 0..n {
+        inputs.push(rng.generate::<u32>());
+    }
+
+    let start = Instant::now();
+    inputs.voracious_mt_sort(num_cpus::get());
+    println!(
+        "time for voracious to sort 200,000,000 random u32 structs: {}ms",
         start.elapsed().as_millis()
     );
 }
