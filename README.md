@@ -54,7 +54,7 @@ impl RadixKey for u16 {
 
 If you know your type has bytes that will always be zero, you can skip those bytes to speed up the sorting process. For instance, if you have a `u32` where values never exceed `10000`, you only need to consider two of the bytes. You could implement this as such:
 
-```
+```rust
 impl RadixKey for u32 {
     const LEVELS: usize = 2;
 
@@ -71,7 +71,7 @@ Note that to replace the default implementations provided by the crate, you must
 
 If your type has multiple values you need to search by, simply create a `RadixKey` that spans both values.
 
-```
+```rust
 impl RadixKey for MyStruct {
     const LEVELS: usize = 4;
 
