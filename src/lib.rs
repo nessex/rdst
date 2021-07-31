@@ -18,14 +18,18 @@
 //!  * `usize`
 //!  * `[u8; N]`
 //!
+//! The default implementations can be disabled by disabling default features on the crate.
+//!
 //! ### Implementing `RadixKey`
 //!
 //! To be able to sort custom types, implement `RadixKey` as below.
 //!
 //!  * `LEVELS` should be set to the total number of bytes you will consider for each item being sorted
-//!  * `get_level` should return the corresponding bytes in the order you would like them to be sorted. This library is intended to be used starting from the MSB (most significant bits).
+//!  * `get_level` should return the corresponding bytes from the most significant byte to the least significant byte
 //!
-//! Note that this also allows you to implement radix keys that span multiple values.
+//! Notes:
+//! * This allows you to implement radix keys that span multiple values, or to implement radix keys that only look at part of a value.
+//! * You should try to make this as fast as possible, so consider using branchless implementations wherever possible
 //!
 //! ```ignore
 //! use rdst::RadixKey;
@@ -40,6 +44,43 @@
 //!         match level {
 //!             0 => b[1],
 //!             _ => b[0],
+//!         }
+//!     }
+//! }
+//! ```
+//!
+//! #### Partial `RadixKey`
+//!
+//! If you know your type has bytes that will always be zero, you can skip those bytes to speed up the sorting process. For instance, if you have a `u32` where values never exceed `10000`, you only need to consider two of the bytes. You could implement this as such:
+//!
+//! ```ignore
+//! impl RadixKey for u32 {
+//!     const LEVELS: usize = 2;
+//!
+//!     #[inline]
+//!     fn get_level(&self, level: usize) -> u8 {
+//!         (self >> ((Self::LEVELS - 1 - level) * 8)) as u8
+//!     }
+//! }
+//! ```
+//!
+//! Note that to replace the default implementations provided by the crate, you must disable the default crate features.
+//!
+//! #### Multi-value `RadixKey`
+//!
+//! If your type has multiple values you need to search by, simply create a `RadixKey` that spans both values.
+//!
+//! ```ignore
+//! impl RadixKey for MyStruct {
+//!     const LEVELS: usize = 4;
+//!
+//!     #[inline]
+//!     fn get_level(&self, level: usize) -> u8 {
+//!         match level {
+//!           0 => self.key_1[0],
+//!           1 => self.key_1[1],
+//!           2 => self.key_2[0],
+//!           3 => self.key_2[1],
 //!         }
 //!     }
 //! }
