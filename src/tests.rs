@@ -1,7 +1,7 @@
 use crate::{RadixKey, RadixSort};
 use nanorand::{Rng, WyRand};
 use std::time::Instant;
-use voracious_radix_sort::{Radixable, RadixSort as Vor};
+use voracious_radix_sort::{RadixSort as Vor, Radixable};
 
 #[derive(Debug, Eq, PartialEq, Clone, Copy, Ord, PartialOrd)]
 struct TestLevel1 {
@@ -137,7 +137,7 @@ pub fn test_complex_4_level_solo() {
 
 #[test]
 pub fn test_random_4_level_solo() {
-    let n = 100_000_000;
+    let n = 200_000_000;
     let mut inputs = Vec::with_capacity(n);
     let mut rng = WyRand::new();
 
@@ -155,7 +155,7 @@ pub fn test_random_4_level_solo() {
 
 #[test]
 pub fn test_random_4_level_voracious() {
-    let n = 100_000_000;
+    let n = 200_000_000;
     let mut inputs = Vec::with_capacity(n);
     let mut rng = WyRand::new();
 
