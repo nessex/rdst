@@ -123,6 +123,13 @@ use rayon::ThreadPoolBuilder;
 use std::cmp::min;
 use std::sync::Mutex;
 
+struct ScannerBucket<'a, T> {
+    write_head: usize,
+    read_head: usize,
+    len: isize,
+    chunk: &'a mut [T],
+}
+
 #[inline]
 fn calculate_position(msb: usize, level: usize, bucket: usize) -> usize {
     let max_msb = 256;
@@ -310,13 +317,23 @@ where
 fn get_scanner_buckets<'a, T>(
     counts: &Vec<usize>,
     bucket: &'a mut [T],
-) -> Vec<Mutex<(usize, usize, isize, &'a mut [T])>> {
+) -> Vec<Mutex<ScannerBucket<'a, T>>> {
     let mut out: Vec<_> = bucket
         .arbitrary_chunks_mut(counts.clone())
-        .map(|chunk| Mutex::new((0usize, 0usize, chunk.len() as isize, chunk)))
+        .map(|chunk| Mutex::new(ScannerBucket {
+            write_head: 0,
+            read_head: 0,
+            len: chunk.len() as isize,
+            chunk,
+        }))
         .collect();
 
-    out.resize_with(256, || Mutex::new((0usize, 0usize, 0isize, &mut [])));
+    out.resize_with(256, || Mutex::new(ScannerBucket {
+        write_head: 0,
+        read_head: 0,
+        len: 0,
+        chunk: &mut [],
+    }));
 
     out
 }
@@ -357,7 +374,7 @@ where
 
                         let mut guard = m.lock().unwrap();
 
-                        if guard.0 >= guard.2 as usize {
+                        if guard.write_head >= guard.len as usize {
                             finished_count += 1;
                             finished_map[i] = true;
 
@@ -368,13 +385,13 @@ where
                             continue;
                         }
 
-                        let read_start = guard.1 as isize;
-                        let to_read = min(guard.2 - read_start, scanner_read_size);
+                        let read_start = guard.read_head as isize;
+                        let to_read = min(guard.len - read_start, scanner_read_size);
 
                         if to_read > 0 {
                             let to_read = to_read as usize;
-                            let end = guard.1 + to_read;
-                            let read_data = &guard.3[guard.1..end];
+                            let end = guard.read_head + to_read;
+                            let read_data = &guard.chunk[guard.read_head..end];
 
                             let read_chunks = read_data.chunks_exact(8);
                             let read_chunks_rem = read_chunks.remainder();
@@ -403,11 +420,11 @@ where
                                 stash[a].push(*v);
                             });
 
-                            guard.1 += to_read;
+                            guard.read_head += to_read;
                         }
 
                         let to_write =
-                            min(stash[i].len() as isize, guard.1 as isize - guard.0 as isize);
+                            min(stash[i].len() as isize, guard.read_head as isize - guard.write_head as isize);
 
                         if to_write < 1 {
                             continue;
@@ -416,13 +433,13 @@ where
                         let to_write = to_write as usize;
                         let split = stash[i].len() - to_write;
                         let some = stash[i].split_off(split);
-                        let end = guard.0 + to_write;
-                        let start = guard.0;
-                        guard.3[start..end].copy_from_slice(&some);
+                        let end = guard.write_head + to_write;
+                        let start = guard.write_head;
+                        guard.chunk[start..end].copy_from_slice(&some);
 
-                        guard.0 += to_write;
+                        guard.write_head += to_write;
 
-                        if guard.0 >= guard.2 as usize {
+                        if guard.write_head >= guard.len as usize {
                             finished_count += 1;
                             finished_map[i] = true;
 
