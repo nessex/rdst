@@ -16,13 +16,11 @@ pub fn lsb_radix_sort_bucket<T>(
         return;
     }
 
-    let mut local_counts = Vec::with_capacity(256);
     let mut prefix_sums = Vec::with_capacity(256);
     let mut running_total = 0;
 
     for i in 0..256 {
         let count = counts[calculate_position(msb, level - 1, i)];
-        local_counts.push(count);
         prefix_sums.push(running_total);
         running_total += count;
     }
