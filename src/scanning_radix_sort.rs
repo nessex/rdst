@@ -55,7 +55,7 @@ where
 
     let tp = ThreadPoolBuilder::new().build().unwrap();
     let scanner_read_size = 16384;
-    let cpus = num_cpus::get_physical();
+    let cpus = num_cpus::get();
 
     tp.scope(|s| {
         for _ in 0..cpus {

@@ -1,4 +1,4 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId, SamplingMode, Throughput};
+use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId, Throughput};
 use nanorand::{WyRand, Rng};
 use voracious_radix_sort::{RadixSort as Vor};
 use rdst::RadixSort;
@@ -27,8 +27,7 @@ fn full_sort_benchmark(c: &mut Criterion) {
 
     let mut group = c.benchmark_group("full_sort");
     group.sample_size(30);
-    group.measurement_time(Duration::from_secs(40));
-    group.sampling_mode(SamplingMode::Linear);
+    group.measurement_time(Duration::from_secs(10));
     for set in input_sets.iter() {
         let l = set.len();
         group.throughput(Throughput::Elements(l as u64));
