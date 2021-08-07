@@ -1,5 +1,6 @@
 use crate::utils::*;
 use crate::RadixKey;
+use rayon::prelude::*;
 
 // lsb_radix_sort_bucket recursively performs an LSB radix sort on a bucket of data, stopping at level 1.
 pub fn lsb_radix_sort_bucket<T>(
@@ -11,8 +12,8 @@ pub fn lsb_radix_sort_bucket<T>(
 ) where
     T: RadixKey + Sized + Send + Ord + Copy + Sync,
 {
-    if bucket.len() < 32 {
-        bucket.sort_unstable();
+    if bucket.len() < 128 {
+        bucket.par_sort_unstable();
         return;
     }
 
@@ -27,11 +28,8 @@ pub fn lsb_radix_sort_bucket<T>(
 
     bucket.iter().for_each(|val| {
         let bucket = val.get_level(level) as usize;
-        unsafe {
-            let write_loc = prefix_sums.get_unchecked_mut(bucket);
-            *tmp_bucket.get_unchecked_mut(*write_loc) = *val;
-            *write_loc += 1;
-        }
+        tmp_bucket[prefix_sums[bucket]] = *val;
+        prefix_sums[bucket] += 1;
     });
 
     drop(prefix_sums);
