@@ -99,18 +99,9 @@
 //!
 //! Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in the work by you, as defined in the Apache-2.0 license, shall be dual licensed as above, without any additional terms or conditions.
 
-// XXX: Required by benches
-// uncomment to run `cargo bench`
-// #![feature(test)]
-
-#[cfg(all(test, feature = "bench"))]
-extern crate test;
-
 #[cfg(test)]
 mod tests;
 
-#[cfg(all(test, feature = "bench"))]
-mod benches;
 mod hybrid_radix_sort;
 mod lsb_radix_sort;
 mod radix_key;
