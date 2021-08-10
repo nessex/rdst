@@ -102,7 +102,6 @@
 #[cfg(test)]
 mod tests;
 
-mod hybrid_radix_sort;
 mod lsb_radix_sort;
 mod msb_ska_sort;
 mod radix_key;
@@ -111,9 +110,9 @@ mod radix_key_impl;
 mod scanning_radix_sort;
 mod utils;
 
-use crate::hybrid_radix_sort::hybrid_radix_sort_bucket;
+use crate::msb_ska_sort::msb_ska_sort;
 use crate::scanning_radix_sort::scanning_radix_sort_bucket;
-use crate::utils::{get_counts, par_get_msb_counts};
+use crate::utils::{par_get_msb_counts};
 pub use radix_key::RadixKey;
 
 fn radix_sort_bucket_start<T>(bucket: &mut [T])
@@ -125,16 +124,11 @@ where
         return;
     }
 
-    let msb_counts = if bucket.len() > 100_000 {
-        par_get_msb_counts(bucket)
-    } else {
-        get_counts(bucket, 0)
-    };
-
     if bucket.len() > 100_000 {
+        let msb_counts = par_get_msb_counts(bucket);
         scanning_radix_sort_bucket(bucket, msb_counts);
     } else {
-        hybrid_radix_sort_bucket(bucket, msb_counts);
+        msb_ska_sort(bucket, 0);
     }
 }
 
