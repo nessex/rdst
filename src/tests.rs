@@ -105,7 +105,7 @@ pub fn test_random_4_level() {
     let mut inputs = Vec::new();
     let mut rng = WyRand::new();
 
-    for _ in 0..1_000_000 {
+    for _ in 0..10_000_000 {
         inputs.push(TestLevel4 {
             key: rng.generate::<u32>(),
         })

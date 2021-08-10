@@ -1,8 +1,8 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId, Throughput};
-use nanorand::{WyRand, Rng};
-use voracious_radix_sort::{RadixSort as Vor};
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
+use nanorand::{Rng, WyRand};
 use rdst::RadixSort;
 use std::time::Duration;
+use voracious_radix_sort::RadixSort as Vor;
 
 fn full_sort_benchmark(c: &mut Criterion) {
     let n = 500_000_000;
@@ -46,7 +46,7 @@ fn full_sort_benchmark(c: &mut Criterion) {
                 black_box(input);
             });
         });
-    };
+    }
     group.finish();
 }
 

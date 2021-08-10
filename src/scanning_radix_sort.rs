@@ -1,5 +1,5 @@
 use crate::lsb_radix_sort::lsb_radix_sort_bucket;
-use crate::utils::*;
+use crate::msb_ska_sort::msb_ska_sort;
 use crate::RadixKey;
 use arbitrary_chunks::ArbitraryChunks;
 use nanorand::{Rng, WyRand};
@@ -45,8 +45,8 @@ fn get_scanner_buckets<'a, T>(
 }
 
 // scanning_radix_sort_bucket does a parallel sort by the MSB. Following the MSB sort, it runs
-// a simple LSB-first sort for the generated buckets.
-pub fn scanning_radix_sort_bucket<T>(bucket: &mut [T], msb_counts: Vec<usize>, lsb_counts: &[usize])
+// a simple LSB-first sort for each of the generated MSB buckets, making this a hybrid sort.
+pub fn scanning_radix_sort_bucket<T>(bucket: &mut [T], msb_counts: Vec<usize>)
 where
     T: RadixKey + Sized + Send + Ord + Copy + Sync,
 {
@@ -167,10 +167,12 @@ where
 
     bucket
         .arbitrary_chunks_mut(msb_counts)
-        .enumerate()
         .par_bridge()
-        .for_each(|(msb, c)| {
-            let mut t = get_tmp_bucket(c.len());
-            lsb_radix_sort_bucket(c, &mut t, T::LEVELS - 1, msb, lsb_counts);
+        .for_each(|c| {
+            if c.len() > 10_000 {
+                msb_ska_sort(c, level + 1);
+            } else {
+                lsb_radix_sort_bucket(c, T::LEVELS - 1, 1);
+            }
         });
 }
