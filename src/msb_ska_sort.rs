@@ -10,6 +10,13 @@ pub fn msb_ska_sort<T>(bucket: &mut [T], level: usize)
 where
     T: RadixKey + Sized + Send + Ord + Copy + Sync,
 {
+    if bucket.len() < 2 {
+        return;
+    } else if bucket.len() < 32 {
+        bucket.sort_unstable();
+        return;
+    }
+
     let counts = get_counts(bucket, level);
     let mut prefix_sums = get_prefix_sums(&counts);
     let mut end_offsets = prefix_sums.split_at(1).1.to_vec();
@@ -26,6 +33,7 @@ where
     let mut finished_map = vec![false; 256];
     let largest = buckets.pop().unwrap();
     finished_map[largest] = true;
+    buckets.reverse();
 
     while finished != 256 {
         for b in buckets.iter() {
@@ -36,19 +44,20 @@ where
                 finished += 1;
             }
 
-            let offset = prefix_sums[*b];
-            let remaining = end_offsets[*b] - offset;
-
-            for i in 0..remaining {
-                let new_b = bucket[offset + i].get_level(level) as usize;
-                bucket.swap(prefix_sums[new_b], offset + i);
+            for i in prefix_sums[*b]..end_offsets[*b] {
+                let new_b = bucket[i].get_level(level) as usize;
+                bucket.swap(prefix_sums[new_b], i);
                 prefix_sums[new_b] += 1;
             }
         }
     }
 
+    drop(prefix_sums);
+    drop(end_offsets);
+    drop(finished_map);
+
     bucket.arbitrary_chunks_mut(counts).for_each(|chunk| {
-        if chunk.len() > 10_000 {
+        if chunk.len() > 500_000 {
             msb_ska_sort(chunk, level + 1);
         } else {
             lsb_radix_sort_bucket(chunk, T::LEVELS - 1, level + 1);

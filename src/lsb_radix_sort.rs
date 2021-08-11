@@ -9,13 +9,17 @@ where
 {
     if bucket.len() < 2 {
         return;
-    } else if bucket.len() < 128 {
+    } else if bucket.len() < 32 {
         bucket.par_sort_unstable();
         return;
     }
 
     let mut tmp_bucket = get_tmp_bucket(bucket.len());
-    let counts = get_counts(bucket, level);
+    let counts = if level == 0 && bucket.len() > 220_000 {
+        par_get_msb_counts(bucket)
+    } else {
+        get_counts(bucket, level)
+    };
     let mut prefix_sums = get_prefix_sums(&counts);
 
     bucket.iter().for_each(|val| {
@@ -24,8 +28,10 @@ where
         prefix_sums[bucket] += 1;
     });
 
-    drop(prefix_sums);
     bucket.copy_from_slice(&tmp_bucket);
+    drop(prefix_sums);
+    drop(counts);
+    drop(tmp_bucket);
 
     if level == min_level {
         return;

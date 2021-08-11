@@ -110,25 +110,33 @@ mod radix_key_impl;
 mod scanning_radix_sort;
 mod utils;
 
-use crate::msb_ska_sort::msb_ska_sort;
+use crate::lsb_radix_sort::lsb_radix_sort_bucket;
 use crate::scanning_radix_sort::scanning_radix_sort_bucket;
-use crate::utils::{par_get_msb_counts};
 pub use radix_key::RadixKey;
+
+// Exposed for benchmarking
+#[cfg(feature = "bench")]
+pub use utils::*;
+
+#[cfg(not(feature = "bench"))]
+use crate::utils::par_get_msb_counts;
 
 fn radix_sort_bucket_start<T>(bucket: &mut [T])
 where
     T: RadixKey + Sized + Send + Ord + Copy + Sync,
 {
-    if bucket.len() < 32 {
+    if bucket.len() < 2 {
+        return;
+    } else if bucket.len() < 32 {
         bucket.sort_unstable();
         return;
     }
 
-    if bucket.len() > 100_000 {
+    if bucket.len() >= 300_000 {
         let msb_counts = par_get_msb_counts(bucket);
         scanning_radix_sort_bucket(bucket, msb_counts);
     } else {
-        msb_ska_sort(bucket, 0);
+        lsb_radix_sort_bucket(bucket, T::LEVELS - 1, 0);
     }
 }
 
