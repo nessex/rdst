@@ -18,8 +18,6 @@
 //!  * `usize`
 //!  * `[u8; N]`
 //!
-//! The default implementations can be disabled by disabling default features on the crate.
-//!
 //! ### Implementing `RadixKey`
 //!
 //! To be able to sort custom types, implement `RadixKey` as below.
@@ -63,8 +61,6 @@
 //!     }
 //! }
 //! ```
-//!
-//! Note that to replace the default implementations provided by the crate, you must disable the default crate features.
 //!
 //! #### Multi-value `RadixKey`
 //!
