@@ -150,6 +150,10 @@ where
     // Drop some data before recursing to reduce memory / thread usage
     drop(scanner_buckets);
 
+    if level == T::LEVELS - 1 {
+        return;
+    }
+
     bucket
         .arbitrary_chunks_mut(msb_counts)
         .par_bridge()

@@ -56,6 +56,10 @@ where
     drop(end_offsets);
     drop(finished_map);
 
+    if level == T::LEVELS - 1 {
+        return;
+    }
+
     bucket.arbitrary_chunks_mut(counts).for_each(|chunk| {
         if chunk.len() > 500_000 {
             msb_ska_sort(chunk, level + 1);
