@@ -32,5 +32,5 @@ name = "full_sort"
 harness = false
 
 [[bench]]
-name = "counts"
+name = "tuning_parameters"
 harness = false

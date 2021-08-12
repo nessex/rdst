@@ -1,82 +1,79 @@
-use crate::lsb_radix_sort::lsb_radix_sort_bucket;
+use crate::lsb_radix_sort::lsb_radix_sort;
 use crate::msb_ska_sort::msb_ska_sort;
-use crate::RadixKey;
+use crate::{RadixKey, par_get_counts, get_counts};
 use arbitrary_chunks::ArbitraryChunks;
-use nanorand::{Rng, WyRand};
 use rayon::prelude::*;
 use std::cmp::min;
 use std::sync::Mutex;
+use crate::tuning_parameters::TuningParameters;
 
-struct ScannerBucket<'a, T> {
+struct ScannerBucketInner<'a, T> {
     write_head: usize,
     read_head: usize,
-    len: isize,
     chunk: &'a mut [T],
+}
+
+struct ScannerBucket<'a, T> {
+    index: usize,
+    len: isize,
+    inner: Mutex<ScannerBucketInner<'a, T>>,
 }
 
 #[inline]
 fn get_scanner_buckets<'a, T>(
     counts: &Vec<usize>,
     bucket: &'a mut [T],
-) -> Vec<Mutex<ScannerBucket<'a, T>>> {
+) -> Vec<ScannerBucket<'a, T>> {
     let mut out: Vec<_> = bucket
         .arbitrary_chunks_mut(counts.clone())
-        .map(|chunk| {
-            Mutex::new(ScannerBucket {
-                write_head: 0,
-                read_head: 0,
+        .enumerate()
+        .map(|(index, chunk)| {
+            ScannerBucket {
+                index,
                 len: chunk.len() as isize,
-                chunk,
-            })
+                inner: Mutex::new(ScannerBucketInner {
+                    write_head: 0,
+                    read_head: 0,
+                    chunk,
+                }),
+            }
         })
         .collect();
 
-    out.resize_with(256, || {
-        Mutex::new(ScannerBucket {
-            write_head: 0,
-            read_head: 0,
-            len: 0,
-            chunk: &mut [],
-        })
-    });
+    out.sort_by_key(|b| b.len);
+    out.reverse();
 
     out
 }
 
 fn scanner_thread<T>(
-    scanner_buckets: &Vec<Mutex<ScannerBucket<T>>>,
+    scanner_buckets: &Vec<ScannerBucket<T>>,
     level: usize,
     scanner_read_size: isize,
 ) where
     T: RadixKey + Copy,
 {
-    let mut rng = WyRand::new();
-    let pivot = rng.generate::<u8>() as usize;
-    let (before, after) = scanner_buckets.split_at(pivot);
-
     let mut stash: Vec<Vec<T>> = Vec::with_capacity(256);
     stash.resize(256, Vec::with_capacity(128));
     let mut finished_count = 0;
     let mut finished_map: Vec<bool> = vec![false; 256];
 
     'outer: loop {
-        for (i, m) in after
-            .iter()
-            .enumerate()
-            .map(|(i, v)| (i + pivot, v))
-            .chain(before.iter().enumerate())
-        {
-            if finished_map[i] {
+        for m in scanner_buckets {
+            if finished_map[m.index] {
                 continue;
             }
 
-            let mut guard = m.lock().unwrap();
+            let mut guard = match m.inner.try_lock() {
+                Ok(g) => g,
+                Err(_) => continue,
+            };
 
-            if guard.write_head >= guard.len as usize {
+            if guard.write_head >= m.len as usize {
                 finished_count += 1;
-                finished_map[i] = true;
+                finished_map[m.index] = true;
 
-                if finished_count == 256 {
+                if finished_count == scanner_buckets.len() {
                     break 'outer;
                 }
 
@@ -84,7 +81,7 @@ fn scanner_thread<T>(
             }
 
             let read_start = guard.read_head as isize;
-            let to_read = min(guard.len - read_start, scanner_read_size);
+            let to_read = min(m.len - read_start, scanner_read_size);
 
             if to_read > 0 {
                 let to_read = to_read as usize;
@@ -100,7 +97,7 @@ fn scanner_thread<T>(
             }
 
             let to_write = min(
-                stash[i].len() as isize,
+                stash[m.index].len() as isize,
                 guard.read_head as isize - guard.write_head as isize,
             );
 
@@ -109,19 +106,19 @@ fn scanner_thread<T>(
             }
 
             let to_write = to_write as usize;
-            let split = stash[i].len() - to_write;
-            let some = stash[i].split_off(split);
+            let split = stash[m.index].len() - to_write;
+            let some = stash[m.index].split_off(split);
             let end = guard.write_head + to_write;
             let start = guard.write_head;
 
             guard.chunk[start..end].copy_from_slice(&some);
             guard.write_head += to_write;
 
-            if guard.write_head >= guard.len as usize {
+            if guard.write_head >= m.len as usize {
                 finished_count += 1;
-                finished_map[i] = true;
+                finished_map[m.index] = true;
 
-                if finished_count == 256 {
+                if finished_count == scanner_buckets.len() {
                     break 'outer;
                 }
             }
@@ -129,25 +126,29 @@ fn scanner_thread<T>(
     }
 }
 
-// scanning_radix_sort_bucket does a parallel sort by the MSB. Following the MSB sort, it runs
-// a simple LSB-first sort for each of the generated MSB buckets, making this a hybrid sort.
-pub fn scanning_radix_sort_bucket<T>(bucket: &mut [T], msb_counts: Vec<usize>)
+// scanning_radix_sort does a parallel MSB-first sort. Following this, depending on the number of
+// elements remaining in each bucket, it will either do an MSB-sort or an LSB-sort, making this
+// a dynamic hybrid sort.
+pub fn scanning_radix_sort<T>(tuning: &TuningParameters, bucket: &mut [T], level: usize)
 where
     T: RadixKey + Sized + Send + Ord + Copy + Sync,
 {
-    let level = 0;
+    let msb_counts = if level == 0 && bucket.len() > tuning.par_count_threshold {
+        par_get_counts(bucket, level)
+    } else {
+        get_counts(bucket, level)
+    };
     let scanner_buckets = get_scanner_buckets(&msb_counts, bucket);
     let cpus = num_cpus::get();
-    let scaling_factor = min(1, (cpus as f32).log2().ceil() as isize);
-    let scanner_read_size = (65536 / scaling_factor) as isize;
+    let threads = min(cpus, scanner_buckets.len());
 
     rayon::scope(|s| {
-        for _ in 0..cpus {
-            s.spawn(|_| scanner_thread(&scanner_buckets, level, scanner_read_size));
+        for _ in 0..threads {
+            s.spawn(|_| scanner_thread(&scanner_buckets, level, tuning.scanner_read_size as isize));
         }
     });
 
-    // Drop some data before recursing to reduce memory / thread usage
+    // Drop some data before recursing to reduce memory usage
     drop(scanner_buckets);
 
     if level == T::LEVELS - 1 {
@@ -158,10 +159,10 @@ where
         .arbitrary_chunks_mut(msb_counts)
         .par_bridge()
         .for_each(|c| {
-            if c.len() > 500_000 {
-                msb_ska_sort(c, level + 1);
+            if c.len() > tuning.ska_sort_threshold {
+                msb_ska_sort(tuning, c, level + 1);
             } else {
-                lsb_radix_sort_bucket(c, T::LEVELS - 1, 1);
+                lsb_radix_sort(tuning, c, T::LEVELS - 1, level + 1);
             }
         });
 }

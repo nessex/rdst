@@ -20,6 +20,8 @@ fn full_sort_u32(c: &mut Criterion) {
         inputs[..50_000_000].to_vec(),
         inputs[..10_000_000].to_vec(),
         inputs[..5_000_000].to_vec(),
+        inputs[..4_000_000].to_vec(),
+        inputs[..3_000_000].to_vec(),
         inputs[..2_000_000].to_vec(),
         inputs[..1_000_000].to_vec(),
         inputs[..500_000].to_vec(),

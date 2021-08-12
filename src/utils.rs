@@ -14,18 +14,18 @@ pub fn get_prefix_sums(counts: &[usize]) -> Vec<usize> {
     sums
 }
 
-pub fn par_get_msb_counts<T>(bucket: &[T]) -> Vec<usize>
+pub fn par_get_counts<T>(bucket: &[T], level: usize) -> Vec<usize>
 where
     T: RadixKey + Sized + Send + Sync,
 {
     let chunk_size = (bucket.len() / num_cpus::get()) + 1;
     let msb_counts = bucket
         .par_chunks(chunk_size)
-        .map(|big_chunk| {
+        .map(|chunk| {
             let mut msb_counts = vec![0usize; 256];
 
-            big_chunk.into_iter().for_each(|v| {
-                let a = v.get_level(0) as usize;
+            chunk.into_iter().for_each(|v| {
+                let a = v.get_level(level) as usize;
                 msb_counts[a] += 1;
             });
 

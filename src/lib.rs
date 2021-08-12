@@ -105,34 +105,46 @@ mod radix_key;
 mod radix_key_impl;
 mod scanning_radix_sort;
 mod utils;
+mod tuning_parameters;
 
-use crate::lsb_radix_sort::lsb_radix_sort_bucket;
-use crate::scanning_radix_sort::scanning_radix_sort_bucket;
 pub use radix_key::RadixKey;
 
 // Exposed for benchmarking
 #[cfg(feature = "bench")]
 pub use utils::*;
+#[cfg(feature = "bench")]
+pub use lsb_radix_sort::*;
+#[cfg(feature = "bench")]
+pub use scanning_radix_sort::*;
+#[cfg(feature = "bench")]
+pub use crate::tuning_parameters::TuningParameters;
+#[cfg(feature = "bench")]
+pub use crate::msb_ska_sort::*;
 
 #[cfg(not(feature = "bench"))]
 use crate::utils::par_get_msb_counts;
+#[cfg(not(feature = "bench"))]
+use crate::lsb_radix_sort::lsb_radix_sort;
+#[cfg(not(feature = "bench"))]
+use crate::scanning_radix_sort::scanning_radix_sort;
+#[cfg(not(feature = "bench"))]
+use crate::tuning_parameters::TuningParameters;
 
-fn radix_sort_bucket_start<T>(bucket: &mut [T])
+fn radix_sort_bucket_start<T>(tuning: &TuningParameters, bucket: &mut [T])
 where
     T: RadixKey + Sized + Send + Ord + Copy + Sync,
 {
     if bucket.len() < 2 {
         return;
-    } else if bucket.len() < 32 {
+    } else if bucket.len() < tuning.comparison_sort_threshold {
         bucket.sort_unstable();
         return;
     }
 
-    if bucket.len() >= 300_000 {
-        let msb_counts = par_get_msb_counts(bucket);
-        scanning_radix_sort_bucket(bucket, msb_counts);
+    if bucket.len() >= tuning.scanning_sort_threshold {
+        scanning_radix_sort(tuning, bucket, 0);
     } else {
-        lsb_radix_sort_bucket(bucket, T::LEVELS - 1, 0);
+        lsb_radix_sort(tuning, bucket, T::LEVELS - 1, 0);
     }
 }
 
@@ -144,7 +156,9 @@ where
         panic!("RadixKey must have at least 1 level");
     }
 
-    radix_sort_bucket_start(bucket);
+    let tuning = TuningParameters::new(T::LEVELS);
+
+    radix_sort_bucket_start(&tuning, bucket);
 }
 
 pub trait RadixSort {

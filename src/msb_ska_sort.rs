@@ -1,18 +1,19 @@
-use crate::lsb_radix_sort::lsb_radix_sort_bucket;
+use crate::lsb_radix_sort::lsb_radix_sort;
 use crate::utils::{get_counts, get_prefix_sums};
 use crate::RadixKey;
 use arbitrary_chunks::ArbitraryChunks;
 use itertools::Itertools;
+use crate::tuning_parameters::TuningParameters;
 
 // Based upon (with modifications):
 // https://probablydance.com/2016/12/27/i-wrote-a-faster-sorting-algorithm/
-pub fn msb_ska_sort<T>(bucket: &mut [T], level: usize)
+pub fn msb_ska_sort<T>(tuning: &TuningParameters, bucket: &mut [T], level: usize)
 where
     T: RadixKey + Sized + Send + Ord + Copy + Sync,
 {
     if bucket.len() < 2 {
         return;
-    } else if bucket.len() < 32 {
+    } else if bucket.len() < tuning.comparison_sort_threshold {
         bucket.sort_unstable();
         return;
     }
@@ -61,10 +62,10 @@ where
     }
 
     bucket.arbitrary_chunks_mut(counts).for_each(|chunk| {
-        if chunk.len() > 500_000 {
-            msb_ska_sort(chunk, level + 1);
+        if chunk.len() > tuning.ska_sort_threshold {
+            msb_ska_sort(tuning, chunk, level + 1);
         } else {
-            lsb_radix_sort_bucket(chunk, T::LEVELS - 1, level + 1);
+            lsb_radix_sort(tuning, chunk, T::LEVELS - 1, level + 1);
         }
     });
 }
