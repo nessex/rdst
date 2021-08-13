@@ -87,8 +87,30 @@ fn scanner_thread<T>(
                 let to_read = to_read as usize;
                 let end = guard.read_head + to_read;
                 let read_data = &guard.chunk[guard.read_head..end];
+                let chunks = read_data.chunks_exact(8);
+                let rem = chunks.remainder();
 
-                read_data.iter().for_each(|v| {
+                chunks.into_iter().for_each(|chunk| {
+                    let a = chunk[0].get_level(level) as usize;
+                    let b = chunk[1].get_level(level) as usize;
+                    let c = chunk[2].get_level(level) as usize;
+                    let d = chunk[3].get_level(level) as usize;
+                    let e = chunk[4].get_level(level) as usize;
+                    let f = chunk[5].get_level(level) as usize;
+                    let g = chunk[6].get_level(level) as usize;
+                    let h = chunk[7].get_level(level) as usize;
+
+                    stash[a].push(chunk[0]);
+                    stash[b].push(chunk[1]);
+                    stash[c].push(chunk[2]);
+                    stash[d].push(chunk[3]);
+                    stash[e].push(chunk[4]);
+                    stash[f].push(chunk[5]);
+                    stash[g].push(chunk[6]);
+                    stash[h].push(chunk[7]);
+                });
+
+                rem.into_iter().for_each(|v| {
                     let a = v.get_level(level) as usize;
                     stash[a].push(*v);
                 });
