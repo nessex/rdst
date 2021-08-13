@@ -1,6 +1,8 @@
 use criterion::*;
 use nanorand::{Rng, WyRand};
-use rdst::{get_counts, par_get_counts, scanning_radix_sort, lsb_radix_sort, TuningParameters, msb_ska_sort};
+use rdst::{
+    get_counts, lsb_radix_sort, msb_ska_sort, par_get_counts, scanning_radix_sort, TuningParameters,
+};
 use std::time::Duration;
 
 fn counts(c: &mut Criterion) {
@@ -46,17 +48,13 @@ fn counts(c: &mut Criterion) {
             });
         });
 
-        group.bench_with_input(
-            BenchmarkId::new("par_get_counts", l),
-            set,
-            |bench, set| {
-                bench.iter(|| {
-                    let input = set.clone();
-                    let c = par_get_counts(&input, 0);
-                    black_box(c);
-                });
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("par_get_counts", l), set, |bench, set| {
+            bench.iter(|| {
+                let input = set.clone();
+                let c = par_get_counts(&input, 0);
+                black_box(c);
+            });
+        });
     }
     group.finish();
 }
@@ -96,25 +94,25 @@ fn scanning_sort(c: &mut Criterion) {
     for set in input_sets.iter() {
         let l = set.len();
         group.throughput(Throughput::Elements(l as u64));
-        group.bench_with_input(BenchmarkId::new("scanning_radix_sort", l), set, |bench, set| {
-            bench.iter(|| {
-                let mut input = set.clone();
-                scanning_radix_sort(&tuning, &mut input, 0);
-                black_box(input);
-            });
-        });
-
         group.bench_with_input(
-            BenchmarkId::new("lsb_radix_sort", l),
+            BenchmarkId::new("scanning_radix_sort", l),
             set,
             |bench, set| {
                 bench.iter(|| {
                     let mut input = set.clone();
-                    lsb_radix_sort(&tuning, &mut input, 3, 0);
+                    scanning_radix_sort(&tuning, &mut input, 0);
                     black_box(input);
                 });
             },
         );
+
+        group.bench_with_input(BenchmarkId::new("lsb_radix_sort", l), set, |bench, set| {
+            bench.iter(|| {
+                let mut input = set.clone();
+                lsb_radix_sort(&tuning, &mut input, 3, 0);
+                black_box(input);
+            });
+        });
     }
     group.finish();
 }
@@ -159,17 +157,13 @@ fn ska_sort(c: &mut Criterion) {
             });
         });
 
-        group.bench_with_input(
-            BenchmarkId::new("lsb_radix_sort", l),
-            set,
-            |bench, set| {
-                bench.iter(|| {
-                    let mut input = set.clone();
-                    lsb_radix_sort(&tuning, &mut input, 3, 0);
-                    black_box(input);
-                });
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("lsb_radix_sort", l), set, |bench, set| {
+            bench.iter(|| {
+                let mut input = set.clone();
+                lsb_radix_sort(&tuning, &mut input, 3, 0);
+                black_box(input);
+            });
+        });
     }
     group.finish();
 
@@ -209,17 +203,13 @@ fn ska_sort(c: &mut Criterion) {
             });
         });
 
-        group.bench_with_input(
-            BenchmarkId::new("lsb_radix_sort", l),
-            set,
-            |bench, set| {
-                bench.iter(|| {
-                    let mut input = set.clone();
-                    lsb_radix_sort(&tuning, &mut input, 3, 0);
-                    black_box(input);
-                });
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("lsb_radix_sort", l), set, |bench, set| {
+            bench.iter(|| {
+                let mut input = set.clone();
+                lsb_radix_sort(&tuning, &mut input, 3, 0);
+                black_box(input);
+            });
+        });
     }
     group.finish();
 }

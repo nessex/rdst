@@ -1,8 +1,8 @@
 use crate::{RadixKey, RadixSort};
-use nanorand::{Rng, WyRand, RandomGen};
+use nanorand::{RandomGen, Rng, WyRand};
+use std::fmt::Debug;
 use std::time::Instant;
 use voracious_radix_sort::{RadixSort as Vor, Radixable};
-use std::fmt::Debug;
 
 #[derive(Debug, Eq, PartialEq, Clone, Copy, Ord, PartialOrd)]
 struct TestLevel1 {
@@ -190,7 +190,7 @@ pub fn test_series_4_level() {
 
 fn sort_comparison_test<T>(n: usize)
 where
-    T: RadixKey + Ord + RandomGen<WyRand> + Clone + Debug + Send + Copy + Sync
+    T: RadixKey + Ord + RandomGen<WyRand> + Clone + Debug + Send + Copy + Sync,
 {
     let mut inputs = Vec::with_capacity(n);
     let mut rng = WyRand::new();
@@ -209,7 +209,7 @@ where
 
 fn sort_comparison_suite<T>()
 where
-    T: RadixKey + Ord + RandomGen<WyRand> + Clone + Debug + Send + Copy + Sync
+    T: RadixKey + Ord + RandomGen<WyRand> + Clone + Debug + Send + Copy + Sync,
 {
     sort_comparison_test::<T>(0);
     sort_comparison_test::<T>(1);
@@ -221,19 +221,31 @@ where
 }
 
 #[test]
-pub fn test_u8() { sort_comparison_suite::<u8>(); }
+pub fn test_u8() {
+    sort_comparison_suite::<u8>();
+}
 
 #[test]
-pub fn test_u16() { sort_comparison_suite::<u16>(); }
+pub fn test_u16() {
+    sort_comparison_suite::<u16>();
+}
 
 #[test]
-pub fn test_u32() { sort_comparison_suite::<u32>(); }
+pub fn test_u32() {
+    sort_comparison_suite::<u32>();
+}
 
 #[test]
-pub fn test_u64() { sort_comparison_suite::<u64>(); }
+pub fn test_u64() {
+    sort_comparison_suite::<u64>();
+}
 
 #[test]
-pub fn test_u128() { sort_comparison_suite::<u128>(); }
+pub fn test_u128() {
+    sort_comparison_suite::<u128>();
+}
 
 #[test]
-pub fn test_usize() { sort_comparison_suite::<usize>(); }
+pub fn test_usize() {
+    sort_comparison_suite::<usize>();
+}

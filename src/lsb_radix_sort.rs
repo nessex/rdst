@@ -1,11 +1,15 @@
+use crate::tuning_parameters::TuningParameters;
 use crate::utils::*;
 use crate::RadixKey;
 use rayon::prelude::*;
-use crate::tuning_parameters::TuningParameters;
 
 // lsb_radix_sort recursively performs an LSB-first radix sort on a bucket of data.
-pub fn lsb_radix_sort<T>(tuning: &TuningParameters, bucket: &mut [T], level: usize, min_level: usize)
-where
+pub fn lsb_radix_sort<T>(
+    tuning: &TuningParameters,
+    bucket: &mut [T],
+    level: usize,
+    min_level: usize,
+) where
     T: RadixKey + Sized + Send + Ord + Copy + Sync,
 {
     if bucket.len() < 2 {
@@ -27,14 +31,14 @@ where
     let rem = chunks.remainder();
 
     chunks.into_iter().for_each(|chunk| {
-        let a = chunk[0].get_level(level)as usize;
-        let b = chunk[1].get_level(level)as usize;
-        let c = chunk[2].get_level(level)as usize;
-        let d = chunk[3].get_level(level)as usize;
-        let e = chunk[4].get_level(level)as usize;
-        let f = chunk[5].get_level(level)as usize;
-        let g = chunk[6].get_level(level)as usize;
-        let h = chunk[7].get_level(level)as usize;
+        let a = chunk[0].get_level(level) as usize;
+        let b = chunk[1].get_level(level) as usize;
+        let c = chunk[2].get_level(level) as usize;
+        let d = chunk[3].get_level(level) as usize;
+        let e = chunk[4].get_level(level) as usize;
+        let f = chunk[5].get_level(level) as usize;
+        let g = chunk[6].get_level(level) as usize;
+        let h = chunk[7].get_level(level) as usize;
 
         tmp_bucket[prefix_sums[a]] = chunk[0];
         prefix_sums[a] += 1;

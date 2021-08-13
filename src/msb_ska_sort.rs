@@ -1,9 +1,9 @@
 use crate::lsb_radix_sort::lsb_radix_sort;
+use crate::tuning_parameters::TuningParameters;
 use crate::utils::{get_counts, get_prefix_sums};
 use crate::RadixKey;
 use arbitrary_chunks::ArbitraryChunks;
 use itertools::Itertools;
-use crate::tuning_parameters::TuningParameters;
 
 // Based upon (with modifications):
 // https://probablydance.com/2016/12/27/i-wrote-a-faster-sorting-algorithm/

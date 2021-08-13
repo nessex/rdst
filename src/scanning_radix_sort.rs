@@ -1,11 +1,12 @@
 use crate::lsb_radix_sort::lsb_radix_sort;
 use crate::msb_ska_sort::msb_ska_sort;
-use crate::{RadixKey, par_get_counts, get_counts};
+use crate::tuning_parameters::TuningParameters;
+use crate::utils::*;
+use crate::RadixKey;
 use arbitrary_chunks::ArbitraryChunks;
 use rayon::prelude::*;
 use std::cmp::min;
 use std::sync::Mutex;
-use crate::tuning_parameters::TuningParameters;
 
 struct ScannerBucketInner<'a, T> {
     write_head: usize,
@@ -27,16 +28,14 @@ fn get_scanner_buckets<'a, T>(
     let mut out: Vec<_> = bucket
         .arbitrary_chunks_mut(counts.clone())
         .enumerate()
-        .map(|(index, chunk)| {
-            ScannerBucket {
-                index,
-                len: chunk.len() as isize,
-                inner: Mutex::new(ScannerBucketInner {
-                    write_head: 0,
-                    read_head: 0,
-                    chunk,
-                }),
-            }
+        .map(|(index, chunk)| ScannerBucket {
+            index,
+            len: chunk.len() as isize,
+            inner: Mutex::new(ScannerBucketInner {
+                write_head: 0,
+                read_head: 0,
+                chunk,
+            }),
         })
         .collect();
 

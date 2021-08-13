@@ -104,30 +104,28 @@ mod radix_key;
 #[cfg(feature = "default-implementations")]
 mod radix_key_impl;
 mod scanning_radix_sort;
-mod utils;
 mod tuning_parameters;
+mod utils;
 
 pub use radix_key::RadixKey;
 
 // Exposed for benchmarking
-#[cfg(feature = "bench")]
-pub use utils::*;
-#[cfg(feature = "bench")]
-pub use lsb_radix_sort::*;
-#[cfg(feature = "bench")]
-pub use scanning_radix_sort::*;
-#[cfg(feature = "bench")]
+#[cfg(any(test, feature = "bench"))]
+pub use crate::msb_ska_sort::msb_ska_sort;
+#[cfg(any(test, feature = "bench"))]
 pub use crate::tuning_parameters::TuningParameters;
-#[cfg(feature = "bench")]
-pub use crate::msb_ska_sort::*;
+#[cfg(any(test, feature = "bench"))]
+pub use lsb_radix_sort::lsb_radix_sort;
+#[cfg(any(test, feature = "bench"))]
+pub use scanning_radix_sort::*;
+#[cfg(any(test, feature = "bench"))]
+pub use utils::*;
 
-#[cfg(not(feature = "bench"))]
-use crate::utils::par_get_msb_counts;
-#[cfg(not(feature = "bench"))]
+#[cfg(not(any(test, feature = "bench")))]
 use crate::lsb_radix_sort::lsb_radix_sort;
-#[cfg(not(feature = "bench"))]
+#[cfg(not(any(test, feature = "bench")))]
 use crate::scanning_radix_sort::scanning_radix_sort;
-#[cfg(not(feature = "bench"))]
+#[cfg(not(any(test, feature = "bench")))]
 use crate::tuning_parameters::TuningParameters;
 
 fn radix_sort_bucket_start<T>(tuning: &TuningParameters, bucket: &mut [T])
