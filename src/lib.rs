@@ -115,14 +115,14 @@ pub use crate::msb_ska_sort::msb_ska_sort;
 #[cfg(any(test, feature = "bench"))]
 pub use crate::tuning_parameters::TuningParameters;
 #[cfg(any(test, feature = "bench"))]
-pub use lsb_radix_sort::lsb_radix_sort;
+pub use lsb_radix_sort::lsb_radix_sort_adapter;
 #[cfg(any(test, feature = "bench"))]
 pub use scanning_radix_sort::*;
 #[cfg(any(test, feature = "bench"))]
 pub use utils::*;
 
 #[cfg(not(any(test, feature = "bench")))]
-use crate::lsb_radix_sort::lsb_radix_sort;
+use crate::lsb_radix_sort::lsb_radix_sort_adapter;
 #[cfg(not(any(test, feature = "bench")))]
 use crate::scanning_radix_sort::scanning_radix_sort;
 #[cfg(not(any(test, feature = "bench")))]
@@ -142,7 +142,7 @@ where
     if bucket.len() >= tuning.scanning_sort_threshold {
         scanning_radix_sort(tuning, bucket, 0);
     } else {
-        lsb_radix_sort(tuning, bucket, T::LEVELS - 1, 0);
+        lsb_radix_sort_adapter(tuning, bucket, T::LEVELS - 1, 0);
     }
 }
 

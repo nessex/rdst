@@ -1,4 +1,4 @@
-use crate::lsb_radix_sort::lsb_radix_sort;
+use crate::lsb_radix_sort::lsb_radix_sort_adapter;
 use crate::tuning_parameters::TuningParameters;
 use crate::utils::{get_counts, get_prefix_sums};
 use crate::RadixKey;
@@ -65,7 +65,7 @@ where
         if chunk.len() > tuning.ska_sort_threshold {
             msb_ska_sort(tuning, chunk, level + 1);
         } else {
-            lsb_radix_sort(tuning, chunk, T::LEVELS - 1, level + 1);
+            lsb_radix_sort_adapter(tuning, chunk, T::LEVELS - 1, level + 1);
         }
     });
 }

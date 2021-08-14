@@ -3,24 +3,16 @@ use crate::utils::*;
 use crate::RadixKey;
 use rayon::prelude::*;
 
-// lsb_radix_sort recursively performs an LSB-first radix sort on a bucket of data.
-pub fn lsb_radix_sort<T>(
-    tuning: &TuningParameters,
+#[inline]
+fn lsb_radix_sort<T>(
     bucket: &mut [T],
+    tmp_bucket: &mut [T],
     level: usize,
-    min_level: usize,
+    parallel_count: bool,
 ) where
     T: RadixKey + Sized + Send + Ord + Copy + Sync,
 {
-    if bucket.len() < 2 {
-        return;
-    } else if bucket.len() < tuning.comparison_sort_threshold {
-        bucket.par_sort_unstable();
-        return;
-    }
-
-    let mut tmp_bucket = get_tmp_bucket(bucket.len());
-    let counts = if level == 0 && bucket.len() > tuning.par_count_threshold {
+    let counts = if parallel_count {
         par_get_counts(bucket, level)
     } else {
         get_counts(bucket, level)
@@ -65,13 +57,29 @@ pub fn lsb_radix_sort<T>(
     });
 
     bucket.copy_from_slice(&tmp_bucket);
+}
 
-    if level != min_level {
-        // Clean up before recursing to reduce memory usage
-        drop(prefix_sums);
-        drop(counts);
-        drop(tmp_bucket);
+pub fn lsb_radix_sort_adapter<T>(
+    tuning: &TuningParameters,
+    bucket: &mut [T],
+    start_level: usize,
+    end_level: usize,
+) where
+    T: RadixKey + Sized + Send + Ord + Copy + Sync,
+{
+    if bucket.len() < 2 {
+        return;
+    } else if bucket.len() < tuning.comparison_sort_threshold {
+        bucket.par_sort_unstable();
+        return;
+    }
 
-        lsb_radix_sort(tuning, bucket, level - 1, min_level);
+    let parallel_count = end_level == 0 && bucket.len() > tuning.par_count_threshold;
+    let mut tmp_bucket = get_tmp_bucket(bucket.len());
+    let mut levels: Vec<usize> = (end_level..start_level).into_iter().collect();
+    levels.reverse();
+
+    for l in levels {
+        lsb_radix_sort(bucket, &mut tmp_bucket, l, parallel_count);
     }
 }

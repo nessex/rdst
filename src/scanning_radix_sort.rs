@@ -1,4 +1,4 @@
-use crate::lsb_radix_sort::lsb_radix_sort;
+use crate::lsb_radix_sort::lsb_radix_sort_adapter;
 use crate::msb_ska_sort::msb_ska_sort;
 use crate::tuning_parameters::TuningParameters;
 use crate::utils::*;
@@ -183,7 +183,7 @@ where
             if c.len() > tuning.ska_sort_threshold {
                 msb_ska_sort(tuning, c, level + 1);
             } else {
-                lsb_radix_sort(tuning, c, T::LEVELS - 1, level + 1);
+                lsb_radix_sort_adapter(tuning, c, T::LEVELS - 1, level + 1);
             }
         });
 }

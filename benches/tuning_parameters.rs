@@ -1,7 +1,7 @@
 use criterion::*;
 use nanorand::{Rng, WyRand};
 use rdst::{
-    get_counts, lsb_radix_sort, msb_ska_sort, par_get_counts, scanning_radix_sort, TuningParameters,
+    get_counts, lsb_radix_sort_adapter, msb_ska_sort, par_get_counts, scanning_radix_sort, TuningParameters,
 };
 use std::time::Duration;
 
@@ -109,7 +109,7 @@ fn scanning_sort(c: &mut Criterion) {
         group.bench_with_input(BenchmarkId::new("lsb_radix_sort", l), set, |bench, set| {
             bench.iter(|| {
                 let mut input = set.clone();
-                lsb_radix_sort(&tuning, &mut input, 3, 0);
+                lsb_radix_sort_adapter(&tuning, &mut input, 3, 0);
                 black_box(input);
             });
         });
@@ -160,7 +160,7 @@ fn ska_sort(c: &mut Criterion) {
         group.bench_with_input(BenchmarkId::new("lsb_radix_sort", l), set, |bench, set| {
             bench.iter(|| {
                 let mut input = set.clone();
-                lsb_radix_sort(&tuning, &mut input, 3, 0);
+                lsb_radix_sort_adapter(&tuning, &mut input, 3, 0);
                 black_box(input);
             });
         });
@@ -206,7 +206,7 @@ fn ska_sort(c: &mut Criterion) {
         group.bench_with_input(BenchmarkId::new("lsb_radix_sort", l), set, |bench, set| {
             bench.iter(|| {
                 let mut input = set.clone();
-                lsb_radix_sort(&tuning, &mut input, 3, 0);
+                lsb_radix_sort_adapter(&tuning, &mut input, 3, 0);
                 black_box(input);
             });
         });
