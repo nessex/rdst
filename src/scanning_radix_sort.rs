@@ -8,6 +8,7 @@ use rayon::prelude::*;
 use std::cmp::min;
 use std::ptr::copy_nonoverlapping;
 use std::sync::Mutex;
+use crate::msb_radix_sort::msb_radix_sort_adapter;
 
 struct ScannerBucketInner<'a, T> {
     write_head: usize,
@@ -162,7 +163,7 @@ fn scanner_thread<T>(
 // a dynamic hybrid sort.
 pub fn scanning_radix_sort<T>(tuning: &TuningParameters, bucket: &mut [T], level: usize)
 where
-    T: RadixKey + Sized + Send + Copy + Sync,
+    T: RadixKey + Sized + Ord + Send + Copy + Sync,
 {
     let msb_counts = if level == 0 && bucket.len() > tuning.par_count_threshold {
         par_get_counts(bucket, level)
@@ -186,12 +187,15 @@ where
         return;
     }
 
+    let msb_target = 256usize.pow((T::LEVELS - level - 1) as u32) / 4;
+
     bucket
         .arbitrary_chunks_mut(msb_counts)
         .par_bridge()
         .for_each(|c| {
-            if c.len() > tuning.ska_sort_threshold {
-                msb_ska_sort(tuning, c, level + 1);
+            if c.len() < msb_target {
+                msb_radix_sort_adapter(tuning, c, level + 1);
+                //msb_ska_sort(tuning, c, level + 1);
             } else {
                 lsb_radix_sort_adapter(tuning, c, T::LEVELS - 1, level + 1);
             }

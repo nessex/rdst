@@ -106,6 +106,7 @@ mod radix_key_impl;
 mod scanning_radix_sort;
 mod tuning_parameters;
 mod utils;
+mod msb_radix_sort;
 
 pub use radix_key::RadixKey;
 
@@ -127,17 +128,26 @@ use crate::lsb_radix_sort::lsb_radix_sort_adapter;
 use crate::scanning_radix_sort::scanning_radix_sort;
 #[cfg(not(any(test, feature = "bench")))]
 use crate::tuning_parameters::TuningParameters;
+use crate::msb_radix_sort::msb_radix_sort_adapter;
 
 fn radix_sort_bucket_start<T>(tuning: &TuningParameters, bucket: &mut [T])
 where
-    T: RadixKey + Sized + Send + Copy + Sync,
+    T: RadixKey + Sized + Ord + Send + Copy + Sync,
 {
     if bucket.len() < 2 {
         return;
+    } else if bucket.len() < 32 {
+        bucket.sort_unstable();
+        return;
     }
+
+    let msb_target = 256usize.pow((T::LEVELS - 1) as u32) / 4;
 
     if bucket.len() >= tuning.scanning_sort_threshold {
         scanning_radix_sort(tuning, bucket, 0);
+    } else if bucket.len() < msb_target {
+        //msb_ska_sort(tuning, bucket, 0);
+        msb_radix_sort_adapter(tuning, bucket, 0);
     } else {
         lsb_radix_sort_adapter(tuning, bucket, T::LEVELS - 1, 0);
     }
@@ -145,7 +155,7 @@ where
 
 fn radix_sort_inner<T>(bucket: &mut [T])
 where
-    T: RadixKey + Sized + Send + Copy + Sync,
+    T: RadixKey + Ord + Sized + Send + Copy + Sync,
 {
     if T::LEVELS == 0 {
         panic!("RadixKey must have at least 1 level");
@@ -164,7 +174,7 @@ pub trait RadixSort {
 
 impl<T> RadixSort for Vec<T>
 where
-    T: RadixKey + Sized + Send + Copy + Sync,
+    T: RadixKey + Sized + Ord + Send + Copy + Sync,
 {
     fn radix_sort_unstable(&mut self) {
         radix_sort_inner(self);
@@ -173,7 +183,7 @@ where
 
 impl<T> RadixSort for [T]
 where
-    T: RadixKey + Sized + Send + Copy + Sync,
+    T: RadixKey + Sized + Ord + Send + Copy + Sync,
 {
     fn radix_sort_unstable(&mut self) {
         radix_sort_inner(self);
