@@ -26,24 +26,24 @@ where
             let chunks = big_chunk.chunks_exact(8);
             let rem = chunks.remainder();
 
-            chunks.into_iter().for_each(|chunk| {
-                let a = chunk[0].get_level(level) as usize;
-                let b = chunk[1].get_level(level) as usize;
-                let c = chunk[2].get_level(level) as usize;
-                let d = chunk[3].get_level(level) as usize;
-                let e = chunk[4].get_level(level) as usize;
-                let f = chunk[5].get_level(level) as usize;
-                let g = chunk[6].get_level(level) as usize;
-                let h = chunk[7].get_level(level) as usize;
+            chunks.into_iter().for_each(|chunk| unsafe {
+                let a = chunk.get_unchecked(0).get_level(level) as usize;
+                let b = chunk.get_unchecked(1).get_level(level) as usize;
+                let c = chunk.get_unchecked(2).get_level(level) as usize;
+                let d = chunk.get_unchecked(3).get_level(level) as usize;
+                let e = chunk.get_unchecked(4).get_level(level) as usize;
+                let f = chunk.get_unchecked(5).get_level(level) as usize;
+                let g = chunk.get_unchecked(6).get_level(level) as usize;
+                let h = chunk.get_unchecked(7).get_level(level) as usize;
 
-                msb_counts[a] += 1;
-                msb_counts[b] += 1;
-                msb_counts[c] += 1;
-                msb_counts[d] += 1;
-                msb_counts[e] += 1;
-                msb_counts[f] += 1;
-                msb_counts[g] += 1;
-                msb_counts[h] += 1;
+                *msb_counts.get_unchecked_mut(a) += 1;
+                *msb_counts.get_unchecked_mut(b) += 1;
+                *msb_counts.get_unchecked_mut(c) += 1;
+                *msb_counts.get_unchecked_mut(d) += 1;
+                *msb_counts.get_unchecked_mut(e) += 1;
+                *msb_counts.get_unchecked_mut(f) += 1;
+                *msb_counts.get_unchecked_mut(g) += 1;
+                *msb_counts.get_unchecked_mut(h) += 1;
             });
 
             rem.into_iter().for_each(|v| {
@@ -57,7 +57,9 @@ where
             || vec![0usize; 256],
             |mut msb_counts, msb| {
                 for (i, c) in msb.into_iter().enumerate() {
-                    msb_counts[i] += c;
+                    unsafe {
+                        *msb_counts.get_unchecked_mut(i) += c;
+                    }
                 }
 
                 msb_counts
@@ -75,24 +77,24 @@ where
     let chunks = bucket.chunks_exact(8);
     let rem = chunks.remainder();
 
-    chunks.into_iter().for_each(|chunk| {
-        let a = chunk[0].get_level(level) as usize;
-        let b = chunk[1].get_level(level) as usize;
-        let c = chunk[2].get_level(level) as usize;
-        let d = chunk[3].get_level(level) as usize;
-        let e = chunk[4].get_level(level) as usize;
-        let f = chunk[5].get_level(level) as usize;
-        let g = chunk[6].get_level(level) as usize;
-        let h = chunk[7].get_level(level) as usize;
+    chunks.into_iter().for_each(|chunk| unsafe {
+        let a = chunk.get_unchecked(0).get_level(level) as usize;
+        let b = chunk.get_unchecked(1).get_level(level) as usize;
+        let c = chunk.get_unchecked(2).get_level(level) as usize;
+        let d = chunk.get_unchecked(3).get_level(level) as usize;
+        let e = chunk.get_unchecked(4).get_level(level) as usize;
+        let f = chunk.get_unchecked(5).get_level(level) as usize;
+        let g = chunk.get_unchecked(6).get_level(level) as usize;
+        let h = chunk.get_unchecked(7).get_level(level) as usize;
 
-        counts[a] += 1;
-        counts[b] += 1;
-        counts[c] += 1;
-        counts[d] += 1;
-        counts[e] += 1;
-        counts[f] += 1;
-        counts[g] += 1;
-        counts[h] += 1;
+        *counts.get_unchecked_mut(a) += 1;
+        *counts.get_unchecked_mut(b) += 1;
+        *counts.get_unchecked_mut(c) += 1;
+        *counts.get_unchecked_mut(d) += 1;
+        *counts.get_unchecked_mut(e) += 1;
+        *counts.get_unchecked_mut(f) += 1;
+        *counts.get_unchecked_mut(g) += 1;
+        *counts.get_unchecked_mut(h) += 1;
     });
 
     rem.into_iter().for_each(|v| {

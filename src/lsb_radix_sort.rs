@@ -2,11 +2,12 @@ use crate::tuning_parameters::TuningParameters;
 use crate::utils::*;
 use crate::RadixKey;
 use rayon::prelude::*;
+use std::ptr::copy_nonoverlapping;
 
 #[inline]
 fn lsb_radix_sort<T>(bucket: &mut [T], tmp_bucket: &mut [T], level: usize, parallel_count: bool)
 where
-    T: RadixKey + Sized + Send + Ord + Copy + Sync,
+    T: RadixKey + Sized + Send + Copy + Sync,
 {
     let counts = if parallel_count {
         par_get_counts(bucket, level)
@@ -18,41 +19,43 @@ where
     let chunks = bucket.chunks_exact(8);
     let rem = chunks.remainder();
 
-    chunks.into_iter().for_each(|chunk| {
-        let a = chunk[0].get_level(level) as usize;
-        let b = chunk[1].get_level(level) as usize;
-        let c = chunk[2].get_level(level) as usize;
-        let d = chunk[3].get_level(level) as usize;
-        let e = chunk[4].get_level(level) as usize;
-        let f = chunk[5].get_level(level) as usize;
-        let g = chunk[6].get_level(level) as usize;
-        let h = chunk[7].get_level(level) as usize;
+    chunks.into_iter().for_each(|chunk| unsafe {
+        let a = chunk.get_unchecked(0).get_level(level) as usize;
+        let b = chunk.get_unchecked(1).get_level(level) as usize;
+        let c = chunk.get_unchecked(2).get_level(level) as usize;
+        let d = chunk.get_unchecked(3).get_level(level) as usize;
+        let e = chunk.get_unchecked(4).get_level(level) as usize;
+        let f = chunk.get_unchecked(5).get_level(level) as usize;
+        let g = chunk.get_unchecked(6).get_level(level) as usize;
+        let h = chunk.get_unchecked(7).get_level(level) as usize;
 
-        tmp_bucket[prefix_sums[a]] = chunk[0];
-        prefix_sums[a] += 1;
-        tmp_bucket[prefix_sums[b]] = chunk[1];
-        prefix_sums[b] += 1;
-        tmp_bucket[prefix_sums[c]] = chunk[2];
-        prefix_sums[c] += 1;
-        tmp_bucket[prefix_sums[d]] = chunk[3];
-        prefix_sums[d] += 1;
-        tmp_bucket[prefix_sums[e]] = chunk[4];
-        prefix_sums[e] += 1;
-        tmp_bucket[prefix_sums[f]] = chunk[5];
-        prefix_sums[f] += 1;
-        tmp_bucket[prefix_sums[g]] = chunk[6];
-        prefix_sums[g] += 1;
-        tmp_bucket[prefix_sums[h]] = chunk[7];
-        prefix_sums[h] += 1;
+        *tmp_bucket.get_unchecked_mut(*prefix_sums.get_unchecked(a)) = *chunk.get_unchecked(0);
+        *prefix_sums.get_unchecked_mut(a) += 1;
+        *tmp_bucket.get_unchecked_mut(*prefix_sums.get_unchecked(b)) = *chunk.get_unchecked(1);
+        *prefix_sums.get_unchecked_mut(b) += 1;
+        *tmp_bucket.get_unchecked_mut(*prefix_sums.get_unchecked(c)) = *chunk.get_unchecked(2);
+        *prefix_sums.get_unchecked_mut(c) += 1;
+        *tmp_bucket.get_unchecked_mut(*prefix_sums.get_unchecked(d)) = *chunk.get_unchecked(3);
+        *prefix_sums.get_unchecked_mut(d) += 1;
+        *tmp_bucket.get_unchecked_mut(*prefix_sums.get_unchecked(e)) = *chunk.get_unchecked(4);
+        *prefix_sums.get_unchecked_mut(e) += 1;
+        *tmp_bucket.get_unchecked_mut(*prefix_sums.get_unchecked(f)) = *chunk.get_unchecked(5);
+        *prefix_sums.get_unchecked_mut(f) += 1;
+        *tmp_bucket.get_unchecked_mut(*prefix_sums.get_unchecked(g)) = *chunk.get_unchecked(6);
+        *prefix_sums.get_unchecked_mut(g) += 1;
+        *tmp_bucket.get_unchecked_mut(*prefix_sums.get_unchecked(h)) = *chunk.get_unchecked(7);
+        *prefix_sums.get_unchecked_mut(h) += 1;
     });
 
-    rem.into_iter().for_each(|val| {
+    rem.into_iter().for_each(|val| unsafe {
         let bucket = val.get_level(level) as usize;
-        tmp_bucket[prefix_sums[bucket]] = *val;
-        prefix_sums[bucket] += 1;
+        *tmp_bucket.get_unchecked_mut(*prefix_sums.get_unchecked(bucket)) = *val;
+        *prefix_sums.get_unchecked_mut(bucket) += 1;
     });
 
-    bucket.copy_from_slice(&tmp_bucket);
+    unsafe {
+        copy_nonoverlapping(tmp_bucket.as_ptr(), bucket.as_mut_ptr(), tmp_bucket.len());
+    }
 }
 
 pub fn lsb_radix_sort_adapter<T>(
@@ -61,12 +64,9 @@ pub fn lsb_radix_sort_adapter<T>(
     start_level: usize,
     end_level: usize,
 ) where
-    T: RadixKey + Sized + Send + Ord + Copy + Sync,
+    T: RadixKey + Sized + Send + Copy + Sync,
 {
     if bucket.len() < 2 {
-        return;
-    } else if bucket.len() < tuning.comparison_sort_threshold {
-        bucket.par_sort_unstable();
         return;
     }
 

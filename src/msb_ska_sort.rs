@@ -9,12 +9,9 @@ use itertools::Itertools;
 // https://probablydance.com/2016/12/27/i-wrote-a-faster-sorting-algorithm/
 pub fn msb_ska_sort<T>(tuning: &TuningParameters, bucket: &mut [T], level: usize)
 where
-    T: RadixKey + Sized + Send + Ord + Copy + Sync,
+    T: RadixKey + Sized + Send + Copy + Sync,
 {
     if bucket.len() < 2 {
-        return;
-    } else if bucket.len() < tuning.comparison_sort_threshold {
-        bucket.sort_unstable();
         return;
     }
 
@@ -45,10 +42,12 @@ where
                 finished += 1;
             }
 
-            for i in prefix_sums[*b]..end_offsets[*b] {
-                let new_b = bucket[i].get_level(level) as usize;
-                bucket.swap(prefix_sums[new_b], i);
-                prefix_sums[new_b] += 1;
+            unsafe {
+                for i in prefix_sums[*b]..end_offsets[*b] {
+                    let new_b = bucket.get_unchecked(i).get_level(level) as usize;
+                    bucket.swap(*prefix_sums.get_unchecked(new_b), i);
+                    *prefix_sums.get_unchecked_mut(new_b) += 1;
+                }
             }
         }
     }

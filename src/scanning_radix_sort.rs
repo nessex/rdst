@@ -59,8 +59,10 @@ fn scanner_thread<T>(
 
     'outer: loop {
         for m in scanner_buckets {
-            if finished_map[m.index] {
-                continue;
+            unsafe {
+                if *finished_map.get_unchecked(m.index) {
+                    continue;
+                }
             }
 
             let mut guard = match m.inner.try_lock() {
@@ -89,24 +91,24 @@ fn scanner_thread<T>(
                 let chunks = read_data.chunks_exact(8);
                 let rem = chunks.remainder();
 
-                chunks.into_iter().for_each(|chunk| {
-                    let a = chunk[0].get_level(level) as usize;
-                    let b = chunk[1].get_level(level) as usize;
-                    let c = chunk[2].get_level(level) as usize;
-                    let d = chunk[3].get_level(level) as usize;
-                    let e = chunk[4].get_level(level) as usize;
-                    let f = chunk[5].get_level(level) as usize;
-                    let g = chunk[6].get_level(level) as usize;
-                    let h = chunk[7].get_level(level) as usize;
+                chunks.into_iter().for_each(|chunk| unsafe {
+                    let a = chunk.get_unchecked(0).get_level(level) as usize;
+                    let b = chunk.get_unchecked(1).get_level(level) as usize;
+                    let c = chunk.get_unchecked(2).get_level(level) as usize;
+                    let d = chunk.get_unchecked(3).get_level(level) as usize;
+                    let e = chunk.get_unchecked(4).get_level(level) as usize;
+                    let f = chunk.get_unchecked(5).get_level(level) as usize;
+                    let g = chunk.get_unchecked(6).get_level(level) as usize;
+                    let h = chunk.get_unchecked(7).get_level(level) as usize;
 
-                    stash[a].push(chunk[0]);
-                    stash[b].push(chunk[1]);
-                    stash[c].push(chunk[2]);
-                    stash[d].push(chunk[3]);
-                    stash[e].push(chunk[4]);
-                    stash[f].push(chunk[5]);
-                    stash[g].push(chunk[6]);
-                    stash[h].push(chunk[7]);
+                    stash.get_unchecked_mut(a).push(*chunk.get_unchecked(0));
+                    stash.get_unchecked_mut(b).push(*chunk.get_unchecked(1));
+                    stash.get_unchecked_mut(c).push(*chunk.get_unchecked(2));
+                    stash.get_unchecked_mut(d).push(*chunk.get_unchecked(3));
+                    stash.get_unchecked_mut(e).push(*chunk.get_unchecked(4));
+                    stash.get_unchecked_mut(f).push(*chunk.get_unchecked(5));
+                    stash.get_unchecked_mut(g).push(*chunk.get_unchecked(6));
+                    stash.get_unchecked_mut(h).push(*chunk.get_unchecked(7));
                 });
 
                 rem.into_iter().for_each(|v| {
@@ -152,7 +154,7 @@ fn scanner_thread<T>(
 // a dynamic hybrid sort.
 pub fn scanning_radix_sort<T>(tuning: &TuningParameters, bucket: &mut [T], level: usize)
 where
-    T: RadixKey + Sized + Send + Ord + Copy + Sync,
+    T: RadixKey + Sized + Send + Copy + Sync,
 {
     let msb_counts = if level == 0 && bucket.len() > tuning.par_count_threshold {
         par_get_counts(bucket, level)
