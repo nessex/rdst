@@ -1,4 +1,4 @@
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput, PlotConfiguration, AxisScale, BatchSize};
 use nanorand::{Rng, WyRand};
 use rdst::RadixSort;
 use std::time::Duration;
@@ -42,19 +42,23 @@ fn full_sort_u32(c: &mut Criterion) {
         let l = set.len();
         group.throughput(Throughput::Elements(l as u64));
         group.bench_with_input(BenchmarkId::new("rdst", l), set, |bench, set| {
-            bench.iter(|| {
-                let mut input = set.clone();
-                input.radix_sort_unstable();
-                black_box(input);
-            });
+            bench.iter_batched(
+                || set.clone(),
+                |mut input| {
+                    input.radix_sort_unstable();
+                    black_box(input);
+                },
+                BatchSize::SmallInput);
         });
 
         group.bench_with_input(BenchmarkId::new("voracious", l), set, |bench, set| {
-            bench.iter(|| {
-                let mut input = set.clone();
-                input.voracious_mt_sort(num_cpus::get());
-                black_box(input);
-            });
+            bench.iter_batched(
+                || set.clone(),
+                |mut input| {
+                    input.voracious_mt_sort(num_cpus::get());
+                    black_box(input);
+                },
+                BatchSize::SmallInput);
         });
     }
     group.finish();
@@ -95,19 +99,23 @@ fn full_sort_u64(c: &mut Criterion) {
         let l = set.len();
         group.throughput(Throughput::Elements(l as u64));
         group.bench_with_input(BenchmarkId::new("rdst", l), set, |bench, set| {
-            bench.iter(|| {
-                let mut input = set.clone();
-                input.radix_sort_unstable();
-                black_box(input);
-            });
+            bench.iter_batched(
+                || set.clone(),
+                |mut input| {
+                    input.radix_sort_unstable();
+                    black_box(input);
+                },
+            BatchSize::SmallInput);
         });
 
         group.bench_with_input(BenchmarkId::new("voracious", l), set, |bench, set| {
-            bench.iter(|| {
-                let mut input = set.clone();
-                input.voracious_mt_sort(num_cpus::get());
-                black_box(input);
-            });
+            bench.iter_batched(
+                || set.clone(),
+                |mut input| {
+                    input.voracious_mt_sort(num_cpus::get());
+                    black_box(input);
+                },
+                BatchSize::SmallInput);
         });
     }
     group.finish();
