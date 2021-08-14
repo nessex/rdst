@@ -46,9 +46,9 @@ where
                 *msb_counts.get_unchecked_mut(h) += 1;
             });
 
-            rem.into_iter().for_each(|v| {
+            rem.into_iter().for_each(|v| unsafe {
                 let a = v.get_level(level) as usize;
-                msb_counts[a] += 1;
+                *msb_counts.get_unchecked_mut(a) += 1;
             });
 
             msb_counts
@@ -97,9 +97,9 @@ where
         *counts.get_unchecked_mut(h) += 1;
     });
 
-    rem.into_iter().for_each(|v| {
+    rem.into_iter().for_each(|v| unsafe {
         let b = v.get_level(level) as usize;
-        counts[b] += 1;
+        *counts.get_unchecked_mut(b) += 1;
     });
 
     counts

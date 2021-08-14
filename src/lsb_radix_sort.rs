@@ -54,7 +54,7 @@ where
     });
 
     unsafe {
-        copy_nonoverlapping(tmp_bucket.as_ptr(), bucket.as_mut_ptr(), tmp_bucket.len());
+        copy_nonoverlapping(tmp_bucket.get_unchecked(0), bucket.get_unchecked_mut(0), tmp_bucket.len());
     }
 }
 
