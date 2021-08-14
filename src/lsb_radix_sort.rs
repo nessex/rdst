@@ -76,7 +76,7 @@ pub fn lsb_radix_sort_adapter<T>(
 
     let parallel_count = end_level == 0 && bucket.len() > tuning.par_count_threshold;
     let mut tmp_bucket = get_tmp_bucket(bucket.len());
-    let mut levels: Vec<usize> = (end_level..start_level).into_iter().collect();
+    let mut levels: Vec<usize> = (end_level..=start_level).into_iter().collect();
     levels.reverse();
 
     for l in levels {
