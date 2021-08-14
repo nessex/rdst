@@ -1,7 +1,6 @@
 use crate::tuning_parameters::TuningParameters;
 use crate::utils::*;
 use crate::RadixKey;
-use rayon::prelude::*;
 use std::ptr::copy_nonoverlapping;
 
 #[inline]
@@ -54,7 +53,11 @@ where
     });
 
     unsafe {
-        copy_nonoverlapping(tmp_bucket.get_unchecked(0), bucket.get_unchecked_mut(0), tmp_bucket.len());
+        copy_nonoverlapping(
+            tmp_bucket.get_unchecked(0),
+            bucket.get_unchecked_mut(0),
+            tmp_bucket.len(),
+        );
     }
 }
 

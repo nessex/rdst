@@ -6,8 +6,8 @@ use crate::RadixKey;
 use arbitrary_chunks::ArbitraryChunks;
 use rayon::prelude::*;
 use std::cmp::min;
-use std::sync::Mutex;
 use std::ptr::copy_nonoverlapping;
+use std::sync::Mutex;
 
 struct ScannerBucketInner<'a, T> {
     write_head: usize,
@@ -136,7 +136,11 @@ fn scanner_thread<T>(
             let start = guard.write_head;
 
             unsafe {
-                copy_nonoverlapping(some.get_unchecked(0), guard.chunk.get_unchecked_mut(start), end - start);
+                copy_nonoverlapping(
+                    some.get_unchecked(0),
+                    guard.chunk.get_unchecked_mut(start),
+                    end - start,
+                );
             }
 
             guard.write_head += to_write;
