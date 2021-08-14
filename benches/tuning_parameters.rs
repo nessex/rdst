@@ -41,19 +41,25 @@ fn counts(c: &mut Criterion) {
         let l = set.len();
         group.throughput(Throughput::Elements(l as u64));
         group.bench_with_input(BenchmarkId::new("get_counts", l), set, |bench, set| {
-            bench.iter(|| {
-                let input = set.clone();
-                let c = get_counts(&input, 0);
-                black_box(c);
-            });
+            bench.iter_batched(
+                || set.clone(),
+                |mut input| {
+                    let c = get_counts(&input, 0);
+                    black_box(c);
+                },
+                BatchSize::SmallInput,
+            );
         });
 
         group.bench_with_input(BenchmarkId::new("par_get_counts", l), set, |bench, set| {
-            bench.iter(|| {
-                let input = set.clone();
-                let c = par_get_counts(&input, 0);
-                black_box(c);
-            });
+            bench.iter_batched(
+                || set.clone(),
+                |mut input| {
+                    let c = par_get_counts(&input, 0);
+                    black_box(c);
+                },
+                BatchSize::SmallInput,
+            );
         });
     }
     group.finish();
@@ -98,20 +104,26 @@ fn scanning_sort(c: &mut Criterion) {
             BenchmarkId::new("scanning_radix_sort", l),
             set,
             |bench, set| {
-                bench.iter(|| {
-                    let mut input = set.clone();
-                    scanning_radix_sort(&tuning, &mut input, 0);
-                    black_box(input);
-                });
+                bench.iter_batched(
+                    || set.clone(),
+                    |mut input| {
+                        scanning_radix_sort(&tuning, &mut input, 0);
+                        black_box(input);
+                    },
+                    BatchSize::SmallInput,
+                );
             },
         );
 
         group.bench_with_input(BenchmarkId::new("lsb_radix_sort", l), set, |bench, set| {
-            bench.iter(|| {
-                let mut input = set.clone();
-                lsb_radix_sort_adapter(&tuning, &mut input, 3, 0);
-                black_box(input);
-            });
+            bench.iter_batched(
+                || set.clone(),
+                |mut input| {
+                    lsb_radix_sort_adapter(&tuning, &mut input, 3, 0);
+                    black_box(input);
+                },
+                BatchSize::SmallInput,
+            );
         });
     }
     group.finish();
@@ -150,19 +162,25 @@ fn ska_sort(c: &mut Criterion) {
         let l = set.len();
         group.throughput(Throughput::Elements(l as u64));
         group.bench_with_input(BenchmarkId::new("ska_sort", l), set, |bench, set| {
-            bench.iter(|| {
-                let mut input = set.clone();
-                msb_ska_sort(&tuning, &mut input, 0);
-                black_box(input);
-            });
+            bench.iter_batched(
+                || set.clone(),
+                |mut input| {
+                    msb_ska_sort(&tuning, &mut input, 0);
+                    black_box(input);
+                },
+                BatchSize::SmallInput,
+            );
         });
 
         group.bench_with_input(BenchmarkId::new("lsb_radix_sort", l), set, |bench, set| {
-            bench.iter(|| {
-                let mut input = set.clone();
-                lsb_radix_sort_adapter(&tuning, &mut input, 3, 0);
-                black_box(input);
-            });
+            bench.iter_batched(
+                || set.clone(),
+                |mut input| {
+                    lsb_radix_sort_adapter(&tuning, &mut input, 3, 0);
+                    black_box(input);
+                },
+                BatchSize::SmallInput,
+            );
         });
     }
     group.finish();
@@ -196,19 +214,25 @@ fn ska_sort(c: &mut Criterion) {
         let l = set.len();
         group.throughput(Throughput::Elements(l as u64));
         group.bench_with_input(BenchmarkId::new("ska_sort", l), set, |bench, set| {
-            bench.iter(|| {
-                let mut input = set.clone();
-                msb_ska_sort(&tuning, &mut input, 0);
-                black_box(input);
-            });
+            bench.iter_batched(
+                || set.clone(),
+                |mut input| {
+                    msb_ska_sort(&tuning, &mut input, 0);
+                    black_box(input);
+                },
+                BatchSize::SmallInput,
+            );
         });
 
         group.bench_with_input(BenchmarkId::new("lsb_radix_sort", l), set, |bench, set| {
-            bench.iter(|| {
-                let mut input = set.clone();
-                lsb_radix_sort_adapter(&tuning, &mut input, 3, 0);
-                black_box(input);
-            });
+            bench.iter_batched(
+                || set.clone(),
+                |mut input| {
+                    lsb_radix_sort_adapter(&tuning, &mut input, 3, 0);
+                    black_box(input);
+                },
+                BatchSize::SmallInput,
+            );
         });
     }
     group.finish();
