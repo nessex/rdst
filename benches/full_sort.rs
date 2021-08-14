@@ -38,8 +38,9 @@ fn full_sort_u32(c: &mut Criterion) {
     drop(inputs);
 
     let mut group = c.benchmark_group("full_sort_u32");
-    group.sample_size(30);
-    group.measurement_time(Duration::from_secs(10));
+    group.sample_size(10);
+    group.measurement_time(Duration::from_secs(5));
+    group.warm_up_time(Duration::from_secs(1));
     for set in input_sets.iter() {
         let l = set.len();
         group.throughput(Throughput::Elements(l as u64));
@@ -97,8 +98,9 @@ fn full_sort_u64(c: &mut Criterion) {
     drop(inputs);
 
     let mut group = c.benchmark_group("full_sort_u64");
-    group.sample_size(30);
-    group.measurement_time(Duration::from_secs(10));
+    group.sample_size(10);
+    group.measurement_time(Duration::from_secs(5));
+    group.warm_up_time(Duration::from_secs(1));
     for set in input_sets.iter() {
         let l = set.len();
         group.throughput(Throughput::Elements(l as u64));
