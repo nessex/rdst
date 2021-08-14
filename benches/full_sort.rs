@@ -1,4 +1,6 @@
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput, PlotConfiguration, AxisScale, BatchSize};
+use criterion::{
+    black_box, criterion_group, criterion_main, BatchSize, BenchmarkId, Criterion, Throughput,
+};
 use nanorand::{Rng, WyRand};
 use rdst::RadixSort;
 use std::time::Duration;
@@ -48,7 +50,8 @@ fn full_sort_u32(c: &mut Criterion) {
                     input.radix_sort_unstable();
                     black_box(input);
                 },
-                BatchSize::SmallInput);
+                BatchSize::SmallInput,
+            );
         });
 
         group.bench_with_input(BenchmarkId::new("voracious", l), set, |bench, set| {
@@ -58,7 +61,8 @@ fn full_sort_u32(c: &mut Criterion) {
                     input.voracious_mt_sort(num_cpus::get());
                     black_box(input);
                 },
-                BatchSize::SmallInput);
+                BatchSize::SmallInput,
+            );
         });
     }
     group.finish();
@@ -105,7 +109,8 @@ fn full_sort_u64(c: &mut Criterion) {
                     input.radix_sort_unstable();
                     black_box(input);
                 },
-            BatchSize::SmallInput);
+                BatchSize::SmallInput,
+            );
         });
 
         group.bench_with_input(BenchmarkId::new("voracious", l), set, |bench, set| {
@@ -115,7 +120,8 @@ fn full_sort_u64(c: &mut Criterion) {
                     input.voracious_mt_sort(num_cpus::get());
                     black_box(input);
                 },
-                BatchSize::SmallInput);
+                BatchSize::SmallInput,
+            );
         });
     }
     group.finish();
