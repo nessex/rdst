@@ -4,12 +4,8 @@ use crate::RadixKey;
 use rayon::prelude::*;
 
 #[inline]
-fn lsb_radix_sort<T>(
-    bucket: &mut [T],
-    tmp_bucket: &mut [T],
-    level: usize,
-    parallel_count: bool,
-) where
+fn lsb_radix_sort<T>(bucket: &mut [T], tmp_bucket: &mut [T], level: usize, parallel_count: bool)
+where
     T: RadixKey + Sized + Send + Ord + Copy + Sync,
 {
     let counts = if parallel_count {

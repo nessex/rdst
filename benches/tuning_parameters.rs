@@ -1,7 +1,8 @@
 use criterion::*;
 use nanorand::{Rng, WyRand};
 use rdst::{
-    get_counts, lsb_radix_sort_adapter, msb_ska_sort, par_get_counts, scanning_radix_sort, TuningParameters,
+    get_counts, lsb_radix_sort_adapter, msb_ska_sort, par_get_counts, scanning_radix_sort,
+    TuningParameters,
 };
 use std::time::Duration;
 
@@ -43,7 +44,7 @@ fn counts(c: &mut Criterion) {
         group.bench_with_input(BenchmarkId::new("get_counts", l), set, |bench, set| {
             bench.iter_batched(
                 || set.clone(),
-                |mut input| {
+                |input| {
                     let c = get_counts(&input, 0);
                     black_box(c);
                 },
@@ -54,7 +55,7 @@ fn counts(c: &mut Criterion) {
         group.bench_with_input(BenchmarkId::new("par_get_counts", l), set, |bench, set| {
             bench.iter_batched(
                 || set.clone(),
-                |mut input| {
+                |input| {
                     let c = par_get_counts(&input, 0);
                     black_box(c);
                 },
