@@ -36,8 +36,9 @@ fn counts(c: &mut Criterion) {
     drop(inputs);
 
     let mut group = c.benchmark_group("counts");
-    group.sample_size(30);
-    group.measurement_time(Duration::from_secs(10));
+    group.sample_size(10);
+    group.measurement_time(Duration::from_secs(5));
+    group.warm_up_time(Duration::from_secs(1));
     for set in input_sets.iter() {
         let l = set.len();
         group.throughput(Throughput::Elements(l as u64));
@@ -96,8 +97,9 @@ fn scanning_sort(c: &mut Criterion) {
     drop(inputs);
 
     let mut group = c.benchmark_group("scanning_sort_level_4");
-    group.sample_size(30);
-    group.measurement_time(Duration::from_secs(10));
+    group.sample_size(10);
+    group.measurement_time(Duration::from_secs(5));
+    group.warm_up_time(Duration::from_secs(1));
     for set in input_sets.iter() {
         let l = set.len();
         group.throughput(Throughput::Elements(l as u64));
@@ -157,8 +159,9 @@ fn ska_sort(c: &mut Criterion) {
     drop(inputs);
 
     let mut group = c.benchmark_group("ska_sort_level_4");
-    group.sample_size(30);
-    group.measurement_time(Duration::from_secs(10));
+    group.sample_size(10);
+    group.measurement_time(Duration::from_secs(5));
+    group.warm_up_time(Duration::from_secs(1));
     for set in input_sets.iter() {
         let l = set.len();
         group.throughput(Throughput::Elements(l as u64));
@@ -209,8 +212,9 @@ fn ska_sort(c: &mut Criterion) {
     drop(inputs);
 
     let mut group = c.benchmark_group("ska_sort_level_8");
-    group.sample_size(30);
-    group.measurement_time(Duration::from_secs(10));
+    group.sample_size(10);
+    group.measurement_time(Duration::from_secs(5));
+    group.warm_up_time(Duration::from_secs(1));
     for set in input_sets.iter() {
         let l = set.len();
         group.throughput(Throughput::Elements(l as u64));
