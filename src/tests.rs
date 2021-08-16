@@ -3,6 +3,7 @@ use nanorand::{RandomGen, Rng, WyRand};
 use std::fmt::Debug;
 use std::time::Instant;
 use voracious_radix_sort::{RadixSort as Vor, Radixable};
+use std::ops::{Shl, Shr};
 
 #[derive(Debug, Eq, PartialEq, Clone, Copy, Ord, PartialOrd)]
 struct TestLevel1 {
@@ -207,9 +208,32 @@ where
     assert_eq!(inputs, inputs_baseline);
 }
 
-fn sort_comparison_suite<T>()
+fn sort_comparison_test_shifted<T>(n: usize, shift: T)
+    where
+        T: RadixKey + Ord + RandomGen<WyRand> + Clone + Debug + Send + Copy + Sync + Shl<Output = T> + Shr<Output = T>,
+{
+    let mut inputs: Vec<T> = Vec::with_capacity(n);
+    let mut rng = WyRand::new();
+
+    for _ in 0..(n/2) {
+        inputs.push(rng.generate::<T>() >> shift);
+    }
+
+    for _ in 0..(n/2) {
+        inputs.push(rng.generate::<T>() << shift);
+    }
+
+    let mut inputs_baseline = inputs.clone();
+
+    inputs.radix_sort_unstable();
+    inputs_baseline.sort_unstable();
+
+    assert_eq!(inputs, inputs_baseline);
+}
+
+fn sort_comparison_suite<T>(shift: T)
 where
-    T: RadixKey + Ord + RandomGen<WyRand> + Clone + Debug + Send + Copy + Sync,
+    T: RadixKey + Ord + RandomGen<WyRand> + Clone + Debug + Send + Copy + Sync + Shl<Output = T> + Shr<Output = T>,
 {
     sort_comparison_test::<T>(0);
     sort_comparison_test::<T>(1);
@@ -218,34 +242,42 @@ where
     sort_comparison_test::<T>(100_000);
     sort_comparison_test::<T>(1_000_000);
     sort_comparison_test::<T>(10_000_000);
+
+    sort_comparison_test_shifted::<T>(0, shift);
+    sort_comparison_test_shifted::<T>(1, shift);
+    sort_comparison_test_shifted::<T>(100, shift);
+    sort_comparison_test_shifted::<T>(10_000, shift);
+    sort_comparison_test_shifted::<T>(100_000, shift);
+    sort_comparison_test_shifted::<T>(1_000_000, shift);
+    sort_comparison_test_shifted::<T>(10_000_000, shift);
 }
 
 #[test]
 pub fn test_u8() {
-    sort_comparison_suite::<u8>();
+    sort_comparison_suite::<u8>(0u8);
 }
 
 #[test]
 pub fn test_u16() {
-    sort_comparison_suite::<u16>();
+    sort_comparison_suite::<u16>(8u16);
 }
 
 #[test]
 pub fn test_u32() {
-    sort_comparison_suite::<u32>();
+    sort_comparison_suite::<u32>(16u32);
 }
 
 #[test]
 pub fn test_u64() {
-    sort_comparison_suite::<u64>();
+    sort_comparison_suite::<u64>(32u64);
 }
 
 #[test]
 pub fn test_u128() {
-    sort_comparison_suite::<u128>();
+    sort_comparison_suite::<u128>(64u128);
 }
 
 #[test]
 pub fn test_usize() {
-    sort_comparison_suite::<usize>();
+    sort_comparison_suite::<usize>(32usize);
 }
