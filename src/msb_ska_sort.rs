@@ -9,9 +9,15 @@ use itertools::Itertools;
 // https://probablydance.com/2016/12/27/i-wrote-a-faster-sorting-algorithm/
 pub fn msb_ska_sort<T>(tuning: &TuningParameters, bucket: &mut [T], level: usize)
 where
-    T: RadixKey + Sized + Send + Copy + Sync,
+    T: RadixKey + Sized + Send + Ord + Copy + Sync,
 {
     if bucket.len() < 2 {
+        return;
+    } else if bucket.len() <= 16 {
+        sortnet::sortnet(bucket);
+        return;
+    } else if bucket.len() <= 64 {
+        bucket.sort_unstable();
         return;
     }
 

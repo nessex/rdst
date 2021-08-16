@@ -130,9 +130,15 @@ use crate::tuning_parameters::TuningParameters;
 
 fn radix_sort_bucket_start<T>(tuning: &TuningParameters, bucket: &mut [T])
 where
-    T: RadixKey + Sized + Send + Copy + Sync,
+    T: RadixKey + Sized + Send + Ord + Copy + Sync,
 {
     if bucket.len() < 2 {
+        return;
+    } else if bucket.len() <= 16 {
+        sortnet::sortnet(bucket);
+        return;
+    } else if bucket.len() <= 64 {
+        bucket.sort_unstable();
         return;
     }
 
@@ -147,7 +153,7 @@ where
 
 fn radix_sort_inner<T>(bucket: &mut [T])
 where
-    T: RadixKey + Sized + Send + Copy + Sync,
+    T: RadixKey + Sized + Send + Ord + Copy + Sync,
 {
     if T::LEVELS == 0 {
         panic!("RadixKey must have at least 1 level");
@@ -166,7 +172,7 @@ pub trait RadixSort {
 
 impl<T> RadixSort for Vec<T>
 where
-    T: RadixKey + Sized + Send + Copy + Sync,
+    T: RadixKey + Sized + Send + Ord + Copy + Sync,
 {
     fn radix_sort_unstable(&mut self) {
         radix_sort_inner(self);
@@ -175,7 +181,7 @@ where
 
 impl<T> RadixSort for [T]
 where
-    T: RadixKey + Sized + Send + Copy + Sync,
+    T: RadixKey + Sized + Send + Ord + Copy + Sync,
 {
     fn radix_sort_unstable(&mut self) {
         radix_sort_inner(self);

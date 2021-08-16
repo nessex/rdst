@@ -162,7 +162,7 @@ fn scanner_thread<T>(
 // a dynamic hybrid sort.
 pub fn scanning_radix_sort<T>(tuning: &TuningParameters, bucket: &mut [T], start_level: usize, parallel_count: bool)
 where
-    T: RadixKey + Sized + Send + Copy + Sync,
+    T: RadixKey + Sized + Send + Ord + Copy + Sync,
 {
     let (msb_counts, level) = if let Some(s) = get_counts_and_level(bucket, start_level, T::LEVELS - 1, parallel_count) {
         s

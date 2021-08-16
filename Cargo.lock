@@ -9,6 +9,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6af2a45d34466b51c85a7f33625e972cd151ebb07f9e03a5b145d144473594ce"
 
 [[package]]
+name = "arrayref"
+version = "0.3.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a4c527152e37cf757a3f78aae5a06fbeefdb07ccc535c980a3208ee3060dd544"
+
+[[package]]
 name = "atty"
 version = "0.2.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -370,6 +376,7 @@ dependencies = [
  "nanorand",
  "num_cpus",
  "rayon",
+ "sortnet",
  "voracious_radix_sort",
 ]
 
@@ -467,6 +474,22 @@ dependencies = [
  "ryu",
  "serde",
 ]
+
+[[package]]
+name = "sortnet"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9e92899040d7b804a767f67c072f236386683ff57bc59c5dc5952d77c38bf3ad"
+dependencies = [
+ "arrayref",
+ "static_assertions",
+]
+
+[[package]]
+name = "static_assertions"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 
 [[package]]
 name = "syn"

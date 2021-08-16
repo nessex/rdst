@@ -66,9 +66,15 @@ pub fn lsb_radix_sort_adapter<T>(
     end_level: usize,
     parallel_count: bool,
 ) where
-    T: RadixKey + Sized + Send + Copy + Sync,
+    T: RadixKey + Sized + Send + Ord + Copy + Sync,
 {
     if bucket.len() < 2 {
+        return;
+    } else if bucket.len() <= 16 {
+        sortnet::sortnet(bucket);
+        return;
+    } else if bucket.len() <= 64 {
+        bucket.sort_unstable();
         return;
     }
 
