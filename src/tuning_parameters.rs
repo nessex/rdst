@@ -39,6 +39,6 @@ impl TuningParameters {
         let cpus = num_cpus::get();
         let scaling_factor = min(1, (cpus as f32).log2().ceil() as isize) as usize;
 
-        65536 / scaling_factor
+        32768 / scaling_factor
     }
 }
