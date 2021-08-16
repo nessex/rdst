@@ -110,7 +110,7 @@ fn scanning_sort(c: &mut Criterion) {
                 bench.iter_batched(
                     || set.clone(),
                     |mut input| {
-                        scanning_radix_sort(&tuning, &mut input, 0);
+                        scanning_radix_sort(&tuning, &mut input, 0, true);
                         black_box(input);
                     },
                     BatchSize::SmallInput,
@@ -122,7 +122,7 @@ fn scanning_sort(c: &mut Criterion) {
             bench.iter_batched(
                 || set.clone(),
                 |mut input| {
-                    lsb_radix_sort_adapter(&tuning, &mut input, 3, 0);
+                    lsb_radix_sort_adapter(&mut input, 3, 0, true);
                     black_box(input);
                 },
                 BatchSize::SmallInput,
@@ -180,7 +180,7 @@ fn ska_sort(c: &mut Criterion) {
             bench.iter_batched(
                 || set.clone(),
                 |mut input| {
-                    lsb_radix_sort_adapter(&tuning, &mut input, 3, 0);
+                    lsb_radix_sort_adapter(&mut input, 3, 0, true);
                     black_box(input);
                 },
                 BatchSize::SmallInput,
@@ -233,7 +233,7 @@ fn ska_sort(c: &mut Criterion) {
             bench.iter_batched(
                 || set.clone(),
                 |mut input| {
-                    lsb_radix_sort_adapter(&tuning, &mut input, 3, 0);
+                    lsb_radix_sort_adapter(&mut input, 3, 0, true);
                     black_box(input);
                 },
                 BatchSize::SmallInput,

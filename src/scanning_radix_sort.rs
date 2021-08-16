@@ -23,11 +23,11 @@ struct ScannerBucket<'a, T> {
 
 #[inline]
 fn get_scanner_buckets<'a, T>(
-    counts: &Vec<usize>,
+    counts: &[usize; 256],
     bucket: &'a mut [T],
 ) -> Vec<ScannerBucket<'a, T>> {
     let mut out: Vec<_> = bucket
-        .arbitrary_chunks_mut(counts.clone())
+        .arbitrary_chunks_mut(counts.to_vec())
         .enumerate()
         .map(|(index, chunk)| ScannerBucket {
             index,
@@ -56,7 +56,7 @@ fn scanner_thread<T>(
     let mut stash: Vec<Vec<T>> = Vec::with_capacity(256);
     stash.resize(256, Vec::with_capacity(128));
     let mut finished_count = 0;
-    let mut finished_map: Vec<bool> = vec![false; 256];
+    let mut finished_map = [false; 256];
 
     'outer: loop {
         for m in scanner_buckets {
@@ -160,15 +160,16 @@ fn scanner_thread<T>(
 // scanning_radix_sort does a parallel MSB-first sort. Following this, depending on the number of
 // elements remaining in each bucket, it will either do an MSB-sort or an LSB-sort, making this
 // a dynamic hybrid sort.
-pub fn scanning_radix_sort<T>(tuning: &TuningParameters, bucket: &mut [T], level: usize)
+pub fn scanning_radix_sort<T>(tuning: &TuningParameters, bucket: &mut [T], start_level: usize, parallel_count: bool)
 where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
-    let msb_counts = if level == 0 && bucket.len() > tuning.par_count_threshold {
-        par_get_counts(bucket, level)
+    let (msb_counts, level) = if let Some(s) = get_counts_and_level(bucket, start_level, T::LEVELS - 1, parallel_count) {
+        s
     } else {
-        get_counts(bucket, level)
+        return;
     };
+
     let scanner_buckets = get_scanner_buckets(&msb_counts, bucket);
     let cpus = num_cpus::get();
     let threads = min(cpus, scanner_buckets.len());
@@ -187,13 +188,13 @@ where
     }
 
     bucket
-        .arbitrary_chunks_mut(msb_counts)
+        .arbitrary_chunks_mut(msb_counts.to_vec())
         .par_bridge()
         .for_each(|c| {
             if c.len() > tuning.ska_sort_threshold {
                 msb_ska_sort(tuning, c, level + 1);
             } else {
-                lsb_radix_sort_adapter(tuning, c, T::LEVELS - 1, level + 1);
+                lsb_radix_sort_adapter(c, T::LEVELS - 1, level + 1, false);
             }
         });
 }

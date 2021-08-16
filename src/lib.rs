@@ -136,10 +136,12 @@ where
         return;
     }
 
+    let parallel_count = bucket.len() >= tuning.par_count_threshold;
+
     if bucket.len() >= tuning.scanning_sort_threshold {
-        scanning_radix_sort(tuning, bucket, 0);
+        scanning_radix_sort(tuning, bucket, 0, parallel_count);
     } else {
-        lsb_radix_sort_adapter(tuning, bucket, T::LEVELS - 1, 0);
+        lsb_radix_sort_adapter(bucket, T::LEVELS - 1, 0, parallel_count);
     }
 }
 

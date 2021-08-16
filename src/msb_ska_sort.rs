@@ -1,6 +1,6 @@
 use crate::lsb_radix_sort::lsb_radix_sort_adapter;
 use crate::tuning_parameters::TuningParameters;
-use crate::utils::{get_counts, get_prefix_sums};
+use crate::utils::{get_prefix_sums, get_counts_and_level};
 use crate::RadixKey;
 use arbitrary_chunks::ArbitraryChunks;
 use itertools::Itertools;
@@ -15,7 +15,12 @@ where
         return;
     }
 
-    let counts = get_counts(bucket, level);
+    let (counts, level) = if let Some(s) = get_counts_and_level(bucket, level, T::LEVELS - 1, false) {
+        s
+    } else {
+        return;
+    };
+
     let mut prefix_sums = get_prefix_sums(&counts);
     let mut end_offsets = prefix_sums.split_at(1).1.to_vec();
     end_offsets.push(end_offsets.last().unwrap() + counts.last().unwrap());
@@ -28,7 +33,7 @@ where
         .collect();
 
     let mut finished = 1;
-    let mut finished_map = vec![false; 256];
+    let mut finished_map = [false; 256];
     let largest = buckets.pop().unwrap();
     finished_map[largest] = true;
     buckets.reverse();
@@ -60,11 +65,11 @@ where
         return;
     }
 
-    bucket.arbitrary_chunks_mut(counts).for_each(|chunk| {
+    bucket.arbitrary_chunks_mut(counts.to_vec()).for_each(|chunk| {
         if chunk.len() > tuning.ska_sort_threshold {
             msb_ska_sort(tuning, chunk, level + 1);
         } else {
-            lsb_radix_sort_adapter(tuning, chunk, T::LEVELS - 1, level + 1);
+            lsb_radix_sort_adapter(chunk, T::LEVELS - 1, level + 1, false);
         }
     });
 }

@@ -1,4 +1,3 @@
-use crate::tuning_parameters::TuningParameters;
 use crate::utils::*;
 use crate::RadixKey;
 use std::ptr::copy_nonoverlapping;
@@ -8,10 +7,10 @@ fn lsb_radix_sort<T>(bucket: &mut [T], tmp_bucket: &mut [T], level: usize, paral
 where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
-    let counts = if parallel_count {
-        par_get_counts(bucket, level)
+    let (counts, level) = if let Some(s) = get_counts_and_level(bucket, level, level, parallel_count) {
+        s
     } else {
-        get_counts(bucket, level)
+        return;
     };
     let mut prefix_sums = get_prefix_sums(&counts);
 
@@ -62,10 +61,10 @@ where
 }
 
 pub fn lsb_radix_sort_adapter<T>(
-    tuning: &TuningParameters,
     bucket: &mut [T],
     start_level: usize,
     end_level: usize,
+    parallel_count: bool,
 ) where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
@@ -73,7 +72,6 @@ pub fn lsb_radix_sort_adapter<T>(
         return;
     }
 
-    let parallel_count = end_level == 0 && bucket.len() > tuning.par_count_threshold;
     let mut tmp_bucket = get_tmp_bucket(bucket.len());
     let mut levels: Vec<usize> = (end_level..=start_level).into_iter().collect();
     levels.reverse();
