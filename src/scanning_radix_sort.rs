@@ -8,6 +8,7 @@ use rayon::prelude::*;
 use std::cmp::min;
 use std::ptr::copy_nonoverlapping;
 use std::sync::Mutex;
+use crate::msb_radix_sort::msb_radix_sort_adapter;
 
 struct ScannerBucketInner<'a, T> {
     write_head: usize,
@@ -187,12 +188,16 @@ where
         return;
     }
 
+    let msb_target = 256usize.pow((T::LEVELS - level - 1) as u32) / 4;
+
     bucket
         .arbitrary_chunks_mut(msb_counts.to_vec())
         .par_bridge()
         .for_each(|c| {
             if c.len() > tuning.ska_sort_threshold {
                 msb_ska_sort(tuning, c, level + 1);
+            } else if c.len() < msb_target {
+                msb_radix_sort_adapter(tuning, c, level + 1, false);
             } else {
                 lsb_radix_sort_adapter(c, T::LEVELS - 1, level + 1, false);
             }

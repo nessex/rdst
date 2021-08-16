@@ -4,6 +4,7 @@ use crate::utils::{get_prefix_sums, get_counts_and_level};
 use crate::RadixKey;
 use arbitrary_chunks::ArbitraryChunks;
 use itertools::Itertools;
+use crate::msb_radix_sort::msb_radix_sort_adapter;
 
 // Based upon (with modifications):
 // https://probablydance.com/2016/12/27/i-wrote-a-faster-sorting-algorithm/
@@ -71,9 +72,13 @@ where
         return;
     }
 
+    let msb_target = 256usize.pow((T::LEVELS - level - 1) as u32) / 4;
+
     bucket.arbitrary_chunks_mut(counts.to_vec()).for_each(|chunk| {
         if chunk.len() > tuning.ska_sort_threshold {
             msb_ska_sort(tuning, chunk, level + 1);
+        } else if chunk.len() < msb_target {
+            msb_radix_sort_adapter(tuning, chunk, level + 1, false);
         } else {
             lsb_radix_sort_adapter(chunk, T::LEVELS - 1, level + 1, false);
         }

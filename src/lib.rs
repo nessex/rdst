@@ -106,6 +106,7 @@ mod radix_key_impl;
 mod scanning_radix_sort;
 mod tuning_parameters;
 mod utils;
+mod msb_radix_sort;
 
 pub use radix_key::RadixKey;
 
