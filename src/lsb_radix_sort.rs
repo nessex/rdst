@@ -3,16 +3,11 @@ use crate::RadixKey;
 use std::ptr::copy_nonoverlapping;
 
 #[inline]
-fn lsb_radix_sort<T>(bucket: &mut [T], tmp_bucket: &mut [T], level: usize, parallel_count: bool)
+fn lsb_radix_sort<T>(bucket: &mut [T], tmp_bucket: &mut [T], level: usize, counts: &[usize])
 where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
-    let (counts, level) = if let Some(s) = get_counts_and_level(bucket, level, level, parallel_count) {
-        s
-    } else {
-        return;
-    };
-    let mut prefix_sums = get_prefix_sums(&counts);
+    let mut prefix_sums = get_prefix_sums(counts);
 
     let chunks = bucket.chunks_exact(8);
     let rem = chunks.remainder();
@@ -76,7 +71,25 @@ pub fn lsb_radix_sort_adapter<T>(
     let mut levels: Vec<usize> = (end_level..=start_level).into_iter().collect();
     levels.reverse();
 
+    let all_counts = if parallel_count {
+        par_get_all_counts(bucket, end_level, start_level + 1)
+    } else {
+        get_all_counts(bucket, end_level, start_level + 1)
+    };
+
     for l in levels {
-        lsb_radix_sort(bucket, &mut tmp_bucket, l, parallel_count);
+        let counts = all_counts[l];
+        let mut non_empty = 0;
+
+        for c in counts {
+            if c > 0 {
+                non_empty += 1;
+
+                if non_empty >= 2 {
+                    lsb_radix_sort(bucket, &mut tmp_bucket, l, &counts);
+                    break;
+                }
+            }
+        }
     }
 }
