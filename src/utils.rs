@@ -186,28 +186,44 @@ pub fn par_get_all_counts<T>(bucket: &[T], start_level: usize, end_level: usize)
         .par_chunks(chunk_size)
         .map(|big_chunk| {
             let mut lsb_counts = get_count_map::<T>();
-            let sci = big_chunk.chunks_exact(8);
+            let sci = big_chunk.chunks_exact(16);
             let rem = sci.remainder();
 
             sci.for_each(|small_chunk| unsafe {
                 for i in start_level..end_level {
-                    let a_b = small_chunk.get_unchecked(0).get_level(i) as usize;
-                    let b_b = small_chunk.get_unchecked(1).get_level(i) as usize;
-                    let c_b = small_chunk.get_unchecked(2).get_level(i) as usize;
-                    let d_b = small_chunk.get_unchecked(3).get_level(i) as usize;
-                    let e_b = small_chunk.get_unchecked(4).get_level(i) as usize;
-                    let f_b = small_chunk.get_unchecked(5).get_level(i) as usize;
-                    let g_b = small_chunk.get_unchecked(6).get_level(i) as usize;
-                    let h_b = small_chunk.get_unchecked(7).get_level(i) as usize;
+                    let b_0 = small_chunk.get_unchecked(0).get_level(i) as usize;
+                    let b_1 = small_chunk.get_unchecked(1).get_level(i) as usize;
+                    let b_2 = small_chunk.get_unchecked(2).get_level(i) as usize;
+                    let b_3 = small_chunk.get_unchecked(3).get_level(i) as usize;
+                    let b_4 = small_chunk.get_unchecked(4).get_level(i) as usize;
+                    let b_5 = small_chunk.get_unchecked(5).get_level(i) as usize;
+                    let b_6 = small_chunk.get_unchecked(6).get_level(i) as usize;
+                    let b_7 = small_chunk.get_unchecked(7).get_level(i) as usize;
+                    let b_8 = small_chunk.get_unchecked(8).get_level(i) as usize;
+                    let b_9 = small_chunk.get_unchecked(9).get_level(i) as usize;
+                    let b_10 = small_chunk.get_unchecked(10).get_level(i) as usize;
+                    let b_11 = small_chunk.get_unchecked(11).get_level(i) as usize;
+                    let b_12 = small_chunk.get_unchecked(12).get_level(i) as usize;
+                    let b_13 = small_chunk.get_unchecked(13).get_level(i) as usize;
+                    let b_14 = small_chunk.get_unchecked(14).get_level(i) as usize;
+                    let b_15 = small_chunk.get_unchecked(15).get_level(i) as usize;
 
-                    *lsb_counts.get_unchecked_mut(i).get_unchecked_mut(a_b) += 1;
-                    *lsb_counts.get_unchecked_mut(i).get_unchecked_mut(b_b) += 1;
-                    *lsb_counts.get_unchecked_mut(i).get_unchecked_mut(c_b) += 1;
-                    *lsb_counts.get_unchecked_mut(i).get_unchecked_mut(d_b) += 1;
-                    *lsb_counts.get_unchecked_mut(i).get_unchecked_mut(e_b) += 1;
-                    *lsb_counts.get_unchecked_mut(i).get_unchecked_mut(f_b) += 1;
-                    *lsb_counts.get_unchecked_mut(i).get_unchecked_mut(g_b) += 1;
-                    *lsb_counts.get_unchecked_mut(i).get_unchecked_mut(h_b) += 1;
+                    *lsb_counts.get_unchecked_mut(i).get_unchecked_mut(b_0) += 1;
+                    *lsb_counts.get_unchecked_mut(i).get_unchecked_mut(b_1) += 1;
+                    *lsb_counts.get_unchecked_mut(i).get_unchecked_mut(b_2) += 1;
+                    *lsb_counts.get_unchecked_mut(i).get_unchecked_mut(b_3) += 1;
+                    *lsb_counts.get_unchecked_mut(i).get_unchecked_mut(b_4) += 1;
+                    *lsb_counts.get_unchecked_mut(i).get_unchecked_mut(b_5) += 1;
+                    *lsb_counts.get_unchecked_mut(i).get_unchecked_mut(b_6) += 1;
+                    *lsb_counts.get_unchecked_mut(i).get_unchecked_mut(b_7) += 1;
+                    *lsb_counts.get_unchecked_mut(i).get_unchecked_mut(b_8) += 1;
+                    *lsb_counts.get_unchecked_mut(i).get_unchecked_mut(b_9) += 1;
+                    *lsb_counts.get_unchecked_mut(i).get_unchecked_mut(b_10) += 1;
+                    *lsb_counts.get_unchecked_mut(i).get_unchecked_mut(b_11) += 1;
+                    *lsb_counts.get_unchecked_mut(i).get_unchecked_mut(b_12) += 1;
+                    *lsb_counts.get_unchecked_mut(i).get_unchecked_mut(b_13) += 1;
+                    *lsb_counts.get_unchecked_mut(i).get_unchecked_mut(b_14) += 1;
+                    *lsb_counts.get_unchecked_mut(i).get_unchecked_mut(b_15) += 1;
                 }
             });
 
@@ -242,28 +258,44 @@ pub fn get_all_counts<T>(bucket: &[T], start_level: usize, end_level: usize) -> 
         T: RadixKey + Sized + Send + Sync,
 {
     let mut lsb_counts = get_count_map::<T>();
-    let sci = bucket.chunks_exact(8);
+    let sci = bucket.chunks_exact(16);
     let rem = sci.remainder();
 
     sci.for_each(|small_chunk| unsafe {
         for i in start_level..end_level {
-            let a_b = small_chunk.get_unchecked(0).get_level(i) as usize;
-            let b_b = small_chunk.get_unchecked(1).get_level(i) as usize;
-            let c_b = small_chunk.get_unchecked(2).get_level(i) as usize;
-            let d_b = small_chunk.get_unchecked(3).get_level(i) as usize;
-            let e_b = small_chunk.get_unchecked(4).get_level(i) as usize;
-            let f_b = small_chunk.get_unchecked(5).get_level(i) as usize;
-            let g_b = small_chunk.get_unchecked(6).get_level(i) as usize;
-            let h_b = small_chunk.get_unchecked(7).get_level(i) as usize;
+            let b_0 = small_chunk.get_unchecked(0).get_level(i) as usize;
+            let b_1 = small_chunk.get_unchecked(1).get_level(i) as usize;
+            let b_2 = small_chunk.get_unchecked(2).get_level(i) as usize;
+            let b_3 = small_chunk.get_unchecked(3).get_level(i) as usize;
+            let b_4 = small_chunk.get_unchecked(4).get_level(i) as usize;
+            let b_5 = small_chunk.get_unchecked(5).get_level(i) as usize;
+            let b_6 = small_chunk.get_unchecked(6).get_level(i) as usize;
+            let b_7 = small_chunk.get_unchecked(7).get_level(i) as usize;
+            let b_8 = small_chunk.get_unchecked(8).get_level(i) as usize;
+            let b_9 = small_chunk.get_unchecked(9).get_level(i) as usize;
+            let b_10 = small_chunk.get_unchecked(10).get_level(i) as usize;
+            let b_11 = small_chunk.get_unchecked(11).get_level(i) as usize;
+            let b_12 = small_chunk.get_unchecked(12).get_level(i) as usize;
+            let b_13 = small_chunk.get_unchecked(13).get_level(i) as usize;
+            let b_14 = small_chunk.get_unchecked(14).get_level(i) as usize;
+            let b_15 = small_chunk.get_unchecked(15).get_level(i) as usize;
 
-            *lsb_counts.get_unchecked_mut(i).get_unchecked_mut(a_b) += 1;
-            *lsb_counts.get_unchecked_mut(i).get_unchecked_mut(b_b) += 1;
-            *lsb_counts.get_unchecked_mut(i).get_unchecked_mut(c_b) += 1;
-            *lsb_counts.get_unchecked_mut(i).get_unchecked_mut(d_b) += 1;
-            *lsb_counts.get_unchecked_mut(i).get_unchecked_mut(e_b) += 1;
-            *lsb_counts.get_unchecked_mut(i).get_unchecked_mut(f_b) += 1;
-            *lsb_counts.get_unchecked_mut(i).get_unchecked_mut(g_b) += 1;
-            *lsb_counts.get_unchecked_mut(i).get_unchecked_mut(h_b) += 1;
+            *lsb_counts.get_unchecked_mut(i).get_unchecked_mut(b_0) += 1;
+            *lsb_counts.get_unchecked_mut(i).get_unchecked_mut(b_1) += 1;
+            *lsb_counts.get_unchecked_mut(i).get_unchecked_mut(b_2) += 1;
+            *lsb_counts.get_unchecked_mut(i).get_unchecked_mut(b_3) += 1;
+            *lsb_counts.get_unchecked_mut(i).get_unchecked_mut(b_4) += 1;
+            *lsb_counts.get_unchecked_mut(i).get_unchecked_mut(b_5) += 1;
+            *lsb_counts.get_unchecked_mut(i).get_unchecked_mut(b_6) += 1;
+            *lsb_counts.get_unchecked_mut(i).get_unchecked_mut(b_7) += 1;
+            *lsb_counts.get_unchecked_mut(i).get_unchecked_mut(b_8) += 1;
+            *lsb_counts.get_unchecked_mut(i).get_unchecked_mut(b_9) += 1;
+            *lsb_counts.get_unchecked_mut(i).get_unchecked_mut(b_10) += 1;
+            *lsb_counts.get_unchecked_mut(i).get_unchecked_mut(b_11) += 1;
+            *lsb_counts.get_unchecked_mut(i).get_unchecked_mut(b_12) += 1;
+            *lsb_counts.get_unchecked_mut(i).get_unchecked_mut(b_13) += 1;
+            *lsb_counts.get_unchecked_mut(i).get_unchecked_mut(b_14) += 1;
+            *lsb_counts.get_unchecked_mut(i).get_unchecked_mut(b_15) += 1;
         }
     });
 
