@@ -1,7 +1,6 @@
 use std::cmp::min;
 
 pub struct TuningParameters {
-    pub comparison_sort_threshold: usize,
     pub scanning_sort_threshold: usize,
     pub ska_sort_threshold: usize,
     pub par_count_threshold: usize,
@@ -11,7 +10,6 @@ pub struct TuningParameters {
 impl TuningParameters {
     pub fn new(levels: usize) -> Self {
         Self {
-            comparison_sort_threshold: 32,
             scanning_sort_threshold: Self::scanning_sort_threshold(),
             ska_sort_threshold: Self::ska_sort_threshold(levels),
             par_count_threshold: Self::par_count_threshold(),
@@ -32,7 +30,7 @@ impl TuningParameters {
     }
 
     fn par_count_threshold() -> usize {
-        220_000
+        350_000
     }
 
     fn scanner_read_size() -> usize {
