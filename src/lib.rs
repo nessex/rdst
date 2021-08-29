@@ -23,7 +23,7 @@
 //! To be able to sort custom types, implement `RadixKey` as below.
 //!
 //!  * `LEVELS` should be set to the total number of bytes you will consider for each item being sorted
-//!  * `get_level` should return the corresponding bytes from the most significant byte to the least significant byte
+//!  * `get_level` should return the corresponding bytes from the least significant byte to the most significant byte
 //!
 //! Notes:
 //! * This allows you to implement radix keys that span multiple values, or to implement radix keys that only look at part of a value.
@@ -37,12 +37,7 @@
 //!
 //!     #[inline]
 //!     fn get_level(&self, level: usize) -> u8 {
-//!         let b = self.to_le_bytes();
-//!
-//!         match level {
-//!             0 => b[1],
-//!             _ => b[0],
-//!         }
+//!         self.to_le_bytes()[level]
 //!     }
 //! }
 //! ```
@@ -57,7 +52,7 @@
 //!
 //!     #[inline]
 //!     fn get_level(&self, level: usize) -> u8 {
-//!         (self >> ((Self::LEVELS - 1 - level) * 8)) as u8
+//!         (self >> (level * 8)) as u8
 //!     }
 //! }
 //! ```
@@ -139,9 +134,9 @@ where
     let parallel_count = bucket.len() >= tuning.par_count_threshold;
 
     if bucket.len() >= tuning.scanning_sort_threshold {
-        scanning_radix_sort(tuning, bucket, 0, parallel_count);
+        scanning_radix_sort(tuning, bucket, T::LEVELS - 1, parallel_count);
     } else {
-        lsb_radix_sort_adapter(bucket, T::LEVELS - 1, 0, parallel_count);
+        lsb_radix_sort_adapter(bucket, 0, T::LEVELS - 1, parallel_count);
     }
 }
 

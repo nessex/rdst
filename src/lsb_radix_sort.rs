@@ -73,8 +73,7 @@ pub fn lsb_radix_sort_adapter<T>(
     }
 
     let mut tmp_bucket = get_tmp_bucket(bucket.len());
-    let mut levels: Vec<usize> = (end_level..=start_level).into_iter().collect();
-    levels.reverse();
+    let levels: Vec<usize> = (start_level..=end_level).into_iter().collect();
 
     for l in levels {
         lsb_radix_sort(bucket, &mut tmp_bucket, l, parallel_count);

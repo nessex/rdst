@@ -164,7 +164,7 @@ pub fn scanning_radix_sort<T>(tuning: &TuningParameters, bucket: &mut [T], start
 where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
-    let (msb_counts, level) = if let Some(s) = get_counts_and_level(bucket, start_level, T::LEVELS - 1, parallel_count) {
+    let (msb_counts, level) = if let Some(s) = get_counts_and_level(bucket, start_level, 0, parallel_count) {
         s
     } else {
         return;
@@ -183,7 +183,7 @@ where
     // Drop some data before recursing to reduce memory usage
     drop(scanner_buckets);
 
-    if level == T::LEVELS - 1 {
+    if level == 0 {
         return;
     }
 
@@ -192,9 +192,9 @@ where
         .par_bridge()
         .for_each(|c| {
             if c.len() > tuning.ska_sort_threshold {
-                msb_ska_sort(tuning, c, level + 1);
+                msb_ska_sort(tuning, c, level - 1);
             } else {
-                lsb_radix_sort_adapter(c, T::LEVELS - 1, level + 1, false);
+                lsb_radix_sort_adapter(c, 0, level - 1, false);
             }
         });
 }

@@ -26,7 +26,7 @@ In the simplest case, you can use this sort by simply calling `my_vec.radix_sort
 To be able to sort custom types, implement `RadixKey` as below.
 
  * `LEVELS` should be set to the total number of bytes you will consider for each item being sorted
- * `get_level` should return the corresponding bytes from the most significant byte to the least significant byte
+ * `get_level` should return the corresponding bytes from the least significant byte to the most significant byte
 
 Notes:
  * This allows you to implement radix keys that span multiple values, or to implement radix keys that only look at part of a value.
@@ -38,12 +38,7 @@ impl RadixKey for u16 {
 
     #[inline]
     fn get_level(&self, level: usize) -> u8 {
-        let b = self.to_le_bytes();
-
-        match level {
-            0 => b[1],
-            _ => b[0],
-        }
+        self.to_le_bytes()[level]
     }
 }
 ```
@@ -58,7 +53,7 @@ impl RadixKey for u32 {
 
     #[inline]
     fn get_level(&self, level: usize) -> u8 {
-        (self >> ((Self::LEVELS - 1 - level) * 8)) as u8
+        (self >> (level * 8)) as u8
     }
 }
 ```

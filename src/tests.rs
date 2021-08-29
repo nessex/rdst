@@ -29,7 +29,7 @@ impl RadixKey for TestLevel4 {
 
     #[inline]
     fn get_level(&self, level: usize) -> u8 {
-        (self.key >> ((Self::LEVELS - 1 - level) * 8)) as u8
+        (self.key >> (level * 8)) as u8
     }
 }
 
@@ -44,7 +44,7 @@ impl RadixKey for TestComplex {
 
     #[inline]
     fn get_level(&self, level: usize) -> u8 {
-        (self.key >> ((Self::LEVELS - 1 - level) * 8)) as u8
+        (self.key >> (level * 8)) as u8
     }
 }
 

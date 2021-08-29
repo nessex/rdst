@@ -14,7 +14,7 @@ impl RadixKey for u16 {
 
     #[inline]
     fn get_level(&self, level: usize) -> u8 {
-        (self >> ((Self::LEVELS - 1 - level) * 8)) as u8
+        (self >> (level * 8)) as u8
     }
 }
 
@@ -23,7 +23,7 @@ impl RadixKey for u32 {
 
     #[inline]
     fn get_level(&self, level: usize) -> u8 {
-        (self >> ((Self::LEVELS - 1 - level) * 8)) as u8
+        (self >> (level * 8)) as u8
     }
 }
 
@@ -32,7 +32,7 @@ impl RadixKey for u64 {
 
     #[inline]
     fn get_level(&self, level: usize) -> u8 {
-        (self >> ((Self::LEVELS - 1 - level) * 8)) as u8
+        (self >> (level * 8)) as u8
     }
 }
 
@@ -41,7 +41,7 @@ impl RadixKey for u128 {
 
     #[inline]
     fn get_level(&self, level: usize) -> u8 {
-        (self >> ((Self::LEVELS - 1 - level) * 8)) as u8
+        (self >> (level * 8)) as u8
     }
 }
 
@@ -51,7 +51,7 @@ impl RadixKey for usize {
 
     #[inline]
     fn get_level(&self, level: usize) -> u8 {
-        (self >> ((Self::LEVELS - 1 - level) * 8)) as u8
+        (self >> (level * 8)) as u8
     }
 }
 
@@ -61,7 +61,7 @@ impl RadixKey for usize {
 
     #[inline]
     fn get_level(&self, level: usize) -> u8 {
-        (self >> ((Self::LEVELS - 1 - level) * 8)) as u8
+        (self >> (level * 8)) as u8
     }
 }
 
@@ -71,7 +71,7 @@ impl RadixKey for usize {
 
     #[inline]
     fn get_level(&self, level: usize) -> u8 {
-        (self >> ((Self::LEVELS - 1 - level) * 8)) as u8
+        (self >> (level * 8)) as u8
     }
 }
 

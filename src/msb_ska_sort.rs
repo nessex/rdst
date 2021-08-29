@@ -15,7 +15,7 @@ where
         return;
     }
 
-    let (counts, level) = if let Some(s) = get_counts_and_level(bucket, level, T::LEVELS - 1, false) {
+    let (counts, level) = if let Some(s) = get_counts_and_level(bucket, level, 0, false) {
         s
     } else {
         return;
@@ -61,15 +61,15 @@ where
     drop(end_offsets);
     drop(finished_map);
 
-    if level == T::LEVELS - 1 {
+    if level == 0 {
         return;
     }
 
     bucket.arbitrary_chunks_mut(counts.to_vec()).for_each(|chunk| {
         if chunk.len() > tuning.ska_sort_threshold {
-            msb_ska_sort(tuning, chunk, level + 1);
+            msb_ska_sort(tuning, chunk, level - 1);
         } else {
-            lsb_radix_sort_adapter(chunk, T::LEVELS - 1, level + 1, false);
+            lsb_radix_sort_adapter(chunk, 0, level - 1, false);
         }
     });
 }
