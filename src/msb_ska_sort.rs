@@ -66,14 +66,7 @@ where
         return;
     }
 
-    if parallel {
-        bucket
-            .arbitrary_chunks_mut(counts.to_vec())
-            .par_bridge()
-            .for_each(|chunk| director(tuning, chunk, level - 1, false));
-    } else {
-        bucket
-            .arbitrary_chunks_mut(counts.to_vec())
-            .for_each(|chunk| director(tuning, chunk, level - 1, false));
-    }
+    bucket
+        .arbitrary_chunks_mut(counts.to_vec())
+        .for_each(|chunk| director(tuning, chunk, level - 1, false));
 }

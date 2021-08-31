@@ -134,7 +134,13 @@ where
         return;
     }
 
-    director(tuning, bucket, T::LEVELS - 1, true);
+    let parallel_count = bucket.len() >= tuning.par_count_threshold;
+
+    if bucket.len() >= tuning.scanning_sort_threshold {
+        scanning_radix_sort(tuning, bucket, T::LEVELS - 1, parallel_count);
+    } else {
+        lsb_radix_sort_adapter(bucket, 0, T::LEVELS - 1, parallel_count);
+    }
 }
 
 fn radix_sort_inner<T>(bucket: &mut [T])
