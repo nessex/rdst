@@ -1,5 +1,4 @@
 use crate::director::director;
-use crate::lsb_radix_sort::lsb_radix_sort_adapter;
 use crate::tuning_parameters::TuningParameters;
 use crate::utils::{get_counts_and_level, get_prefix_sums};
 use crate::RadixKey;

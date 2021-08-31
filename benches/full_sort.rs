@@ -194,11 +194,11 @@ fn full_sort_u64_bimodal(c: &mut Criterion) {
     let mut rng = WyRand::new();
     let shift = 32u64;
 
-    for _ in 0..(n/2) {
+    for _ in 0..(n / 2) {
         inputs.push(rng.generate::<u64>() >> shift);
     }
 
-    for _ in 0..(n/2) {
+    for _ in 0..(n / 2) {
         inputs.push(rng.generate::<u64>() << shift);
     }
 
