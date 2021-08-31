@@ -56,14 +56,37 @@ fn scanner_thread<T>(
     stash.resize(256, Vec::with_capacity(128));
     let mut finished_count = 0;
     let mut finished_map = [false; 256];
+    let mut remaining_buckets: Vec<usize> = (0..scanner_buckets.len()).into_iter().collect();
 
     'outer: loop {
-        for m in scanner_buckets {
+        if remaining_buckets.len() == 0 {
+            break;
+        } else if remaining_buckets.len() == 1 {
+            let m = &scanner_buckets[remaining_buckets[0]];
+            let mut guard = match m.inner.try_lock() {
+                None => continue 'outer,
+                Some(g) => g,
+            };
+
+            let to_write = stash[m.index].len();
+
+            let end = guard.write_head + to_write as usize;
+            let start = guard.write_head;
+
             unsafe {
-                if *finished_map.get_unchecked(m.index) {
-                    continue;
-                }
+                copy_nonoverlapping(
+                    stash[m.index].get_unchecked(0),
+                    guard.chunk.get_unchecked_mut(start),
+                    end - start,
+                );
             }
+
+            guard.write_head += to_write;
+            break;
+        }
+
+        for bucket in remaining_buckets.iter() {
+            let m = &scanner_buckets[*bucket];
 
             let mut guard = match m.inner.try_lock() {
                 Some(g) => g,
@@ -153,6 +176,11 @@ fn scanner_thread<T>(
                 }
             }
         }
+
+        remaining_buckets = remaining_buckets
+            .into_iter()
+            .filter(|v| !finished_map[scanner_buckets[*v].index])
+            .collect();
     }
 }
 
