@@ -204,19 +204,19 @@ fn full_sort_u64_bimodal(c: &mut Criterion) {
 
     let input_sets: Vec<Vec<u64>> = vec![
         inputs.clone(),
-        inputs[..100_000_000].to_vec(),
-        inputs[..50_000_000].to_vec(),
-        inputs[..10_000_000].to_vec(),
-        inputs[..5_000_000].to_vec(),
-        inputs[..2_000_000].to_vec(),
-        inputs[..1_000_000].to_vec(),
-        inputs[..500_000].to_vec(),
-        inputs[..300_000].to_vec(),
-        inputs[..200_000].to_vec(),
-        inputs[..100_000].to_vec(),
-        inputs[..50_000].to_vec(),
-        inputs[..10_000].to_vec(),
-        inputs[..5_000].to_vec(),
+        inputs[50_000_000..150_000_000].to_vec(),
+        inputs[75_000_000..125_000_000].to_vec(),
+        inputs[95_000_000..105_000_000].to_vec(),
+        inputs[97_500_000..102_500_000].to_vec(),
+        inputs[99_000_000..101_000_000].to_vec(),
+        inputs[99_500_000..100_500_000].to_vec(),
+        inputs[99_750_000..100_250_000].to_vec(),
+        inputs[99_850_000..100_150_000].to_vec(),
+        inputs[99_900_000..100_100_000].to_vec(),
+        inputs[99_950_000..100_050_000].to_vec(),
+        inputs[99_975_000..100_025_000].to_vec(),
+        inputs[99_995_000..100_005_000].to_vec(),
+        inputs[99_997_500..100_002_500].to_vec(),
     ];
 
     drop(inputs);
