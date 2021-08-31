@@ -248,5 +248,11 @@ fn full_sort_u64_truncated_shifted(c: &mut Criterion) {
     group.finish();
 }
 
-criterion_group!(benches, full_sort_u32, full_sort_u64, full_sort_u64_truncated, full_sort_u64_truncated_shifted);
+criterion_group!(
+    benches,
+    full_sort_u32,
+    full_sort_u64,
+    full_sort_u64_truncated,
+    full_sort_u64_truncated_shifted
+);
 criterion_main!(benches);

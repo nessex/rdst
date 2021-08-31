@@ -117,9 +117,14 @@ pub fn get_tmp_bucket<T>(len: usize) -> Vec<T> {
     tmp_bucket
 }
 
-pub fn get_counts_and_level<T>(bucket: &[T], start_level: usize, end_level: usize, parallel_count: bool) -> Option<([usize; 256], usize)>
+pub fn get_counts_and_level<T>(
+    bucket: &[T],
+    start_level: usize,
+    end_level: usize,
+    parallel_count: bool,
+) -> Option<([usize; 256], usize)>
 where
-    T: RadixKey + Sized + Send + Sync
+    T: RadixKey + Sized + Send + Sync,
 {
     let counts;
     let mut level = start_level;

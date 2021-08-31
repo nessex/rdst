@@ -1,13 +1,15 @@
+use crate::director::director;
 use crate::lsb_radix_sort::lsb_radix_sort_adapter;
 use crate::tuning_parameters::TuningParameters;
-use crate::utils::{get_prefix_sums, get_counts_and_level};
+use crate::utils::{get_counts_and_level, get_prefix_sums};
 use crate::RadixKey;
 use arbitrary_chunks::ArbitraryChunks;
 use itertools::Itertools;
+use rayon::prelude::*;
 
 // Based upon (with modifications):
 // https://probablydance.com/2016/12/27/i-wrote-a-faster-sorting-algorithm/
-pub fn msb_ska_sort<T>(tuning: &TuningParameters, bucket: &mut [T], level: usize)
+pub fn msb_ska_sort<T>(tuning: &TuningParameters, bucket: &mut [T], level: usize, parallel: bool)
 where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
@@ -15,7 +17,7 @@ where
         return;
     }
 
-    let (counts, level) = if let Some(s) = get_counts_and_level(bucket, level, 0, false) {
+    let (counts, level) = if let Some(s) = get_counts_and_level(bucket, level, 0, parallel) {
         s
     } else {
         return;
@@ -65,11 +67,14 @@ where
         return;
     }
 
-    bucket.arbitrary_chunks_mut(counts.to_vec()).for_each(|chunk| {
-        if chunk.len() > tuning.ska_sort_threshold {
-            msb_ska_sort(tuning, chunk, level - 1);
-        } else {
-            lsb_radix_sort_adapter(chunk, 0, level - 1, false);
-        }
-    });
+    if parallel {
+        bucket
+            .arbitrary_chunks_mut(counts.to_vec())
+            .par_bridge()
+            .for_each(|chunk| director(tuning, chunk, level - 1, false));
+    } else {
+        bucket
+            .arbitrary_chunks_mut(counts.to_vec())
+            .for_each(|chunk| director(tuning, chunk, level - 1, false));
+    }
 }

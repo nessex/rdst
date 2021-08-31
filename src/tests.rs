@@ -1,9 +1,9 @@
 use crate::{RadixKey, RadixSort};
 use nanorand::{RandomGen, Rng, WyRand};
 use std::fmt::Debug;
+use std::ops::{Shl, Shr};
 use std::time::Instant;
 use voracious_radix_sort::{RadixSort as Vor, Radixable};
-use std::ops::{Shl, Shr};
 
 #[derive(Debug, Eq, PartialEq, Clone, Copy, Ord, PartialOrd)]
 struct TestLevel1 {
@@ -209,17 +209,26 @@ where
 }
 
 fn sort_comparison_test_shifted<T>(n: usize, shift: T)
-    where
-        T: RadixKey + Ord + RandomGen<WyRand> + Clone + Debug + Send + Copy + Sync + Shl<Output = T> + Shr<Output = T>,
+where
+    T: RadixKey
+        + Ord
+        + RandomGen<WyRand>
+        + Clone
+        + Debug
+        + Send
+        + Copy
+        + Sync
+        + Shl<Output = T>
+        + Shr<Output = T>,
 {
     let mut inputs: Vec<T> = Vec::with_capacity(n);
     let mut rng = WyRand::new();
 
-    for _ in 0..(n/2) {
+    for _ in 0..(n / 2) {
         inputs.push(rng.generate::<T>() >> shift);
     }
 
-    for _ in 0..(n/2) {
+    for _ in 0..(n / 2) {
         inputs.push(rng.generate::<T>() << shift);
     }
 
@@ -233,7 +242,16 @@ fn sort_comparison_test_shifted<T>(n: usize, shift: T)
 
 fn sort_comparison_suite<T>(shift: T)
 where
-    T: RadixKey + Ord + RandomGen<WyRand> + Clone + Debug + Send + Copy + Sync + Shl<Output = T> + Shr<Output = T>,
+    T: RadixKey
+        + Ord
+        + RandomGen<WyRand>
+        + Clone
+        + Debug
+        + Send
+        + Copy
+        + Sync
+        + Shl<Output = T>
+        + Shr<Output = T>,
 {
     sort_comparison_test::<T>(0);
     sort_comparison_test::<T>(1);

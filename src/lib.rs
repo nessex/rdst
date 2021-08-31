@@ -93,6 +93,7 @@
 #[cfg(test)]
 mod tests;
 
+mod director;
 mod lsb_radix_sort;
 mod msb_ska_sort;
 mod radix_key;
@@ -123,6 +124,8 @@ use crate::scanning_radix_sort::scanning_radix_sort;
 #[cfg(not(any(test, feature = "bench")))]
 use crate::tuning_parameters::TuningParameters;
 
+use crate::director::director;
+
 fn radix_sort_bucket_start<T>(tuning: &TuningParameters, bucket: &mut [T])
 where
     T: RadixKey + Sized + Send + Copy + Sync,
@@ -131,13 +134,7 @@ where
         return;
     }
 
-    let parallel_count = bucket.len() >= tuning.par_count_threshold;
-
-    if bucket.len() >= tuning.scanning_sort_threshold {
-        scanning_radix_sort(tuning, bucket, T::LEVELS - 1, parallel_count);
-    } else {
-        lsb_radix_sort_adapter(bucket, 0, T::LEVELS - 1, parallel_count);
-    }
+    director(tuning, bucket, T::LEVELS - 1, true);
 }
 
 fn radix_sort_inner<T>(bucket: &mut [T])

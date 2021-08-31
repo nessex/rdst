@@ -1,3 +1,4 @@
+use crate::director::director;
 use crate::lsb_radix_sort::lsb_radix_sort_adapter;
 use crate::msb_ska_sort::msb_ska_sort;
 use crate::tuning_parameters::TuningParameters;
@@ -160,15 +161,20 @@ fn scanner_thread<T>(
 // scanning_radix_sort does a parallel MSB-first sort. Following this, depending on the number of
 // elements remaining in each bucket, it will either do an MSB-sort or an LSB-sort, making this
 // a dynamic hybrid sort.
-pub fn scanning_radix_sort<T>(tuning: &TuningParameters, bucket: &mut [T], start_level: usize, parallel_count: bool)
-where
+pub fn scanning_radix_sort<T>(
+    tuning: &TuningParameters,
+    bucket: &mut [T],
+    start_level: usize,
+    parallel_count: bool,
+) where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
-    let (msb_counts, level) = if let Some(s) = get_counts_and_level(bucket, start_level, 0, parallel_count) {
-        s
-    } else {
-        return;
-    };
+    let (msb_counts, level) =
+        if let Some(s) = get_counts_and_level(bucket, start_level, 0, parallel_count) {
+            s
+        } else {
+            return;
+        };
 
     let scanner_buckets = get_scanner_buckets(&msb_counts, bucket);
     let cpus = num_cpus::get();
@@ -190,11 +196,5 @@ where
     bucket
         .arbitrary_chunks_mut(msb_counts.to_vec())
         .par_bridge()
-        .for_each(|c| {
-            if c.len() > tuning.ska_sort_threshold {
-                msb_ska_sort(tuning, c, level - 1);
-            } else {
-                lsb_radix_sort_adapter(c, 0, level - 1, false);
-            }
-        });
+        .for_each(|chunk| director(tuning, chunk, level - 1, false));
 }

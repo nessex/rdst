@@ -7,11 +7,12 @@ fn lsb_radix_sort<T>(bucket: &mut [T], tmp_bucket: &mut [T], level: usize, paral
 where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
-    let (counts, level) = if let Some(s) = get_counts_and_level(bucket, level, level, parallel_count) {
-        s
-    } else {
-        return;
-    };
+    let (counts, level) =
+        if let Some(s) = get_counts_and_level(bucket, level, level, parallel_count) {
+            s
+        } else {
+            return;
+        };
     let mut prefix_sums = get_prefix_sums(&counts);
 
     let chunks = bucket.chunks_exact(8);
