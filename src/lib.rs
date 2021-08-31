@@ -124,8 +124,6 @@ use crate::scanning_radix_sort::scanning_radix_sort;
 #[cfg(not(any(test, feature = "bench")))]
 use crate::tuning_parameters::TuningParameters;
 
-use crate::director::director;
-
 fn radix_sort_bucket_start<T>(tuning: &TuningParameters, bucket: &mut [T])
 where
     T: RadixKey + Sized + Send + Copy + Sync,

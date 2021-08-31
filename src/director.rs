@@ -1,5 +1,4 @@
-use crate::msb_ska_sort;
-use crate::scanning_radix_sort;
+use crate::msb_ska_sort::msb_ska_sort;
 use crate::{lsb_radix_sort_adapter, RadixKey, TuningParameters};
 
 #[inline]

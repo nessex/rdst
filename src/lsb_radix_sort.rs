@@ -8,7 +8,7 @@ where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
     let (counts, level) =
-        if let Some(s) = get_counts_and_level(bucket, level, level, parallel_count) {
+        if let Some(s) = get_counts_and_level_ascending(bucket, level, level, parallel_count) {
             s
         } else {
             return;

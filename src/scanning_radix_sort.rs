@@ -168,7 +168,7 @@ pub fn scanning_radix_sort<T>(
     T: RadixKey + Sized + Send + Copy + Sync,
 {
     let (msb_counts, level) =
-        if let Some(s) = get_counts_and_level(bucket, start_level, 0, parallel_count) {
+        if let Some(s) = get_counts_and_level_descending(bucket, start_level, 0, parallel_count) {
             s
         } else {
             return;
