@@ -6,7 +6,7 @@ use arbitrary_chunks::ArbitraryChunks;
 use rayon::prelude::*;
 use std::cmp::min;
 use std::ptr::copy_nonoverlapping;
-use std::sync::Mutex;
+use try_mutex::TryMutex;
 
 struct ScannerBucketInner<'a, T> {
     write_head: usize,
@@ -17,7 +17,7 @@ struct ScannerBucketInner<'a, T> {
 struct ScannerBucket<'a, T> {
     index: usize,
     len: isize,
-    inner: Mutex<ScannerBucketInner<'a, T>>,
+    inner: TryMutex<ScannerBucketInner<'a, T>>,
 }
 
 #[inline]
@@ -31,7 +31,7 @@ fn get_scanner_buckets<'a, T>(
         .map(|(index, chunk)| ScannerBucket {
             index,
             len: chunk.len() as isize,
-            inner: Mutex::new(ScannerBucketInner {
+            inner: TryMutex::new(ScannerBucketInner {
                 write_head: 0,
                 read_head: 0,
                 chunk,
@@ -66,8 +66,8 @@ fn scanner_thread<T>(
             }
 
             let mut guard = match m.inner.try_lock() {
-                Ok(g) => g,
-                Err(_) => continue,
+                Some(g) => g,
+                None => continue,
             };
 
             if guard.write_head >= m.len as usize {
