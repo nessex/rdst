@@ -140,15 +140,16 @@ where
     T: RadixKey + Sized + Send + Sync,
 {
     let counts;
+    let count_func = if parallel_count {
+        par_get_counts
+    } else {
+        get_counts
+    };
     let mut level = start_level;
     let ascending = start_level < end_level;
 
     'outer: loop {
-        let tmp_counts = if parallel_count {
-            par_get_counts(bucket, level)
-        } else {
-            get_counts(bucket, level)
-        };
+        let tmp_counts = count_func(bucket, level);
 
         let mut num_buckets = 0;
         for c in tmp_counts {
