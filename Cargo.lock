@@ -370,6 +370,7 @@ dependencies = [
  "nanorand",
  "num_cpus",
  "rayon",
+ "try-mutex",
  "voracious_radix_sort",
 ]
 
@@ -497,6 +498,12 @@ dependencies = [
  "serde",
  "serde_json",
 ]
+
+[[package]]
+name = "try-mutex"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1efbcd4ec6f7cd566b74a90331a1830ec45b1cfd62e7b1a33452388b856fc83b"
 
 [[package]]
 name = "unicode-width"

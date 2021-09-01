@@ -14,6 +14,7 @@ pub fn get_prefix_sums(counts: &[usize]) -> [usize; 256] {
     sums
 }
 
+#[inline]
 pub fn par_get_counts<T>(bucket: &[T], level: usize) -> [usize; 256]
 where
     T: RadixKey + Sized + Send + Sync,
@@ -79,6 +80,7 @@ where
     })
 }
 
+#[inline]
 pub fn get_counts<T>(bucket: &[T], level: usize) -> [usize; 256]
     where
         T: RadixKey,
@@ -130,7 +132,8 @@ pub fn get_tmp_bucket<T>(len: usize) -> Vec<T> {
     tmp_bucket
 }
 
-pub fn get_counts_and_level<T>(
+#[inline]
+pub fn get_counts_and_level_ascending<T>(
     bucket: &[T],
     start_level: usize,
     end_level: usize,
@@ -139,40 +142,60 @@ pub fn get_counts_and_level<T>(
 where
     T: RadixKey + Sized + Send + Sync,
 {
-    let counts;
-    let count_func = if parallel_count {
+    let counts = if parallel_count {
         par_get_counts
     } else {
         get_counts
     };
-    let mut level = start_level;
-    let ascending = start_level < end_level;
 
-    'outer: loop {
-        let tmp_counts = count_func(bucket, level);
+    for level in start_level..=end_level {
+        let tmp_counts = counts(bucket, level);
 
         let mut num_buckets = 0;
         for c in tmp_counts {
             if c > 0 {
                 if num_buckets == 1 {
-                    counts = tmp_counts;
-                    break 'outer;
+                    return Some((tmp_counts, level));
                 }
 
                 num_buckets += 1;
             }
         }
+    }
 
-        if level == end_level {
-            return None;
-        }
+    None
+}
 
-        if ascending {
-            level += 1;
-        } else {
-            level -= 1;
+#[inline]
+pub fn get_counts_and_level_descending<T>(
+    bucket: &[T],
+    start_level: usize,
+    end_level: usize,
+    parallel_count: bool,
+) -> Option<([usize; 256], usize)>
+where
+    T: RadixKey + Sized + Send + Sync,
+{
+    let counts = if parallel_count {
+        par_get_counts
+    } else {
+        get_counts
+    };
+
+    for level in (end_level..=start_level).into_iter().rev() {
+        let tmp_counts = counts(bucket, level);
+
+        let mut num_buckets = 0;
+        for c in tmp_counts {
+            if c > 0 {
+                if num_buckets == 1 {
+                    return Some((tmp_counts, level));
+                }
+
+                num_buckets += 1;
+            }
         }
     }
 
-    Some((counts, level))
+    None
 }

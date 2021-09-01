@@ -1,10 +1,9 @@
 use crate::director::director;
 use crate::tuning_parameters::TuningParameters;
-use crate::utils::{get_counts_and_level, get_prefix_sums};
+use crate::utils::*;
 use crate::RadixKey;
 use arbitrary_chunks::ArbitraryChunks;
 use itertools::Itertools;
-use rayon::prelude::*;
 
 // Based upon (with modifications):
 // https://probablydance.com/2016/12/27/i-wrote-a-faster-sorting-algorithm/
@@ -16,11 +15,12 @@ where
         return;
     }
 
-    let (counts, level) = if let Some(s) = get_counts_and_level(bucket, level, 0, parallel) {
-        s
-    } else {
-        return;
-    };
+    let (counts, level) =
+        if let Some(s) = get_counts_and_level_descending(bucket, level, 0, parallel) {
+            s
+        } else {
+            return;
+        };
 
     let mut prefix_sums = get_prefix_sums(&counts);
     let mut end_offsets = prefix_sums.split_at(1).1.to_vec();
@@ -66,14 +66,7 @@ where
         return;
     }
 
-    if parallel {
-        bucket
-            .arbitrary_chunks_mut(counts.to_vec())
-            .par_bridge()
-            .for_each(|chunk| director(tuning, chunk, level - 1, false));
-    } else {
-        bucket
-            .arbitrary_chunks_mut(counts.to_vec())
-            .for_each(|chunk| director(tuning, chunk, level - 1, false));
-    }
+    bucket
+        .arbitrary_chunks_mut(counts.to_vec())
+        .for_each(|chunk| director(tuning, chunk, level - 1, false));
 }
