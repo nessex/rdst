@@ -1,7 +1,5 @@
 use crate::RadixKey;
-use rayon::prelude::*;
 use std::sync::mpsc::channel;
-use rayon::in_place_scope;
 
 #[inline]
 pub fn get_prefix_sums(counts: &[usize]) -> [usize; 256] {
