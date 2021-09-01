@@ -68,11 +68,14 @@ where
 }
 
 pub fn get_counts<T>(bucket: &[T], level: usize) -> [usize; 256]
-where
-    T: RadixKey,
+    where
+        T: RadixKey,
 {
-    let mut counts = [0usize; 256];
-    let chunks = bucket.chunks_exact(8);
+    let mut counts_1 = [0usize; 256];
+    let mut counts_2 = [0usize; 256];
+    let mut counts_3 = [0usize; 256];
+    let mut counts_4 = [0usize; 256];
+    let chunks = bucket.chunks_exact(4);
     let rem = chunks.remainder();
 
     chunks.into_iter().for_each(|chunk| unsafe {
@@ -80,27 +83,25 @@ where
         let b = chunk.get_unchecked(1).get_level(level) as usize;
         let c = chunk.get_unchecked(2).get_level(level) as usize;
         let d = chunk.get_unchecked(3).get_level(level) as usize;
-        let e = chunk.get_unchecked(4).get_level(level) as usize;
-        let f = chunk.get_unchecked(5).get_level(level) as usize;
-        let g = chunk.get_unchecked(6).get_level(level) as usize;
-        let h = chunk.get_unchecked(7).get_level(level) as usize;
 
-        *counts.get_unchecked_mut(a) += 1;
-        *counts.get_unchecked_mut(b) += 1;
-        *counts.get_unchecked_mut(c) += 1;
-        *counts.get_unchecked_mut(d) += 1;
-        *counts.get_unchecked_mut(e) += 1;
-        *counts.get_unchecked_mut(f) += 1;
-        *counts.get_unchecked_mut(g) += 1;
-        *counts.get_unchecked_mut(h) += 1;
+        *counts_1.get_unchecked_mut(a) += 1;
+        *counts_2.get_unchecked_mut(b) += 1;
+        *counts_3.get_unchecked_mut(c) += 1;
+        *counts_4.get_unchecked_mut(d) += 1;
     });
 
     rem.into_iter().for_each(|v| unsafe {
         let b = v.get_level(level) as usize;
-        *counts.get_unchecked_mut(b) += 1;
+        *counts_1.get_unchecked_mut(b) += 1;
     });
 
-    counts
+    for i in 0..256 {
+        counts_1[i] += counts_2[i];
+        counts_1[i] += counts_3[i];
+        counts_1[i] += counts_4[i];
+    }
+
+    counts_1
 }
 
 #[inline]
