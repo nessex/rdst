@@ -30,7 +30,7 @@ impl TuningParameters {
     }
 
     fn par_count_threshold() -> usize {
-        350_000
+        400_000
     }
 
     fn scanner_read_size() -> usize {

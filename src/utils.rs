@@ -20,7 +20,8 @@ where
 {
 
     let threads = num_cpus::get();
-    let chunk_size = (bucket.len() / num_cpus::get()) + 1;
+    let chunk_divisor = 8;
+    let chunk_size = (bucket.len() / threads / chunk_divisor) + 1;
 
     rayon::scope(|s| {
         let (tx, rx) = channel();
@@ -66,7 +67,7 @@ where
 
         let mut msb_counts = [0usize; 256];
 
-        for _ in 0..threads {
+        for _ in 0..(threads * chunk_divisor) {
             let counts = rx.recv().unwrap();
 
             for (i, c) in counts.iter().enumerate() {
