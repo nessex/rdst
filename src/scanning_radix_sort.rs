@@ -3,17 +3,17 @@ use crate::tuning_parameters::TuningParameters;
 use crate::utils::*;
 use crate::RadixKey;
 use arbitrary_chunks::ArbitraryChunks;
-use rayon::prelude::*;
+use partition::partition_index;
 use std::cmp::min;
 use std::ptr::copy_nonoverlapping;
 use try_mutex::TryMutex;
-use partition::partition_index;
 
 struct ScannerBucketInner<'a, T> {
     write_head: usize,
     read_head: usize,
     chunk: &'a mut [T],
     locally_partitioned: bool,
+    sorted: bool,
 }
 
 struct ScannerBucket<'a, T> {
@@ -38,27 +38,53 @@ fn get_scanner_buckets<'a, T>(
                 read_head: 0,
                 chunk,
                 locally_partitioned: false,
+                sorted: false,
             }),
         })
         .collect();
 
     out.sort_by_key(|b| b.len);
-    out.reverse();
+    // out.reverse();
 
     out
 }
 
 fn scanner_thread<T>(
-    scanner_buckets: &Vec<ScannerBucket<T>>,
+    thread_num: usize,
+    tuning: &TuningParameters,
+    scanner_buckets: &[ScannerBucket<T>],
     level: usize,
     scanner_read_size: isize,
 ) where
-    T: RadixKey + Copy,
+    T: RadixKey + Copy + Send + Sync,
 {
     let mut stash: Vec<Vec<T>> = Vec::with_capacity(256);
     stash.resize(256, Vec::with_capacity(128));
+    let mut stash_total = 0;
     let mut finished_count = 0;
     let mut finished_map = [false; 256];
+    let cutoff = if thread_num == 0 {
+        scanner_buckets.len()
+    } else {
+        scanner_buckets.len() - thread_num - 1
+    };
+
+    for m in scanner_buckets {
+        let mut guard = match m.inner.try_lock() {
+            Some(g) => g,
+            None => continue,
+        };
+
+        if !guard.locally_partitioned {
+            guard.locally_partitioned = true;
+            let index = m.index as u8;
+
+            let start = partition_index(&mut guard.chunk, |v| v.get_level(level) == index);
+
+            guard.read_head = start;
+            guard.write_head = start;
+        }
+    }
 
     'outer: loop {
         for m in scanner_buckets {
@@ -77,7 +103,7 @@ fn scanner_thread<T>(
                 finished_count += 1;
                 finished_map[m.index] = true;
 
-                if finished_count == scanner_buckets.len() {
+                if finished_count >= cutoff && stash_total == 0 {
                     break 'outer;
                 }
 
@@ -88,9 +114,7 @@ fn scanner_thread<T>(
                 guard.locally_partitioned = true;
                 let index = m.index as u8;
 
-                let start = partition_index(&mut guard.chunk, |v| {
-                    v.get_level(level) == index
-                });
+                let start = partition_index(&mut guard.chunk, |v| v.get_level(level) == index);
 
                 guard.read_head = start;
                 guard.write_head = start;
@@ -132,6 +156,7 @@ fn scanner_thread<T>(
                 });
 
                 guard.read_head += to_read;
+                stash_total += to_read;
             }
 
             let to_write = min(
@@ -158,15 +183,33 @@ fn scanner_thread<T>(
             }
 
             guard.write_head += to_write;
+            stash_total -= to_write;
 
             if guard.write_head >= m.len as usize {
                 finished_count += 1;
                 finished_map[m.index] = true;
 
-                if finished_count == scanner_buckets.len() {
+                if finished_count >= cutoff && stash_total == 0 {
                     break 'outer;
                 }
             }
+        }
+    }
+
+    if level == 0 {
+        return;
+    }
+
+    for m in scanner_buckets {
+        let mut guard = match m.inner.try_lock() {
+            Some(g) => g,
+            None => continue,
+        };
+
+        if !guard.sorted {
+            guard.sorted = true;
+
+            director(tuning, guard.chunk, level - 1, false);
         }
     }
 }
@@ -194,20 +237,11 @@ pub fn scanning_radix_sort<T>(
     let threads = min(cpus, scanner_buckets.len());
 
     rayon::scope(|s| {
-        for _ in 0..threads {
-            s.spawn(|_| scanner_thread(&scanner_buckets, level, tuning.scanner_read_size as isize));
+        for i in 0..threads {
+            let buckets = scanner_buckets.as_slice();
+            s.spawn(move |_| {
+                scanner_thread(i, tuning, buckets, level, tuning.scanner_read_size as isize)
+            });
         }
     });
-
-    // Drop some data before recursing to reduce memory usage
-    drop(scanner_buckets);
-
-    if level == 0 {
-        return;
-    }
-
-    bucket
-        .arbitrary_chunks_mut(msb_counts.to_vec())
-        .par_bridge()
-        .for_each(|chunk| director(tuning, chunk, level - 1, false));
 }
