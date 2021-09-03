@@ -23,6 +23,7 @@ nanorand = "0.6.1"
 arbitrary-chunks = "0.2.1"
 itertools = "0.10.1"
 try-mutex = "0.4.0"
+partition = "0.1.2"
 
 [dev-dependencies]
 voracious_radix_sort = { version = "1.1.0", features = ["voracious_multithread"] }

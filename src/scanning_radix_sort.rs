@@ -7,11 +7,13 @@ use rayon::prelude::*;
 use std::cmp::min;
 use std::ptr::copy_nonoverlapping;
 use try_mutex::TryMutex;
+use partition::partition_index;
 
 struct ScannerBucketInner<'a, T> {
     write_head: usize,
     read_head: usize,
     chunk: &'a mut [T],
+    locally_partitioned: bool,
 }
 
 struct ScannerBucket<'a, T> {
@@ -35,6 +37,7 @@ fn get_scanner_buckets<'a, T>(
                 write_head: 0,
                 read_head: 0,
                 chunk,
+                locally_partitioned: false,
             }),
         })
         .collect();
@@ -79,6 +82,18 @@ fn scanner_thread<T>(
                 }
 
                 continue;
+            }
+
+            if !guard.locally_partitioned {
+                guard.locally_partitioned = true;
+                let index = m.index as u8;
+
+                let start = partition_index(&mut guard.chunk, |v| {
+                    v.get_level(level) == index
+                });
+
+                guard.read_head = start;
+                guard.write_head = start;
             }
 
             let read_start = guard.read_head as isize;
