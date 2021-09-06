@@ -76,3 +76,60 @@ where
         lsb_radix_sort(bucket, &mut tmp_bucket, &counts, level);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::test_utils::sort_comparison_suite;
+    use crate::{RadixKey, RadixSort};
+    use nanorand::{RandomGen, WyRand};
+    use std::fmt::Debug;
+    use std::ops::{Shl, Shr};
+    use crate::sorts::lsb_radix_sort::lsb_radix_sort_adapter;
+
+    fn test_lsb_radix_sort_adapter<T>(shift: T)
+    where
+        T: RadixKey
+        + Ord
+        + RandomGen<WyRand>
+        + Clone
+        + Debug
+        + Send
+        + Sized
+        + Copy
+        + Sync
+        + Shl<Output = T>
+        + Shr<Output = T>,
+    {
+        sort_comparison_suite(shift, |inputs| lsb_radix_sort_adapter(inputs, 0, T::LEVELS - 1));
+    }
+
+    #[test]
+    pub fn test_u8() {
+        test_lsb_radix_sort_adapter(0u8);
+    }
+
+    #[test]
+    pub fn test_u16() {
+        test_lsb_radix_sort_adapter(8u16);
+    }
+
+    #[test]
+    pub fn test_u32() {
+        test_lsb_radix_sort_adapter(16u32);
+    }
+
+    #[test]
+    pub fn test_u64() {
+        test_lsb_radix_sort_adapter(32u64);
+    }
+
+    #[test]
+    pub fn test_u128() {
+        test_lsb_radix_sort_adapter(64u128);
+    }
+
+    #[test]
+    pub fn test_usize() {
+        test_lsb_radix_sort_adapter(32usize);
+    }
+}

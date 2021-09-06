@@ -77,3 +77,62 @@ where
         .par_bridge()
         .for_each(|chunk| director(tuning, chunk, len, level - 1));
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::test_utils::sort_comparison_suite;
+    use crate::{RadixKey, RadixSort};
+    use nanorand::{RandomGen, WyRand};
+    use std::fmt::Debug;
+    use std::ops::{Shl, Shr};
+    use crate::tuning_parameters::TuningParameters;
+    use crate::sorts::recombinating_sort::recombinating_sort;
+
+    fn test_recombinating_sort<T>(shift: T)
+    where
+        T: RadixKey
+        + Ord
+        + RandomGen<WyRand>
+        + Clone
+        + Debug
+        + Send
+        + Sized
+        + Copy
+        + Sync
+        + Shl<Output = T>
+        + Shr<Output = T>,
+    {
+        let tuning = TuningParameters::new(T::LEVELS);
+        sort_comparison_suite(shift, |inputs| recombinating_sort(&tuning, inputs, T::LEVELS - 1));
+    }
+
+    #[test]
+    pub fn test_u8() {
+        test_recombinating_sort(0u8);
+    }
+
+    #[test]
+    pub fn test_u16() {
+        test_recombinating_sort(8u16);
+    }
+
+    #[test]
+    pub fn test_u32() {
+        test_recombinating_sort(16u32);
+    }
+
+    #[test]
+    pub fn test_u64() {
+        test_recombinating_sort(32u64);
+    }
+
+    #[test]
+    pub fn test_u128() {
+        test_recombinating_sort(64u128);
+    }
+
+    #[test]
+    pub fn test_usize() {
+        test_recombinating_sort(32usize);
+    }
+}

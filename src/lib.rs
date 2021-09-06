@@ -90,9 +90,6 @@
 //!
 //! Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in the work by you, as defined in the Apache-2.0 license, shall be dual licensed as above, without any additional terms or conditions.
 
-#[cfg(test)]
-mod tests;
-
 mod director;
 mod radix_key;
 #[cfg(feature = "default-implementations")]
@@ -112,6 +109,9 @@ pub mod tuning_parameters;
 mod utils;
 #[cfg(any(test, feature = "bench"))]
 pub mod utils;
+
+#[cfg(any(test, feature = "bench"))]
+pub mod test_utils;
 
 mod radix_sort;
 mod sort_manager;

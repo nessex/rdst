@@ -227,3 +227,62 @@ pub fn scanning_radix_sort<T>(
         .into_par_iter()
         .for_each(|chunk| director(tuning, chunk, len, level - 1));
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::test_utils::sort_comparison_suite;
+    use crate::{RadixKey, RadixSort};
+    use nanorand::{RandomGen, WyRand};
+    use std::fmt::Debug;
+    use std::ops::{Shl, Shr};
+    use crate::tuning_parameters::TuningParameters;
+    use crate::sorts::scanning_radix_sort::scanning_radix_sort;
+
+    fn test_scanning_sort<T>(shift: T)
+    where
+        T: RadixKey
+        + Ord
+        + RandomGen<WyRand>
+        + Clone
+        + Debug
+        + Send
+        + Sized
+        + Copy
+        + Sync
+        + Shl<Output = T>
+        + Shr<Output = T>,
+    {
+        let tuning = TuningParameters::new(T::LEVELS);
+        sort_comparison_suite(shift, |inputs| scanning_radix_sort(&tuning, inputs, T::LEVELS - 1, false));
+    }
+
+    #[test]
+    pub fn test_u8() {
+        test_scanning_sort(0u8);
+    }
+
+    #[test]
+    pub fn test_u16() {
+        test_scanning_sort(8u16);
+    }
+
+    #[test]
+    pub fn test_u32() {
+        test_scanning_sort(16u32);
+    }
+
+    #[test]
+    pub fn test_u64() {
+        test_scanning_sort(32u64);
+    }
+
+    #[test]
+    pub fn test_u128() {
+        test_scanning_sort(64u128);
+    }
+
+    #[test]
+    pub fn test_usize() {
+        test_scanning_sort(32usize);
+    }
+}
