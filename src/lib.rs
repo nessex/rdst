@@ -103,10 +103,11 @@ mod scanning_radix_sort;
 mod ska_sort;
 mod tuning_parameters;
 mod utils;
+mod radix_sort;
 
 // Public exports
-pub mod radix_sort;
 pub use radix_key::RadixKey;
+pub use radix_sort::RadixSort;
 
 // Exposed for benchmarking
 #[cfg(any(test, feature = "bench"))]

@@ -1,3 +1,7 @@
+use crate::{TuningParameters, RadixKey};
+use crate::lsb_radix_sort::lsb_radix_sort_adapter;
+use crate::scanning_radix_sort::scanning_radix_sort;
+
 fn radix_sort_bucket_start<T>(tuning: &TuningParameters, bucket: &mut [T])
     where
         T: RadixKey + Sized + Send + Copy + Sync,
