@@ -29,7 +29,7 @@ fn tune_counts(c: &mut Criterion) {
         ),
     ];
 
-    bench_common(c, 0u32, "counts", tests);
+    bench_common(c, 0u32, "tune_counts", tests);
 }
 
 fn tune_sort_common<T>(c: &mut Criterion, shift: T, name_suffix: &str)
