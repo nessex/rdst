@@ -5,6 +5,7 @@ use nanorand::{RandomGen, Rng, WyRand};
 use std::fmt::Debug;
 use std::ops::{Shl, Shr};
 use std::time::Duration;
+use criterion::{PlotConfiguration, AxisScale};
 
 #[cfg(feature = "bench")]
 pub fn bench_common<T>(
@@ -31,6 +32,7 @@ pub fn bench_common<T>(
     group.sample_size(10);
     group.measurement_time(Duration::from_secs(5));
     group.warm_up_time(Duration::from_secs(1));
+    group.plot_config(PlotConfiguration::default().summary_scale(AxisScale::Logarithmic));
 
     for set in input_sets.iter() {
         let l = set.len();
