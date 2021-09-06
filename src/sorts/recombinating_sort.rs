@@ -1,12 +1,13 @@
 use crate::director::director;
-use crate::lsb_radix_sort::lsb_radix_sort_adapter;
-use crate::ska_sort::ska_sort;
+use crate::sorts::lsb_radix_sort::lsb_radix_sort_adapter;
+use crate::sorts::ska_sort::ska_sort;
 use crate::utils::*;
 use crate::RadixKey;
 use arbitrary_chunks::ArbitraryChunks;
 use rayon::prelude::*;
+use crate::tuning_parameters::TuningParameters;
 
-pub fn recombinating_sort<T>(bucket: &mut [T], level: usize)
+pub fn recombinating_sort<T>(tuning: &TuningParameters, bucket: &mut [T], level: usize)
 where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
@@ -74,5 +75,5 @@ where
     bucket
         .arbitrary_chunks_mut(global_counts.to_vec())
         .par_bridge()
-        .for_each(|chunk| director(chunk, len, level - 1));
+        .for_each(|chunk| director(tuning, chunk, len, level - 1));
 }

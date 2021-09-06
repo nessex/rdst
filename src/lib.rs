@@ -94,36 +94,28 @@
 mod tests;
 
 mod director;
-mod lsb_radix_sort;
 mod radix_key;
 #[cfg(feature = "default-implementations")]
 mod radix_key_impl;
-mod recombinating_sort;
-mod scanning_radix_sort;
-mod ska_sort;
+
+#[cfg(not(any(test, feature = "bench")))]
+mod sorts;
+#[cfg(any(test, feature = "bench"))]
+pub mod sorts;
+
+#[cfg(not(any(test, feature = "bench")))]
 mod tuning_parameters;
+#[cfg(any(test, feature = "bench"))]
+pub mod tuning_parameters;
+
+#[cfg(not(any(test, feature = "bench")))]
 mod utils;
+#[cfg(any(test, feature = "bench"))]
+pub mod utils;
+
 mod radix_sort;
+mod sort_manager;
 
 // Public exports
 pub use radix_key::RadixKey;
 pub use radix_sort::RadixSort;
-
-// Exposed for benchmarking
-#[cfg(any(test, feature = "bench"))]
-pub use crate::ska_sort::ska_sort;
-#[cfg(any(test, feature = "bench"))]
-pub use crate::tuning_parameters::TuningParameters;
-#[cfg(any(test, feature = "bench"))]
-pub use lsb_radix_sort::lsb_radix_sort_adapter;
-#[cfg(any(test, feature = "bench"))]
-pub use scanning_radix_sort::scanning_radix_sort;
-#[cfg(any(test, feature = "bench"))]
-pub use utils::*;
-
-#[cfg(not(any(test, feature = "bench")))]
-use crate::lsb_radix_sort::lsb_radix_sort_adapter;
-#[cfg(not(any(test, feature = "bench")))]
-use crate::scanning_radix_sort::scanning_radix_sort;
-#[cfg(not(any(test, feature = "bench")))]
-use crate::tuning_parameters::TuningParameters;

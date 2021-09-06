@@ -4,7 +4,6 @@ use crate::utils::*;
 use crate::RadixKey;
 use arbitrary_chunks::ArbitraryChunks;
 use itertools::Itertools;
-use rayon::prelude::*;
 
 // Based upon (with modifications):
 // https://probablydance.com/2016/12/27/i-wrote-a-faster-sorting-algorithm/
@@ -49,7 +48,7 @@ where
     }
 }
 
-pub fn ska_sort_adapter<T>(bucket: &mut [T], level: usize)
+pub fn ska_sort_adapter<T>(tuning: &TuningParameters, bucket: &mut [T], level: usize)
 where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
@@ -70,5 +69,5 @@ where
 
     bucket
         .arbitrary_chunks_mut(counts.to_vec())
-        .for_each(|chunk| director(chunk, len, level - 1));
+        .for_each(|chunk| director(tuning, chunk, len, level - 1));
 }

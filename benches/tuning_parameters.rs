@@ -1,9 +1,10 @@
 use criterion::*;
 use nanorand::{Rng, WyRand};
-use rdst::{
-    get_counts, lsb_radix_sort_adapter, par_get_counts, scanning_radix_sort, ska_sort,
-    TuningParameters,
-};
+use rdst::utils::*;
+use rdst::sorts::ska_sort::ska_sort;
+use rdst::sorts::scanning_radix_sort::scanning_radix_sort;
+use rdst::sorts::lsb_radix_sort::lsb_radix_sort_adapter;
+use rdst::tuning_parameters::TuningParameters;
 use std::time::Duration;
 
 fn counts(c: &mut Criterion) {

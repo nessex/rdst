@@ -72,6 +72,7 @@ where
         } else {
             continue;
         };
+
         lsb_radix_sort(bucket, &mut tmp_bucket, &counts, level);
     }
 }
