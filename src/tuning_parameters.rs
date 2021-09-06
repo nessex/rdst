@@ -22,11 +22,11 @@ impl TuningParameters {
     }
 
     fn recombinating_sort_threshold() -> usize {
-        350_000
+        150_000
     }
 
     fn scanning_sort_threshold() -> usize {
-        200_000
+        10_000_000
     }
 
     fn ska_sort_threshold(levels: usize) -> usize {

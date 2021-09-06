@@ -2,6 +2,7 @@ use crate::sorts::lsb_radix_sort::lsb_radix_sort_adapter;
 use crate::sorts::scanning_radix_sort::scanning_radix_sort;
 use crate::tuning_parameters::TuningParameters;
 use crate::RadixKey;
+use crate::sorts::recombinating_sort::recombinating_sort;
 
 pub struct SortManager {
     tuning: TuningParameters,
@@ -33,6 +34,8 @@ impl SortManager {
 
         if bucket.len() >= self.tuning.scanning_sort_threshold {
             scanning_radix_sort(&self.tuning, bucket, T::LEVELS - 1, parallel_count);
+        } else if bucket.len() >= self.tuning.recombinating_sort_threshold {
+            recombinating_sort(&self.tuning, bucket, T::LEVELS - 1);
         } else {
             lsb_radix_sort_adapter(bucket, 0, T::LEVELS - 1);
         }
