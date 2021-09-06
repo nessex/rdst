@@ -1,324 +1,68 @@
-use criterion::{
-    black_box, criterion_group, criterion_main, BatchSize, BenchmarkId, Criterion, Throughput,
-};
-use nanorand::{Rng, WyRand};
-use rdst::RadixSort;
-use std::time::Duration;
-use voracious_radix_sort::RadixSort as Vor;
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use nanorand::{RandomGen, WyRand};
+use rdst::test_utils::bench_common;
+use rdst::{RadixKey, RadixSort};
+use std::fmt::Debug;
+use std::ops::{Shl, Shr};
+use voracious_radix_sort::{RadixKey as VorKey, RadixSort as Vor, Radixable};
 
-fn full_sort_u32(c: &mut Criterion) {
-    let n = 500_000_000;
-    let mut inputs = Vec::with_capacity(n);
-    let mut rng = WyRand::new();
-
-    for _ in 0..n {
-        inputs.push(rng.generate::<u32>());
-    }
-
-    let input_sets: Vec<Vec<u32>> = vec![
-        inputs.clone(),
-        inputs[..200_000_000].to_vec(),
-        inputs[..100_000_000].to_vec(),
-        inputs[..50_000_000].to_vec(),
-        inputs[..10_000_000].to_vec(),
-        inputs[..5_000_000].to_vec(),
-        inputs[..4_000_000].to_vec(),
-        inputs[..3_000_000].to_vec(),
-        inputs[..2_000_000].to_vec(),
-        inputs[..1_000_000].to_vec(),
-        inputs[..500_000].to_vec(),
-        inputs[..300_000].to_vec(),
-        inputs[..200_000].to_vec(),
-        inputs[..100_000].to_vec(),
-        inputs[..50_000].to_vec(),
-        inputs[..10_000].to_vec(),
-        inputs[..5_000].to_vec(),
+fn full_sort_common<T>(c: &mut Criterion, shift: T, name_suffix: &str)
+where
+    T: RadixKey
+        + Ord
+        + RandomGen<WyRand>
+        + Clone
+        + Debug
+        + Send
+        + Sized
+        + Copy
+        + Sync
+        + Shl<Output = T>
+        + Shr<Output = T>
+        + Radixable<T>
+        + VorKey,
+{
+    let tests: Vec<(&str, Box<dyn Fn(Vec<_>)>)> = vec![
+        (
+            "rdst",
+            Box::new(|mut input| {
+                input.radix_sort_unstable();
+                black_box(input);
+            }),
+        ),
+        (
+            "voracious",
+            Box::new(|mut input| {
+                input.voracious_mt_sort(num_cpus::get());
+                black_box(input);
+            }),
+        ),
     ];
 
-    drop(inputs);
+    bench_common(c, shift, &("full_sort_".to_owned() + name_suffix), tests);
+}
 
-    let mut group = c.benchmark_group("full_sort_u32");
-    group.sample_size(10);
-    group.measurement_time(Duration::from_secs(5));
-    group.warm_up_time(Duration::from_secs(1));
-    for set in input_sets.iter() {
-        let l = set.len();
-        group.throughput(Throughput::Elements(l as u64));
-        group.bench_with_input(BenchmarkId::new("rdst", l), set, |bench, set| {
-            bench.iter_batched(
-                || set.clone(),
-                |mut input| {
-                    input.radix_sort_unstable();
-                    black_box(input);
-                },
-                BatchSize::SmallInput,
-            );
-        });
-
-        group.bench_with_input(BenchmarkId::new("voracious", l), set, |bench, set| {
-            bench.iter_batched(
-                || set.clone(),
-                |mut input| {
-                    input.voracious_mt_sort(num_cpus::get());
-                    black_box(input);
-                },
-                BatchSize::SmallInput,
-            );
-        });
-    }
-    group.finish();
+fn full_sort_u32(c: &mut Criterion) {
+    full_sort_common(c, 0u32, "u32");
 }
 
 fn full_sort_u64(c: &mut Criterion) {
-    let n = 200_000_000;
-    let mut inputs = Vec::with_capacity(n);
-    let mut rng = WyRand::new();
-
-    for _ in 0..n {
-        inputs.push(rng.generate::<u64>());
-    }
-
-    let input_sets: Vec<Vec<u64>> = vec![
-        inputs.clone(),
-        inputs[..100_000_000].to_vec(),
-        inputs[..50_000_000].to_vec(),
-        inputs[..10_000_000].to_vec(),
-        inputs[..5_000_000].to_vec(),
-        inputs[..2_000_000].to_vec(),
-        inputs[..1_000_000].to_vec(),
-        inputs[..500_000].to_vec(),
-        inputs[..300_000].to_vec(),
-        inputs[..200_000].to_vec(),
-        inputs[..100_000].to_vec(),
-        inputs[..50_000].to_vec(),
-        inputs[..10_000].to_vec(),
-        inputs[..5_000].to_vec(),
-    ];
-
-    drop(inputs);
-
-    let mut group = c.benchmark_group("full_sort_u64");
-    group.sample_size(10);
-    group.measurement_time(Duration::from_secs(5));
-    group.warm_up_time(Duration::from_secs(1));
-    for set in input_sets.iter() {
-        let l = set.len();
-        group.throughput(Throughput::Elements(l as u64));
-        group.bench_with_input(BenchmarkId::new("rdst", l), set, |bench, set| {
-            bench.iter_batched(
-                || set.clone(),
-                |mut input| {
-                    input.radix_sort_unstable();
-                    black_box(input);
-                },
-                BatchSize::SmallInput,
-            );
-        });
-
-        group.bench_with_input(BenchmarkId::new("voracious", l), set, |bench, set| {
-            bench.iter_batched(
-                || set.clone(),
-                |mut input| {
-                    input.voracious_mt_sort(num_cpus::get());
-                    black_box(input);
-                },
-                BatchSize::SmallInput,
-            );
-        });
-    }
-    group.finish();
+    full_sort_common(c, 0u64, "u64");
 }
 
-fn full_sort_u64_truncated(c: &mut Criterion) {
-    let n = 100_000_000;
-    let mut inputs = Vec::with_capacity(n);
-    let mut rng = WyRand::new();
-
-    for _ in 0..n {
-        inputs.push(rng.generate::<u32>() as u64);
-    }
-
-    let input_sets: Vec<Vec<u64>> = vec![
-        inputs.clone(),
-        inputs[..50_000_000].to_vec(),
-        inputs[..10_000_000].to_vec(),
-        inputs[..5_000_000].to_vec(),
-        inputs[..2_000_000].to_vec(),
-        inputs[..1_000_000].to_vec(),
-        inputs[..500_000].to_vec(),
-        inputs[..300_000].to_vec(),
-        inputs[..200_000].to_vec(),
-        inputs[..100_000].to_vec(),
-        inputs[..50_000].to_vec(),
-        inputs[..10_000].to_vec(),
-        inputs[..5_000].to_vec(),
-    ];
-
-    drop(inputs);
-
-    let mut group = c.benchmark_group("full_sort_u64_truncated");
-    group.sample_size(10);
-    group.measurement_time(Duration::from_secs(5));
-    group.warm_up_time(Duration::from_secs(1));
-    for set in input_sets.iter() {
-        let l = set.len();
-        group.throughput(Throughput::Elements(l as u64));
-        group.bench_with_input(BenchmarkId::new("rdst", l), set, |bench, set| {
-            bench.iter_batched(
-                || set.clone(),
-                |mut input| {
-                    input.radix_sort_unstable();
-                    black_box(input);
-                },
-                BatchSize::SmallInput,
-            );
-        });
-
-        group.bench_with_input(BenchmarkId::new("voracious", l), set, |bench, set| {
-            bench.iter_batched(
-                || set.clone(),
-                |mut input| {
-                    input.voracious_mt_sort(num_cpus::get());
-                    black_box(input);
-                },
-                BatchSize::SmallInput,
-            );
-        });
-    }
-    group.finish();
+fn full_sort_u32_bimodal(c: &mut Criterion) {
+    full_sort_common(c, 16u32, "u32_bimodal");
 }
 
 fn full_sort_u64_bimodal(c: &mut Criterion) {
-    let n = 200_000_000;
-    let mut inputs = Vec::with_capacity(n);
-    let mut rng = WyRand::new();
-    let shift = 32u64;
-
-    for _ in 0..(n / 2) {
-        inputs.push(rng.generate::<u64>() >> shift);
-    }
-
-    for _ in 0..(n / 2) {
-        inputs.push(rng.generate::<u64>() << shift);
-    }
-
-    let input_sets: Vec<Vec<u64>> = vec![
-        inputs.clone(),
-        inputs[50_000_000..150_000_000].to_vec(),
-        inputs[75_000_000..125_000_000].to_vec(),
-        inputs[95_000_000..105_000_000].to_vec(),
-        inputs[97_500_000..102_500_000].to_vec(),
-        inputs[99_000_000..101_000_000].to_vec(),
-        inputs[99_500_000..100_500_000].to_vec(),
-        inputs[99_750_000..100_250_000].to_vec(),
-        inputs[99_850_000..100_150_000].to_vec(),
-        inputs[99_900_000..100_100_000].to_vec(),
-        inputs[99_950_000..100_050_000].to_vec(),
-        inputs[99_975_000..100_025_000].to_vec(),
-        inputs[99_995_000..100_005_000].to_vec(),
-        inputs[99_997_500..100_002_500].to_vec(),
-    ];
-
-    drop(inputs);
-
-    let mut group = c.benchmark_group("full_sort_u64_bimodal");
-    group.sample_size(10);
-    group.measurement_time(Duration::from_secs(5));
-    group.warm_up_time(Duration::from_secs(1));
-    for set in input_sets.iter() {
-        let l = set.len();
-        group.throughput(Throughput::Elements(l as u64));
-        group.bench_with_input(BenchmarkId::new("rdst", l), set, |bench, set| {
-            bench.iter_batched(
-                || set.clone(),
-                |mut input| {
-                    input.radix_sort_unstable();
-                    black_box(input);
-                },
-                BatchSize::SmallInput,
-            );
-        });
-
-        group.bench_with_input(BenchmarkId::new("voracious", l), set, |bench, set| {
-            bench.iter_batched(
-                || set.clone(),
-                |mut input| {
-                    input.voracious_mt_sort(num_cpus::get());
-                    black_box(input);
-                },
-                BatchSize::SmallInput,
-            );
-        });
-    }
-    group.finish();
-}
-
-fn full_sort_u64_truncated_shifted(c: &mut Criterion) {
-    let n = 200_000_000;
-    let mut inputs = Vec::with_capacity(n);
-    let mut rng = WyRand::new();
-
-    for _ in 0..n {
-        inputs.push((rng.generate::<u32>() as u64) << 16);
-    }
-
-    let input_sets: Vec<Vec<u64>> = vec![
-        inputs.clone(),
-        inputs[..100_000_000].to_vec(),
-        inputs[..50_000_000].to_vec(),
-        inputs[..10_000_000].to_vec(),
-        inputs[..5_000_000].to_vec(),
-        inputs[..2_000_000].to_vec(),
-        inputs[..1_000_000].to_vec(),
-        inputs[..500_000].to_vec(),
-        inputs[..300_000].to_vec(),
-        inputs[..200_000].to_vec(),
-        inputs[..100_000].to_vec(),
-        inputs[..50_000].to_vec(),
-        inputs[..10_000].to_vec(),
-        inputs[..5_000].to_vec(),
-    ];
-
-    drop(inputs);
-
-    let mut group = c.benchmark_group("full_sort_u64_truncated_shifted");
-    group.sample_size(10);
-    group.measurement_time(Duration::from_secs(5));
-    group.warm_up_time(Duration::from_secs(1));
-    for set in input_sets.iter() {
-        let l = set.len();
-        group.throughput(Throughput::Elements(l as u64));
-        group.bench_with_input(BenchmarkId::new("rdst", l), set, |bench, set| {
-            bench.iter_batched(
-                || set.clone(),
-                |mut input| {
-                    input.radix_sort_unstable();
-                    black_box(input);
-                },
-                BatchSize::SmallInput,
-            );
-        });
-
-        group.bench_with_input(BenchmarkId::new("voracious", l), set, |bench, set| {
-            bench.iter_batched(
-                || set.clone(),
-                |mut input| {
-                    input.voracious_mt_sort(num_cpus::get());
-                    black_box(input);
-                },
-                BatchSize::SmallInput,
-            );
-        });
-    }
-    group.finish();
+    full_sort_common(c, 32u64, "u64_bimodal");
 }
 
 criterion_group!(
     benches,
     full_sort_u32,
     full_sort_u64,
+    full_sort_u32_bimodal,
     full_sort_u64_bimodal,
-    full_sort_u64_truncated,
-    full_sort_u64_truncated_shifted,
 );
 criterion_main!(benches);

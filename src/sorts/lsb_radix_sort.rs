@@ -79,28 +79,30 @@ where
 
 #[cfg(test)]
 mod tests {
+    use crate::sorts::lsb_radix_sort::lsb_radix_sort_adapter;
     use crate::test_utils::sort_comparison_suite;
     use crate::RadixKey;
     use nanorand::{RandomGen, WyRand};
     use std::fmt::Debug;
     use std::ops::{Shl, Shr};
-    use crate::sorts::lsb_radix_sort::lsb_radix_sort_adapter;
 
     fn test_lsb_radix_sort_adapter<T>(shift: T)
     where
         T: RadixKey
-        + Ord
-        + RandomGen<WyRand>
-        + Clone
-        + Debug
-        + Send
-        + Sized
-        + Copy
-        + Sync
-        + Shl<Output = T>
-        + Shr<Output = T>,
+            + Ord
+            + RandomGen<WyRand>
+            + Clone
+            + Debug
+            + Send
+            + Sized
+            + Copy
+            + Sync
+            + Shl<Output = T>
+            + Shr<Output = T>,
     {
-        sort_comparison_suite(shift, |inputs| lsb_radix_sort_adapter(inputs, 0, T::LEVELS - 1));
+        sort_comparison_suite(shift, |inputs| {
+            lsb_radix_sort_adapter(inputs, 0, T::LEVELS - 1)
+        });
     }
 
     #[test]

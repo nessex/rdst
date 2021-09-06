@@ -3,11 +3,11 @@ use crate::tuning_parameters::TuningParameters;
 use crate::utils::*;
 use crate::RadixKey;
 use arbitrary_chunks::ArbitraryChunks;
+use partition::partition_index;
 use rayon::prelude::*;
 use std::cmp::min;
 use std::ptr::copy_nonoverlapping;
 use try_mutex::TryMutex;
-use partition::partition_index;
 
 struct ScannerBucketInner<'a, T> {
     write_head: usize,
@@ -88,9 +88,7 @@ fn scanner_thread<T>(
                 guard.locally_partitioned = true;
                 let index = m.index as u8;
 
-                let start = partition_index(&mut guard.chunk, |v| {
-                    v.get_level(level) == index
-                });
+                let start = partition_index(&mut guard.chunk, |v| v.get_level(level) == index);
 
                 guard.read_head = start;
                 guard.write_head = start;
@@ -230,30 +228,32 @@ pub fn scanning_radix_sort<T>(
 
 #[cfg(test)]
 mod tests {
+    use crate::sorts::scanning_radix_sort::scanning_radix_sort;
     use crate::test_utils::sort_comparison_suite;
+    use crate::tuning_parameters::TuningParameters;
     use crate::RadixKey;
     use nanorand::{RandomGen, WyRand};
     use std::fmt::Debug;
     use std::ops::{Shl, Shr};
-    use crate::tuning_parameters::TuningParameters;
-    use crate::sorts::scanning_radix_sort::scanning_radix_sort;
 
     fn test_scanning_sort<T>(shift: T)
     where
         T: RadixKey
-        + Ord
-        + RandomGen<WyRand>
-        + Clone
-        + Debug
-        + Send
-        + Sized
-        + Copy
-        + Sync
-        + Shl<Output = T>
-        + Shr<Output = T>,
+            + Ord
+            + RandomGen<WyRand>
+            + Clone
+            + Debug
+            + Send
+            + Sized
+            + Copy
+            + Sync
+            + Shl<Output = T>
+            + Shr<Output = T>,
     {
         let tuning = TuningParameters::new(T::LEVELS);
-        sort_comparison_suite(shift, |inputs| scanning_radix_sort(&tuning, inputs, T::LEVELS - 1, false));
+        sort_comparison_suite(shift, |inputs| {
+            scanning_radix_sort(&tuning, inputs, T::LEVELS - 1, false)
+        });
     }
 
     #[test]

@@ -1,11 +1,15 @@
 use crate::sorts::lsb_radix_sort::lsb_radix_sort_adapter;
 use crate::sorts::recombinating_sort::recombinating_sort;
 use crate::sorts::ska_sort::ska_sort_adapter;
-use crate::RadixKey;
 use crate::tuning_parameters::TuningParameters;
+use crate::RadixKey;
 
-pub fn director<T>(tuning: &TuningParameters, bucket: &mut [T], level_total_len: usize, level: usize)
-where
+pub fn director<T>(
+    tuning: &TuningParameters,
+    bucket: &mut [T],
+    level_total_len: usize,
+    level: usize,
+) where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
     // len_limit allows for detecting buckets which are significantly larger than

@@ -52,12 +52,12 @@ pub fn ska_sort_adapter<T>(tuning: &TuningParameters, bucket: &mut [T], level: u
 where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
-    let (counts, level) =
-        if let Some(s) = get_counts_and_level_descending(bucket, level, 0, false) {
-            s
-        } else {
-            return;
-        };
+    let (counts, level) = if let Some(s) = get_counts_and_level_descending(bucket, level, 0, false)
+    {
+        s
+    } else {
+        return;
+    };
 
     ska_sort(bucket, &counts, level);
 
@@ -74,30 +74,32 @@ where
 
 #[cfg(test)]
 mod tests {
+    use crate::sorts::ska_sort::ska_sort_adapter;
     use crate::test_utils::sort_comparison_suite;
+    use crate::tuning_parameters::TuningParameters;
     use crate::RadixKey;
     use nanorand::{RandomGen, WyRand};
     use std::fmt::Debug;
     use std::ops::{Shl, Shr};
-    use crate::tuning_parameters::TuningParameters;
-    use crate::sorts::ska_sort::ska_sort_adapter;
 
     fn test_ska_sort_adapter<T>(shift: T)
     where
         T: RadixKey
-        + Ord
-        + RandomGen<WyRand>
-        + Clone
-        + Debug
-        + Send
-        + Sized
-        + Copy
-        + Sync
-        + Shl<Output = T>
-        + Shr<Output = T>,
+            + Ord
+            + RandomGen<WyRand>
+            + Clone
+            + Debug
+            + Send
+            + Sized
+            + Copy
+            + Sync
+            + Shl<Output = T>
+            + Shr<Output = T>,
     {
         let tuning = TuningParameters::new(T::LEVELS);
-        sort_comparison_suite(shift, |inputs| ska_sort_adapter(&tuning, inputs, T::LEVELS - 1));
+        sort_comparison_suite(shift, |inputs| {
+            ska_sort_adapter(&tuning, inputs, T::LEVELS - 1)
+        });
     }
 
     #[test]

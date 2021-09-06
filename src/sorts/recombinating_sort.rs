@@ -1,10 +1,10 @@
 use crate::director::director;
 use crate::sorts::ska_sort::ska_sort;
+use crate::tuning_parameters::TuningParameters;
 use crate::utils::*;
 use crate::RadixKey;
 use arbitrary_chunks::ArbitraryChunks;
 use rayon::prelude::*;
-use crate::tuning_parameters::TuningParameters;
 
 pub fn recombinating_sort<T>(tuning: &TuningParameters, bucket: &mut [T], level: usize)
 where
@@ -79,30 +79,32 @@ where
 
 #[cfg(test)]
 mod tests {
+    use crate::sorts::recombinating_sort::recombinating_sort;
     use crate::test_utils::sort_comparison_suite;
+    use crate::tuning_parameters::TuningParameters;
     use crate::RadixKey;
     use nanorand::{RandomGen, WyRand};
     use std::fmt::Debug;
     use std::ops::{Shl, Shr};
-    use crate::tuning_parameters::TuningParameters;
-    use crate::sorts::recombinating_sort::recombinating_sort;
 
     fn test_recombinating_sort<T>(shift: T)
     where
         T: RadixKey
-        + Ord
-        + RandomGen<WyRand>
-        + Clone
-        + Debug
-        + Send
-        + Sized
-        + Copy
-        + Sync
-        + Shl<Output = T>
-        + Shr<Output = T>,
+            + Ord
+            + RandomGen<WyRand>
+            + Clone
+            + Debug
+            + Send
+            + Sized
+            + Copy
+            + Sync
+            + Shl<Output = T>
+            + Shr<Output = T>,
     {
         let tuning = TuningParameters::new(T::LEVELS);
-        sort_comparison_suite(shift, |inputs| recombinating_sort(&tuning, inputs, T::LEVELS - 1));
+        sort_comparison_suite(shift, |inputs| {
+            recombinating_sort(&tuning, inputs, T::LEVELS - 1)
+        });
     }
 
     #[test]

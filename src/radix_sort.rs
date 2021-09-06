@@ -1,5 +1,5 @@
-use crate::RadixKey;
 use crate::sort_manager::SortManager;
+use crate::RadixKey;
 
 pub trait RadixSort {
     /// radix_sort_unstable runs the actual radix sort based upon the `rdst::RadixKey` implementation
@@ -18,8 +18,8 @@ where
 }
 
 impl<T> RadixSort for [T]
-    where
-        T: RadixKey + Sized + Send + Copy + Sync,
+where
+    T: RadixKey + Sized + Send + Copy + Sync,
 {
     fn radix_sort_unstable(&mut self) {
         let sm = SortManager::new::<T>();
@@ -38,16 +38,16 @@ mod tests {
     fn test_full_sort<T>(shift: T)
     where
         T: RadixKey
-        + Ord
-        + RandomGen<WyRand>
-        + Clone
-        + Debug
-        + Send
-        + Sized
-        + Copy
-        + Sync
-        + Shl<Output = T>
-        + Shr<Output = T>,
+            + Ord
+            + RandomGen<WyRand>
+            + Clone
+            + Debug
+            + Send
+            + Sized
+            + Copy
+            + Sync
+            + Shl<Output = T>
+            + Shr<Output = T>,
     {
         sort_comparison_suite(shift, |inputs| inputs.radix_sort_unstable());
     }
