@@ -51,7 +51,7 @@ where
             "scanning_radix_sort",
             Box::new(|mut input| {
                 let tuning = TuningParameters::new(4);
-                scanning_radix_sort(&tuning, &mut input, 3, false);
+                scanning_radix_sort(&tuning, &mut input, 3, true);
                 black_box(input);
             }),
         ),
