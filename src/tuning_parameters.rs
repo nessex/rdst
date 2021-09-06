@@ -1,6 +1,7 @@
 use std::cmp::min;
 
 pub struct TuningParameters {
+    pub cpus: usize,
     pub recombinating_sort_threshold: usize,
     pub scanning_sort_threshold: usize,
     pub ska_sort_threshold: usize,
@@ -11,6 +12,7 @@ pub struct TuningParameters {
 impl TuningParameters {
     pub fn new(levels: usize) -> Self {
         Self {
+            cpus: num_cpus::get(),
             recombinating_sort_threshold: Self::recombinating_sort_threshold(),
             scanning_sort_threshold: Self::scanning_sort_threshold(),
             ska_sort_threshold: Self::ska_sort_threshold(levels),

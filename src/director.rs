@@ -14,7 +14,7 @@ pub fn director<T>(
 {
     // len_limit allows for detecting buckets which are significantly larger than
     // the rest of their cohort.
-    let len_limit = ((level_total_len / num_cpus::get()) as f64 * 1.4) as usize;
+    let len_limit = ((level_total_len / tuning.cpus) as f64 * 1.4) as usize;
 
     if bucket.len() > len_limit && bucket.len() >= tuning.recombinating_sort_threshold {
         recombinating_sort(tuning, bucket, level);

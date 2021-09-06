@@ -12,7 +12,7 @@ where
 {
     let mut tmp_bucket: Vec<T> = get_tmp_bucket::<T>(bucket.len());
 
-    let threads = num_cpus::get();
+    let threads = tuning.cpus;
     let chunk_size = (bucket.len() / threads) + 1;
 
     let locals: Vec<([usize; 256], [usize; 256])> = bucket

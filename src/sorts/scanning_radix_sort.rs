@@ -189,8 +189,7 @@ pub fn scanning_radix_sort<T>(
 
     let len = bucket.len();
     let scanner_buckets = get_scanner_buckets(&msb_counts, bucket);
-    let cpus = num_cpus::get();
-    let threads = min(cpus, scanner_buckets.len());
+    let threads = min(tuning.cpus, scanner_buckets.len());
 
     rayon::scope(|s| {
         for _ in 0..threads {
@@ -205,7 +204,7 @@ pub fn scanning_radix_sort<T>(
         return;
     }
 
-    let len_limit = ((len / cpus) as f64 * 1.4) as usize;
+    let len_limit = ((len / tuning.cpus) as f64 * 1.4) as usize;
     let mut long_chunks = Vec::new();
     let mut average_chunks = Vec::with_capacity(256);
 
