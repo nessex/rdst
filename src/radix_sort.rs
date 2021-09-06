@@ -1,7 +1,4 @@
 use crate::RadixKey;
-use crate::tuning_parameters::TuningParameters;
-use crate::sorts::lsb_radix_sort::lsb_radix_sort_adapter;
-use crate::sorts::scanning_radix_sort::scanning_radix_sort;
 use crate::sort_manager::SortManager;
 
 pub trait RadixSort {

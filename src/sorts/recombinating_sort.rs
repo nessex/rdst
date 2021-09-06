@@ -1,5 +1,4 @@
 use crate::director::director;
-use crate::sorts::lsb_radix_sort::lsb_radix_sort_adapter;
 use crate::sorts::ska_sort::ska_sort;
 use crate::utils::*;
 use crate::RadixKey;
@@ -81,7 +80,7 @@ where
 #[cfg(test)]
 mod tests {
     use crate::test_utils::sort_comparison_suite;
-    use crate::{RadixKey, RadixSort};
+    use crate::RadixKey;
     use nanorand::{RandomGen, WyRand};
     use std::fmt::Debug;
     use std::ops::{Shl, Shr};

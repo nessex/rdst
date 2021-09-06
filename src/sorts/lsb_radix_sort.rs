@@ -80,7 +80,7 @@ where
 #[cfg(test)]
 mod tests {
     use crate::test_utils::sort_comparison_suite;
-    use crate::{RadixKey, RadixSort};
+    use crate::RadixKey;
     use nanorand::{RandomGen, WyRand};
     use std::fmt::Debug;
     use std::ops::{Shl, Shr};

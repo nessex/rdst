@@ -2,12 +2,10 @@ use nanorand::{RandomGen, Rng, WyRand};
 use rdst::{RadixKey, RadixSort};
 use std::fmt::{Debug, Display};
 use std::ops::{Shl, Shr};
-use voracious_radix_sort::{RadixSort as Vor, Radixable};
 
 fn run<T>(shift: T)
 where
     T: RadixKey
-        + Radixable<u64>
         + Ord
         + RandomGen<WyRand>
         + Clone
