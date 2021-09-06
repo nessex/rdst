@@ -1,6 +1,6 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use nanorand::{RandomGen, WyRand};
-use rdst::test_utils::bench_common;
+use rdst::bench_utils::bench_common;
 use rdst::{RadixKey, RadixSort};
 use std::fmt::Debug;
 use std::ops::{Shl, Shr};

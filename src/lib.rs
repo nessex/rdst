@@ -110,6 +110,9 @@ mod utils;
 #[cfg(any(test, feature = "bench"))]
 pub mod utils;
 
+#[cfg(feature = "bench")]
+pub mod bench_utils;
+
 #[cfg(any(test, feature = "bench"))]
 pub mod test_utils;
 

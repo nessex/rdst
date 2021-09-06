@@ -1,8 +1,8 @@
 use crate::sorts::lsb_radix_sort::lsb_radix_sort_adapter;
+use crate::sorts::recombinating_sort::recombinating_sort;
 use crate::sorts::scanning_radix_sort::scanning_radix_sort;
 use crate::tuning_parameters::TuningParameters;
 use crate::RadixKey;
-use crate::sorts::recombinating_sort::recombinating_sort;
 
 pub struct SortManager {
     tuning: TuningParameters,

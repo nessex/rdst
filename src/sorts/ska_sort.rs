@@ -48,6 +48,7 @@ where
     }
 }
 
+#[allow(dead_code)]
 pub fn ska_sort_adapter<T>(tuning: &TuningParameters, bucket: &mut [T], level: usize)
 where
     T: RadixKey + Sized + Send + Copy + Sync,
