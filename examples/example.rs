@@ -1,5 +1,5 @@
+use nanorand::{RandomGen, Rng, WyRand};
 use rdst::{RadixKey, RadixSort};
-use nanorand::{RandomGen, WyRand, Rng};
 use std::fmt::{Debug, Display};
 use std::ops::{Shl, Shr};
 use voracious_radix_sort::{RadixSort as Vor, Radixable};
@@ -7,17 +7,17 @@ use voracious_radix_sort::{RadixSort as Vor, Radixable};
 fn run<T>(shift: T)
 where
     T: RadixKey
-    + Radixable<u64>
-    + Ord
-    + RandomGen<WyRand>
-    + Clone
-    + Debug
-    + Display
-    + Send
-    + Copy
-    + Sync
-    + Shl<Output = T>
-    + Shr<Output = T>,
+        + Radixable<u64>
+        + Ord
+        + RandomGen<WyRand>
+        + Clone
+        + Debug
+        + Display
+        + Send
+        + Copy
+        + Sync
+        + Shl<Output = T>
+        + Shr<Output = T>,
 {
     let n = 200_000_000;
     let mut inputs: Vec<T> = Vec::with_capacity(n);

@@ -189,6 +189,7 @@ pub fn scanning_radix_sort<T>(
             return;
         };
 
+    let len = bucket.len();
     let scanner_buckets = get_scanner_buckets(&msb_counts, bucket);
     let cpus = num_cpus::get();
     let threads = min(cpus, scanner_buckets.len());
@@ -206,8 +207,23 @@ pub fn scanning_radix_sort<T>(
         return;
     }
 
-    bucket
-        .arbitrary_chunks_mut(msb_counts.to_vec())
-        .par_bridge()
-        .for_each(|chunk| director(tuning, chunk, level - 1, false));
+    let len_limit = ((len / cpus) as f64 * 1.4) as usize;
+    let mut long_chunks = Vec::new();
+    let mut average_chunks = Vec::with_capacity(256);
+
+    for chunk in bucket.arbitrary_chunks_mut(msb_counts.to_vec()) {
+        if chunk.len() > len_limit && chunk.len() > tuning.scanning_sort_threshold {
+            long_chunks.push(chunk);
+        } else {
+            average_chunks.push(chunk);
+        }
+    }
+
+    long_chunks
+        .into_iter()
+        .for_each(|chunk| scanning_radix_sort(tuning, chunk, level - 1, true));
+
+    average_chunks
+        .into_par_iter()
+        .for_each(|chunk| director(chunk, len, level - 1));
 }

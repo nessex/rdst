@@ -95,11 +95,12 @@ mod tests;
 
 mod director;
 mod lsb_radix_sort;
-mod msb_ska_sort;
 mod radix_key;
 #[cfg(feature = "default-implementations")]
 mod radix_key_impl;
+mod recombinating_sort;
 mod scanning_radix_sort;
+mod ska_sort;
 mod tuning_parameters;
 mod utils;
 
@@ -107,13 +108,13 @@ pub use radix_key::RadixKey;
 
 // Exposed for benchmarking
 #[cfg(any(test, feature = "bench"))]
-pub use crate::msb_ska_sort::msb_ska_sort;
+pub use crate::ska_sort::ska_sort;
 #[cfg(any(test, feature = "bench"))]
 pub use crate::tuning_parameters::TuningParameters;
 #[cfg(any(test, feature = "bench"))]
 pub use lsb_radix_sort::lsb_radix_sort_adapter;
 #[cfg(any(test, feature = "bench"))]
-pub use scanning_radix_sort::*;
+pub use scanning_radix_sort::scanning_radix_sort;
 #[cfg(any(test, feature = "bench"))]
 pub use utils::*;
 
@@ -137,7 +138,7 @@ where
     if bucket.len() >= tuning.scanning_sort_threshold {
         scanning_radix_sort(tuning, bucket, T::LEVELS - 1, parallel_count);
     } else {
-        lsb_radix_sort_adapter(bucket, 0, T::LEVELS - 1, parallel_count);
+        lsb_radix_sort_adapter(bucket, 0, T::LEVELS - 1);
     }
 }
 

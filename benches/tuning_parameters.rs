@@ -1,7 +1,7 @@
 use criterion::*;
 use nanorand::{Rng, WyRand};
 use rdst::{
-    get_counts, lsb_radix_sort_adapter, msb_ska_sort, par_get_counts, scanning_radix_sort,
+    get_counts, lsb_radix_sort_adapter, par_get_counts, scanning_radix_sort, ska_sort,
     TuningParameters,
 };
 use std::time::Duration;
@@ -113,7 +113,7 @@ fn scanning_sort(c: &mut Criterion) {
                 bench.iter_batched(
                     || set.clone(),
                     |mut input| {
-                        scanning_radix_sort(&tuning, &mut input, 3, true);
+                        scanning_radix_sort(&tuning, &mut input, 3, false);
                         black_box(input);
                     },
                     BatchSize::SmallInput,
@@ -125,7 +125,7 @@ fn scanning_sort(c: &mut Criterion) {
             bench.iter_batched(
                 || set.clone(),
                 |mut input| {
-                    lsb_radix_sort_adapter(&mut input, 0, 3, true);
+                    lsb_radix_sort_adapter(&mut input, 0, 3);
                     black_box(input);
                 },
                 BatchSize::SmallInput,
@@ -135,7 +135,7 @@ fn scanning_sort(c: &mut Criterion) {
     group.finish();
 }
 
-fn ska_sort(c: &mut Criterion) {
+fn bench_ska_sort(c: &mut Criterion) {
     let n = 10_000_000;
     let mut inputs = Vec::with_capacity(n);
     let mut rng = WyRand::new();
@@ -172,7 +172,7 @@ fn ska_sort(c: &mut Criterion) {
             bench.iter_batched(
                 || set.clone(),
                 |mut input| {
-                    msb_ska_sort(&tuning, &mut input, 3, false);
+                    //ska_sort(&tuning, &mut input, 3, false);
                     black_box(input);
                 },
                 BatchSize::SmallInput,
@@ -183,7 +183,7 @@ fn ska_sort(c: &mut Criterion) {
             bench.iter_batched(
                 || set.clone(),
                 |mut input| {
-                    lsb_radix_sort_adapter(&mut input, 0, 3, false);
+                    lsb_radix_sort_adapter(&mut input, 0, 3);
                     black_box(input);
                 },
                 BatchSize::SmallInput,
@@ -225,7 +225,7 @@ fn ska_sort(c: &mut Criterion) {
             bench.iter_batched(
                 || set.clone(),
                 |mut input| {
-                    msb_ska_sort(&tuning, &mut input, 3, false);
+                    //ska_sort(&tuning, &mut input, 3, false);
                     black_box(input);
                 },
                 BatchSize::SmallInput,
@@ -236,7 +236,7 @@ fn ska_sort(c: &mut Criterion) {
             bench.iter_batched(
                 || set.clone(),
                 |mut input| {
-                    lsb_radix_sort_adapter(&mut input, 0, 3, false);
+                    lsb_radix_sort_adapter(&mut input, 0, 3);
                     black_box(input);
                 },
                 BatchSize::SmallInput,
@@ -246,5 +246,5 @@ fn ska_sort(c: &mut Criterion) {
     group.finish();
 }
 
-criterion_group!(tuning_parameters, counts, scanning_sort, ska_sort);
+criterion_group!(tuning_parameters, counts, scanning_sort, bench_ska_sort);
 criterion_main!(tuning_parameters);

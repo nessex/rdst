@@ -19,7 +19,6 @@ pub fn par_get_counts<T>(bucket: &[T], level: usize) -> [usize; 256]
 where
     T: RadixKey + Sized + Send + Sync,
 {
-
     let threads = num_cpus::get();
     let chunk_divisor = 8;
     let chunk_size = (bucket.len() / threads / chunk_divisor) + 1;
@@ -27,44 +26,42 @@ where
     rayon::scope(|s| {
         let (tx, rx) = channel();
 
-        bucket
-            .chunks(chunk_size)
-            .for_each(|big_chunk| {
-                let tx = tx.clone();
-                s.spawn(move |_| {
-                    let mut msb_counts_1 = [0usize; 256];
-                    let mut msb_counts_2 = [0usize; 256];
-                    let mut msb_counts_3 = [0usize; 256];
-                    let mut msb_counts_4 = [0usize; 256];
-                    let chunks = big_chunk.chunks_exact(4);
-                    let rem = chunks.remainder();
+        bucket.chunks(chunk_size).for_each(|big_chunk| {
+            let tx = tx.clone();
+            s.spawn(move |_| {
+                let mut msb_counts_1 = [0usize; 256];
+                let mut msb_counts_2 = [0usize; 256];
+                let mut msb_counts_3 = [0usize; 256];
+                let mut msb_counts_4 = [0usize; 256];
+                let chunks = big_chunk.chunks_exact(4);
+                let rem = chunks.remainder();
 
-                    chunks.into_iter().for_each(|chunk| unsafe {
-                        let a = chunk.get_unchecked(0).get_level(level) as usize;
-                        let b = chunk.get_unchecked(1).get_level(level) as usize;
-                        let c = chunk.get_unchecked(2).get_level(level) as usize;
-                        let d = chunk.get_unchecked(3).get_level(level) as usize;
+                chunks.into_iter().for_each(|chunk| unsafe {
+                    let a = chunk.get_unchecked(0).get_level(level) as usize;
+                    let b = chunk.get_unchecked(1).get_level(level) as usize;
+                    let c = chunk.get_unchecked(2).get_level(level) as usize;
+                    let d = chunk.get_unchecked(3).get_level(level) as usize;
 
-                        *msb_counts_1.get_unchecked_mut(a) += 1;
-                        *msb_counts_2.get_unchecked_mut(b) += 1;
-                        *msb_counts_3.get_unchecked_mut(c) += 1;
-                        *msb_counts_4.get_unchecked_mut(d) += 1;
-                    });
-
-                    rem.into_iter().for_each(|v| unsafe {
-                        let a = v.get_level(level) as usize;
-                        *msb_counts_1.get_unchecked_mut(a) += 1;
-                    });
-
-                    for i in 0..256 {
-                        msb_counts_1[i] += msb_counts_2[i];
-                        msb_counts_1[i] += msb_counts_3[i];
-                        msb_counts_1[i] += msb_counts_4[i];
-                    }
-
-                    tx.send(msb_counts_1).unwrap();
+                    *msb_counts_1.get_unchecked_mut(a) += 1;
+                    *msb_counts_2.get_unchecked_mut(b) += 1;
+                    *msb_counts_3.get_unchecked_mut(c) += 1;
+                    *msb_counts_4.get_unchecked_mut(d) += 1;
                 });
+
+                rem.into_iter().for_each(|v| unsafe {
+                    let a = v.get_level(level) as usize;
+                    *msb_counts_1.get_unchecked_mut(a) += 1;
+                });
+
+                for i in 0..256 {
+                    msb_counts_1[i] += msb_counts_2[i];
+                    msb_counts_1[i] += msb_counts_3[i];
+                    msb_counts_1[i] += msb_counts_4[i];
+                }
+
+                tx.send(msb_counts_1).unwrap();
             });
+        });
 
         let mut msb_counts = [0usize; 256];
 
@@ -82,8 +79,8 @@ where
 
 #[inline]
 pub fn get_counts<T>(bucket: &[T], level: usize) -> [usize; 256]
-    where
-        T: RadixKey,
+where
+    T: RadixKey,
 {
     let mut counts_1 = [0usize; 256];
     let mut counts_2 = [0usize; 256];

@@ -8,21 +8,10 @@ use rayon::prelude::*;
 
 // Based upon (with modifications):
 // https://probablydance.com/2016/12/27/i-wrote-a-faster-sorting-algorithm/
-pub fn msb_ska_sort<T>(tuning: &TuningParameters, bucket: &mut [T], level: usize, parallel: bool)
+pub fn ska_sort<T>(bucket: &mut [T], counts: &[usize], level: usize)
 where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
-    if bucket.len() < 2 {
-        return;
-    }
-
-    let (counts, level) =
-        if let Some(s) = get_counts_and_level_descending(bucket, level, 0, parallel) {
-            s
-        } else {
-            return;
-        };
-
     let mut prefix_sums = get_prefix_sums(&counts);
     let mut end_offsets = prefix_sums.split_at(1).1.to_vec();
     end_offsets.push(end_offsets.last().unwrap() + counts.last().unwrap());
@@ -58,17 +47,28 @@ where
             }
         }
     }
+}
 
-    drop(prefix_sums);
-    drop(end_offsets);
-    drop(finished_map);
+pub fn ska_sort_adapter<T>(bucket: &mut [T], level: usize)
+where
+    T: RadixKey + Sized + Send + Copy + Sync,
+{
+    let (counts, level) =
+        if let Some(s) = get_counts_and_level_descending(bucket, level, 0, false) {
+            s
+        } else {
+            return;
+        };
+
+    ska_sort(bucket, &counts, level);
 
     if level == 0 {
         return;
     }
 
+    let len = bucket.len();
+
     bucket
         .arbitrary_chunks_mut(counts.to_vec())
-        .par_bridge()
-        .for_each(|chunk| director(tuning, chunk, level - 1, false));
+        .for_each(|chunk| director(chunk, len, level - 1));
 }
