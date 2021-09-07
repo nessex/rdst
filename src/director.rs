@@ -1,8 +1,8 @@
 use crate::sorts::lsb_radix_sort::lsb_radix_sort_adapter;
 use crate::sorts::recombinating_sort::recombinating_sort;
+use crate::sorts::ska_sort::ska_sort_adapter;
 use crate::tuning_parameters::TuningParameters;
 use crate::RadixKey;
-use crate::sorts::ska_sort::ska_sort_adapter;
 
 pub fn director<T>(
     tuning: &TuningParameters,
