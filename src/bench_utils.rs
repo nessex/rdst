@@ -1,13 +1,11 @@
 use crate::test_utils::gen_bench_input_set;
 use crate::RadixKey;
-#[cfg(feature = "bench")]
 use criterion::{AxisScale, BatchSize, BenchmarkId, Criterion, PlotConfiguration, Throughput};
 use nanorand::{RandomGen, WyRand};
 use std::fmt::Debug;
 use std::ops::{Shl, Shr};
 use std::time::Duration;
 
-#[cfg(feature = "bench")]
 pub fn bench_common<T>(
     c: &mut Criterion,
     shift: T,
