@@ -81,4 +81,34 @@ mod tests {
     pub fn test_usize() {
         test_full_sort(32usize);
     }
+
+    #[test]
+    pub fn test_i8() {
+        test_full_sort(0i8);
+    }
+
+    #[test]
+    pub fn test_i16() {
+        test_full_sort(8i16);
+    }
+
+    #[test]
+    pub fn test_i32() {
+        test_full_sort(16i32);
+    }
+
+    #[test]
+    pub fn test_i64() {
+        test_full_sort(32i64);
+    }
+
+    #[test]
+    pub fn test_i128() {
+        test_full_sort(64i128);
+    }
+
+    #[test]
+    pub fn test_isize() {
+        test_full_sort(32isize);
+    }
 }
