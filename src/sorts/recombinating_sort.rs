@@ -27,7 +27,7 @@ where
         })
         .collect();
 
-    let mut global_counts = [0usize; 256];
+    let mut global_counts = vec![0usize; 256];
 
     locals.iter().for_each(|(counts, _)| {
         for (i, c) in counts.iter().enumerate() {
@@ -36,7 +36,7 @@ where
     });
 
     tmp_bucket
-        .arbitrary_chunks_mut(global_counts.to_vec())
+        .arbitrary_chunks_mut(global_counts.clone())
         .enumerate()
         .par_bridge()
         .for_each(|(index, global_chunk)| {
@@ -72,7 +72,7 @@ where
     let len = bucket.len();
 
     bucket
-        .arbitrary_chunks_mut(global_counts.to_vec())
+        .arbitrary_chunks_mut(global_counts)
         .par_bridge()
         .for_each(|chunk| director(tuning, chunk, len, level - 1));
 }
