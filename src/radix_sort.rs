@@ -111,4 +111,14 @@ mod tests {
     pub fn test_isize() {
         test_full_sort(32isize);
     }
+
+    #[test]
+    pub fn test_f32() {
+        test_full_sort(16u32);
+    }
+
+    #[test]
+    pub fn test_f64() {
+        test_full_sort(32u64);
+    }
 }

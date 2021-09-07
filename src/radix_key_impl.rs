@@ -158,3 +158,35 @@ impl RadixKey for isize {
         ((self ^ isize::MIN) >> (level * 8)) as u8
     }
 }
+
+impl RadixKey for f32 {
+    const LEVELS: usize = 4;
+
+    #[inline]
+    fn get_level(&self, level: usize) -> u8 {
+        let s = self.to_bits();
+        let u = if s >> 31 == 1 {
+            !s
+        } else {
+            s ^ (1 << 31)
+        };
+
+        (u >> (level * 8)) as u8
+    }
+}
+
+impl RadixKey for f64 {
+    const LEVELS: usize = 8;
+
+    #[inline]
+    fn get_level(&self, level: usize) -> u8 {
+        let s = self.to_bits();
+        let u = if s >> 63 == 1 {
+            !s
+        } else {
+            s ^ (1 << 63)
+        };
+
+        (u >> (level * 8)) as u8
+    }
+}
