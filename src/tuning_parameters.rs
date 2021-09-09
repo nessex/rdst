@@ -11,13 +11,14 @@ pub struct TuningParameters {
 
 impl TuningParameters {
     pub fn new(levels: usize) -> Self {
+        let cpus = rayon::current_num_threads();
         Self {
-            cpus: num_cpus::get(),
+            cpus,
             recombinating_sort_threshold: Self::recombinating_sort_threshold(),
             scanning_sort_threshold: Self::scanning_sort_threshold(),
             ska_sort_threshold: Self::ska_sort_threshold(levels),
             par_count_threshold: Self::par_count_threshold(),
-            scanner_read_size: Self::scanner_read_size(),
+            scanner_read_size: Self::scanner_read_size(cpus),
         }
     }
 
@@ -41,8 +42,7 @@ impl TuningParameters {
         400_000
     }
 
-    fn scanner_read_size() -> usize {
-        let cpus = num_cpus::get();
+    fn scanner_read_size(cpus: usize) -> usize {
         let scaling_factor = min(1, (cpus as f32).log2().ceil() as isize) as usize;
 
         32768 / scaling_factor

@@ -19,13 +19,13 @@ pub fn par_get_counts<T>(bucket: &[T], level: usize) -> [usize; 256]
 where
     T: RadixKey + Sized + Send + Sync,
 {
-    let threads = num_cpus::get();
+    let threads = rayon::current_num_threads();
     let chunk_divisor = 8;
     let chunk_size = (bucket.len() / threads / chunk_divisor) + 1;
     let chunks = bucket.chunks(chunk_size);
     let len = chunks.len();
 
-    rayon::scope(|s| {
+    rayon::scope(move |s| {
         let (tx, rx) = channel();
 
         chunks.for_each(|chunk| {
