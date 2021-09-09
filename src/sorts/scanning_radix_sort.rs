@@ -67,6 +67,10 @@ fn scanner_thread<T>(
     // In the case of buckets not above the uniform_threshold, we can ignore them as the
     // partitioning adds unnecessary overhead in that case.
     for m in scanner_buckets {
+        if (m.len as usize) < uniform_threshold {
+            continue;
+        }
+
         let mut guard = match m.inner.try_lock() {
             Some(g) => g,
             None => continue,
@@ -75,13 +79,11 @@ fn scanner_thread<T>(
         if !guard.locally_partitioned {
             guard.locally_partitioned = true;
 
-            if guard.chunk.len() > uniform_threshold {
-                let index = m.index as u8;
-                let start = partition_index(&mut guard.chunk, |v| v.get_level(level) == index);
+            let index = m.index as u8;
+            let start = partition_index(&mut guard.chunk, |v| v.get_level(level) == index);
 
-                guard.read_head = start;
-                guard.write_head = start;
-            }
+            guard.read_head = start;
+            guard.write_head = start;
         }
     }
 
