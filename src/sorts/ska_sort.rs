@@ -3,7 +3,6 @@ use crate::tuning_parameters::TuningParameters;
 use crate::utils::*;
 use crate::RadixKey;
 use arbitrary_chunks::ArbitraryChunks;
-use itertools::Itertools;
 
 // Based upon (with modifications):
 // https://probablydance.com/2016/12/27/i-wrote-a-faster-sorting-algorithm/
@@ -15,12 +14,14 @@ where
     let mut end_offsets = prefix_sums.split_at(1).1.to_vec();
     end_offsets.push(end_offsets.last().unwrap() + counts.last().unwrap());
 
-    let mut buckets: Vec<usize> = counts
+    let mut buckets_sorted: Vec<(usize, usize)> = counts
         .iter()
+        .map(|c| *c)
         .enumerate()
-        .sorted_unstable_by_key(|(_, c)| **c)
-        .map(|(i, _)| i)
         .collect();
+
+    buckets_sorted.sort_unstable_by_key(|(_, c)| *c);
+    let mut buckets: Vec<usize> = buckets_sorted.into_iter().map(|(i, _)| i).collect();
 
     let mut finished = 1;
     let mut finished_map = [false; 256];

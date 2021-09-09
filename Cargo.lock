@@ -372,7 +372,6 @@ version = "0.12.1"
 dependencies = [
  "arbitrary-chunks",
  "criterion",
- "itertools",
  "nanorand",
  "num_cpus",
  "partition",
