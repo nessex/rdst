@@ -61,6 +61,11 @@ fn scanner_thread<T>(
     let mut finished_count = 0;
     let mut finished_map = [false; 256];
 
+    // Locally partition chunk into [correct bucket | incorrect bucket] in-place.
+    // This provides a speed improvement when there are just a few larger outlier buckets as there
+    // is less data to move around to temporary storage etc.
+    // In the case of buckets not above the uniform_threshold, we can ignore them as the
+    // partitioning adds unnecessary overhead in that case.
     for m in scanner_buckets {
         let mut guard = match m.inner.try_lock() {
             Some(g) => g,
