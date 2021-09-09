@@ -52,6 +52,7 @@ fn scanner_thread<T>(
     scanner_buckets: &Vec<ScannerBucket<T>>,
     level: usize,
     scanner_read_size: isize,
+    uniform_threshold: usize,
 ) where
     T: RadixKey + Copy,
 {
@@ -59,6 +60,25 @@ fn scanner_thread<T>(
     stash.resize(256, Vec::with_capacity(128));
     let mut finished_count = 0;
     let mut finished_map = [false; 256];
+
+    for m in scanner_buckets {
+        let mut guard = match m.inner.try_lock() {
+            Some(g) => g,
+            None => continue,
+        };
+
+        if !guard.locally_partitioned {
+            guard.locally_partitioned = true;
+
+            if guard.chunk.len() > uniform_threshold {
+                let index = m.index as u8;
+                let start = partition_index(&mut guard.chunk, |v| v.get_level(level) == index);
+
+                guard.read_head = start;
+                guard.write_head = start;
+            }
+        }
+    }
 
     'outer: loop {
         for m in scanner_buckets {
@@ -82,16 +102,6 @@ fn scanner_thread<T>(
                 }
 
                 continue;
-            }
-
-            if !guard.locally_partitioned {
-                guard.locally_partitioned = true;
-                let index = m.index as u8;
-
-                let start = partition_index(&mut guard.chunk, |v| v.get_level(level) == index);
-
-                guard.read_head = start;
-                guard.write_head = start;
             }
 
             let read_start = guard.read_head as isize;
@@ -188,11 +198,17 @@ pub fn scanning_radix_sort<T>(
         };
 
     let len = bucket.len();
+    let uniform_threshold = ((len / tuning.cpus) as f64 * 1.4) as usize;
     let scanner_buckets = get_scanner_buckets(&msb_counts, bucket);
     let threads = min(tuning.cpus, scanner_buckets.len());
 
     (0..threads).into_par_iter().for_each(|_| {
-        scanner_thread(&scanner_buckets, level, tuning.scanner_read_size as isize);
+        scanner_thread(
+            &scanner_buckets,
+            level,
+            tuning.scanner_read_size as isize,
+            uniform_threshold,
+        );
     });
 
     // Drop some data before recursing to reduce memory usage
