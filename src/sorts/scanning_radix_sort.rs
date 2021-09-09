@@ -191,10 +191,8 @@ pub fn scanning_radix_sort<T>(
     let scanner_buckets = get_scanner_buckets(&msb_counts, bucket);
     let threads = min(tuning.cpus, scanner_buckets.len());
 
-    rayon::scope(|s| {
-        for _ in 0..threads {
-            s.spawn(|_| scanner_thread(&scanner_buckets, level, tuning.scanner_read_size as isize));
-        }
+    (0..threads).into_par_iter().for_each(|_| {
+        scanner_thread(&scanner_buckets, level, tuning.scanner_read_size as isize);
     });
 
     // Drop some data before recursing to reduce memory usage
