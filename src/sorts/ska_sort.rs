@@ -14,11 +14,7 @@ where
     let mut end_offsets = prefix_sums.split_at(1).1.to_vec();
     end_offsets.push(end_offsets.last().unwrap() + counts.last().unwrap());
 
-    let mut buckets_sorted: Vec<(usize, usize)> = counts
-        .iter()
-        .map(|c| *c)
-        .enumerate()
-        .collect();
+    let mut buckets_sorted: Vec<(usize, usize)> = counts.iter().map(|c| *c).enumerate().collect();
 
     buckets_sorted.sort_unstable_by_key(|(_, c)| *c);
     let mut buckets: Vec<usize> = buckets_sorted.into_iter().map(|(i, _)| i).collect();

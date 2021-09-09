@@ -1,4 +1,5 @@
 use crate::RadixKey;
+use rayon::prelude::*;
 use std::sync::mpsc::channel;
 
 #[inline]
@@ -22,32 +23,25 @@ where
     let threads = rayon::current_num_threads();
     let chunk_divisor = 8;
     let chunk_size = (bucket.len() / threads / chunk_divisor) + 1;
-    let chunks = bucket.chunks(chunk_size);
+    let chunks = bucket.par_chunks(chunk_size);
     let len = chunks.len();
+    let (tx, rx) = channel();
+    chunks.for_each_with(tx.clone(), |tx, chunk| {
+        let counts = get_counts(chunk, level);
+        tx.send(counts).unwrap();
+    });
 
-    rayon::scope(move |s| {
-        let (tx, rx) = channel();
+    let mut msb_counts = [0usize; 256];
 
-        chunks.for_each(|chunk| {
-            let tx = tx.clone();
-            s.spawn(move |_| {
-                let counts = get_counts(chunk, level);
-                tx.send(counts).unwrap();
-            });
-        });
+    for _ in 0..len {
+        let counts = rx.recv().unwrap();
 
-        let mut msb_counts = [0usize; 256];
-
-        for _ in 0..len {
-            let counts = rx.recv().unwrap();
-
-            for (i, c) in counts.iter().enumerate() {
-                msb_counts[i] += *c;
-            }
+        for (i, c) in counts.iter().enumerate() {
+            msb_counts[i] += *c;
         }
+    }
 
-        msb_counts
-    })
+    msb_counts
 }
 
 #[inline]
