@@ -56,21 +56,21 @@ where
     let chunks = bucket.chunks_exact(4);
     let rem = chunks.remainder();
 
-    chunks.into_iter().for_each(|chunk| unsafe {
-        let a = chunk.get_unchecked(0).get_level(level) as usize;
-        let b = chunk.get_unchecked(1).get_level(level) as usize;
-        let c = chunk.get_unchecked(2).get_level(level) as usize;
-        let d = chunk.get_unchecked(3).get_level(level) as usize;
+    chunks.into_iter().for_each(|chunk| {
+        let a = chunk[0].get_level(level) as usize;
+        let b = chunk[1].get_level(level) as usize;
+        let c = chunk[2].get_level(level) as usize;
+        let d = chunk[3].get_level(level) as usize;
 
-        *counts_1.get_unchecked_mut(a) += 1;
-        *counts_2.get_unchecked_mut(b) += 1;
-        *counts_3.get_unchecked_mut(c) += 1;
-        *counts_4.get_unchecked_mut(d) += 1;
+        counts_1[a] += 1;
+        counts_2[b] += 1;
+        counts_3[c] += 1;
+        counts_4[d] += 1;
     });
 
-    rem.into_iter().for_each(|v| unsafe {
+    rem.into_iter().for_each(|v| {
         let b = v.get_level(level) as usize;
-        *counts_1.get_unchecked_mut(b) += 1;
+        counts_1[b] += 1;
     });
 
     for i in 0..256 {

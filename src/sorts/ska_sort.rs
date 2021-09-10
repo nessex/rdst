@@ -34,12 +34,10 @@ where
                 finished += 1;
             }
 
-            unsafe {
-                for i in prefix_sums[*b]..end_offsets[*b] {
-                    let new_b = bucket.get_unchecked(i).get_level(level) as usize;
-                    bucket.swap(*prefix_sums.get_unchecked(new_b), i);
-                    *prefix_sums.get_unchecked_mut(new_b) += 1;
-                }
+            for i in prefix_sums[*b]..end_offsets[*b] {
+                let new_b = bucket[i].get_level(level) as usize;
+                bucket.swap(prefix_sums[new_b], i);
+                prefix_sums[new_b] += 1;
             }
         }
     }
