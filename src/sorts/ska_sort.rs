@@ -11,30 +11,35 @@ where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
     let mut prefix_sums = get_prefix_sums(&counts);
-    let mut end_offsets = prefix_sums.split_at(1).1.to_vec();
-    end_offsets.push(end_offsets.last().unwrap() + counts.last().unwrap());
+    let mut end_offsets = [0usize; 256];
 
-    let mut buckets_sorted: Vec<(usize, usize)> = counts.iter().map(|c| *c).enumerate().collect();
-
-    buckets_sorted.sort_unstable_by_key(|(_, c)| *c);
-    let mut buckets: Vec<usize> = buckets_sorted.into_iter().map(|(i, _)| i).collect();
+    end_offsets[0..255].copy_from_slice(&prefix_sums[1..256]);
+    end_offsets[255] = counts[255];
 
     let mut finished = 1;
     let mut finished_map = [false; 256];
-    let largest = buckets.pop().unwrap();
-    finished_map[largest] = true;
-    buckets.reverse();
+    let mut largest = 0;
+    let mut largest_index = 0;
+
+    for (i, c) in counts.iter().enumerate() {
+        if *c > largest {
+            largest = *c;
+            largest_index = i;
+        }
+    }
+
+    finished_map[largest_index] = true;
 
     while finished != 256 {
-        for b in buckets.iter() {
-            if finished_map[*b] {
+        for b in 0..256 {
+            if finished_map[b] {
                 continue;
-            } else if prefix_sums[*b] >= end_offsets[*b] {
-                finished_map[*b] = true;
+            } else if prefix_sums[b] >= end_offsets[b] {
+                finished_map[b] = true;
                 finished += 1;
             }
 
-            for i in prefix_sums[*b]..end_offsets[*b] {
+            for i in prefix_sums[b]..end_offsets[b] {
                 let new_b = bucket[i].get_level(level) as usize;
                 bucket.swap(prefix_sums[new_b], i);
                 prefix_sums[new_b] += 1;
