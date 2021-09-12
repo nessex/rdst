@@ -27,7 +27,7 @@ impl TuningParameters {
     }
 
     fn scanning_sort_threshold() -> usize {
-        10_000_000
+        50_000_000
     }
 
     fn ska_sort_threshold(levels: usize) -> usize {
