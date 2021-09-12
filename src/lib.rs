@@ -1,6 +1,6 @@
 //! # rdst
 //!
-//! rdst is a flexible native Rust implementation of unstable radix sort.
+//! rdst is a flexible native Rust implementation of multi-threaded unstable radix sort.
 //!
 //! ## Usage
 //!
