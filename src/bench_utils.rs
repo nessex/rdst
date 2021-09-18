@@ -1,9 +1,5 @@
-use crate::test_utils::gen_bench_input_set;
-use crate::RadixKey;
+use crate::test_utils::{gen_bench_input_set, NumericTest};
 use criterion::{AxisScale, BatchSize, BenchmarkId, Criterion, PlotConfiguration, Throughput};
-use nanorand::{RandomGen, WyRand};
-use std::fmt::Debug;
-use std::ops::{Shl, Shr};
 use std::time::Duration;
 
 pub fn bench_common<T>(
@@ -12,17 +8,7 @@ pub fn bench_common<T>(
     group: &str,
     tests: Vec<(&str, Box<dyn Fn(Vec<T>)>)>,
 ) where
-    T: RadixKey
-        + Ord
-        + RandomGen<WyRand>
-        + Clone
-        + Debug
-        + Send
-        + Sized
-        + Copy
-        + Sync
-        + Shl<Output = T>
-        + Shr<Output = T>,
+    T: NumericTest<T>,
 {
     let input_sets = gen_bench_input_set(shift);
 

@@ -3,8 +3,8 @@ use crate::RadixKey;
 
 #[inline]
 pub fn out_of_place_sort<T>(bucket: &[T], tmp_bucket: &mut [T], counts: &[usize], level: usize)
-    where
-        T: RadixKey + Sized + Send + Copy + Sync,
+where
+    T: RadixKey + Sized + Send + Copy + Sync,
 {
     let mut prefix_sums = get_prefix_sums(&counts);
 

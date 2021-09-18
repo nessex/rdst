@@ -32,6 +32,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a"
 
 [[package]]
+name = "block-pseudorand"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "509d4973ba41dc874d3a1f7211c6b6682820ef845fb5403b47290c77dcdce7ab"
+dependencies = [
+ "bytemuck",
+ "chiapos-chacha8",
+ "nanorand",
+ "transvec",
+]
+
+[[package]]
 name = "bstr"
 version = "0.2.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -50,6 +62,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9c59e7af012c713f529e7a3ee57ce9b31ddd858d4b512923602f74608b009631"
 
 [[package]]
+name = "bytemuck"
+version = "1.7.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "72957246c41db82b8ef88a5486143830adeb8227ef9837740bdec67724cf2c5b"
+
+[[package]]
 name = "cast"
 version = "0.2.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -63,6 +81,15 @@ name = "cfg-if"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
+
+[[package]]
+name = "chiapos-chacha8"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "33f8be573a85f6c2bc1b8e43834c07e32f95e489b914bf856c0549c3c269cd0a"
+dependencies = [
+ "rayon",
+]
 
 [[package]]
 name = "clap"
@@ -368,11 +395,11 @@ dependencies = [
 
 [[package]]
 name = "rdst"
-version = "0.15.0"
+version = "0.15.1"
 dependencies = [
  "arbitrary-chunks",
+ "block-pseudorand",
  "criterion",
- "nanorand",
  "num_cpus",
  "partition",
  "rayon",
@@ -503,6 +530,15 @@ checksum = "be4d6b5f19ff7664e8c98d03e2139cb510db9b0a60b55f8e8709b689d939b6bc"
 dependencies = [
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "transvec"
+version = "0.3.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fdb1f8bf1d30cab7d95c457d5e5a98ef9c0f2ebee235e20879f9800cb9650f4d"
+dependencies = [
+ "bytemuck",
 ]
 
 [[package]]

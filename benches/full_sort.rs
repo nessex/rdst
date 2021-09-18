@@ -1,26 +1,12 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use nanorand::{RandomGen, WyRand};
 use rdst::bench_utils::bench_common;
-use rdst::{RadixKey, RadixSort};
-use std::fmt::Debug;
-use std::ops::{Shl, Shr};
+use rdst::test_utils::NumericTest;
+use rdst::RadixSort;
 use voracious_radix_sort::{RadixKey as VorKey, RadixSort as Vor, Radixable};
 
 fn full_sort_common<T>(c: &mut Criterion, shift: T, name_suffix: &str)
 where
-    T: RadixKey
-        + Ord
-        + RandomGen<WyRand>
-        + Clone
-        + Debug
-        + Send
-        + Sized
-        + Copy
-        + Sync
-        + Shl<Output = T>
-        + Shr<Output = T>
-        + Radixable<T>
-        + VorKey,
+    T: NumericTest<T> + Radixable<T> + VorKey,
 {
     let tests: Vec<(&str, Box<dyn Fn(Vec<_>)>)> = vec![
         (

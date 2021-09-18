@@ -29,25 +29,12 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::test_utils::sort_comparison_suite;
-    use crate::{RadixKey, RadixSort};
-    use nanorand::{RandomGen, WyRand};
-    use std::fmt::Debug;
-    use std::ops::{Shl, Shr};
+    use crate::test_utils::{sort_comparison_suite, NumericTest};
+    use crate::RadixSort;
 
     fn test_full_sort<T>(shift: T)
     where
-        T: RadixKey
-            + Ord
-            + RandomGen<WyRand>
-            + Clone
-            + Debug
-            + Send
-            + Sized
-            + Copy
-            + Sync
-            + Shl<Output = T>
-            + Shr<Output = T>,
+        T: NumericTest<T>,
     {
         sort_comparison_suite(shift, |inputs| inputs.radix_sort_unstable());
     }

@@ -1,6 +1,6 @@
+use crate::sorts::out_of_place_sort::out_of_place_sort;
 use crate::utils::*;
 use crate::RadixKey;
-use crate::sorts::out_of_place_sort::out_of_place_sort;
 
 #[inline]
 fn lsb_radix_sort<T>(bucket: &mut [T], tmp_bucket: &mut [T], counts: &[usize], level: usize)
@@ -37,25 +37,11 @@ where
 #[cfg(test)]
 mod tests {
     use crate::sorts::lsb_radix_sort::lsb_radix_sort_adapter;
-    use crate::test_utils::sort_comparison_suite;
-    use crate::RadixKey;
-    use nanorand::{RandomGen, WyRand};
-    use std::fmt::Debug;
-    use std::ops::{Shl, Shr};
+    use crate::test_utils::{sort_comparison_suite, NumericTest};
 
     fn test_lsb_radix_sort_adapter<T>(shift: T)
     where
-        T: RadixKey
-            + Ord
-            + RandomGen<WyRand>
-            + Clone
-            + Debug
-            + Send
-            + Sized
-            + Copy
-            + Sync
-            + Shl<Output = T>
-            + Shr<Output = T>,
+        T: NumericTest<T>,
     {
         sort_comparison_suite(shift, |inputs| {
             lsb_radix_sort_adapter(inputs, 0, T::LEVELS - 1)

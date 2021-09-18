@@ -1,15 +1,12 @@
 use criterion::*;
-use nanorand::{RandomGen, WyRand};
 use rdst::bench_utils::bench_common;
 use rdst::sorts::lsb_radix_sort::lsb_radix_sort_adapter;
 use rdst::sorts::recombinating_sort::recombinating_sort;
 use rdst::sorts::scanning_radix_sort::scanning_radix_sort;
 use rdst::sorts::ska_sort::ska_sort_adapter;
+use rdst::test_utils::NumericTest;
 use rdst::tuning_parameters::TuningParameters;
 use rdst::utils::*;
-use rdst::RadixKey;
-use std::fmt::Debug;
-use std::ops::{Shl, Shr};
 
 fn tune_counts(c: &mut Criterion) {
     let tests: Vec<(&str, Box<dyn Fn(Vec<_>)>)> = vec![
@@ -34,17 +31,7 @@ fn tune_counts(c: &mut Criterion) {
 
 fn tune_sort_common<T>(c: &mut Criterion, shift: T, name_suffix: &str)
 where
-    T: RadixKey
-        + Ord
-        + RandomGen<WyRand>
-        + Clone
-        + Debug
-        + Send
-        + Sized
-        + Copy
-        + Sync
-        + Shl<Output = T>
-        + Shr<Output = T>,
+    T: NumericTest<T>,
 {
     let tests: Vec<(&str, Box<dyn Fn(Vec<_>)>)> = vec![
         (
