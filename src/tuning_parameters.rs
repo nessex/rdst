@@ -1,4 +1,4 @@
-use std::cmp::min;
+use std::cmp::max;
 
 pub struct TuningParameters {
     pub cpus: usize,
@@ -43,7 +43,7 @@ impl TuningParameters {
     }
 
     fn scanner_read_size(cpus: usize) -> usize {
-        let scaling_factor = min(1, (cpus as f32).log2().ceil() as isize) as usize;
+        let scaling_factor = max(1, (cpus as f32).log2().ceil() as isize) as usize;
 
         32768 / scaling_factor
     }
