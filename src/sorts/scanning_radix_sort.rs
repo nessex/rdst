@@ -123,15 +123,17 @@ fn scanner_thread<T>(
                     let b = chunk[1].get_level(level) as usize;
                     let c = chunk[2].get_level(level) as usize;
                     let d = chunk[3].get_level(level) as usize;
-                    let e = chunk[4].get_level(level) as usize;
-                    let f = chunk[5].get_level(level) as usize;
-                    let g = chunk[6].get_level(level) as usize;
-                    let h = chunk[7].get_level(level) as usize;
 
                     stash[a].push(chunk[0]);
                     stash[b].push(chunk[1]);
                     stash[c].push(chunk[2]);
                     stash[d].push(chunk[3]);
+
+                    let e = chunk[4].get_level(level) as usize;
+                    let f = chunk[5].get_level(level) as usize;
+                    let g = chunk[6].get_level(level) as usize;
+                    let h = chunk[7].get_level(level) as usize;
+
                     stash[e].push(chunk[4]);
                     stash[f].push(chunk[5]);
                     stash[g].push(chunk[6]);
