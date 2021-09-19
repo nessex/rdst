@@ -86,7 +86,7 @@ where
 pub fn get_tmp_bucket<T>(len: usize) -> Vec<T> {
     let mut tmp_bucket = Vec::with_capacity(len);
     unsafe {
-        // This will leave the vec with garbage data
+        // Safety: This will leave the vec with potentially uninitialized data
         // however as we account for every value when placing things
         // into tmp_bucket, this is "safe". This is used because it provides a
         // very significant speed improvement over resize, to_vec etc.
