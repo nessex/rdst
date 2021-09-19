@@ -57,12 +57,12 @@ where
             }
         });
 
+    if level == 0 {
+        return;
+    }
+
     rayon::scope(|s| {
         s.spawn(move |_| drop(tmp_bucket));
-
-        if level == 0 {
-            return;
-        }
 
         bucket
             .arbitrary_chunks_mut(global_counts)
