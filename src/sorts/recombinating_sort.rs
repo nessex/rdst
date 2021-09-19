@@ -10,9 +10,9 @@ pub fn recombinating_sort<T>(tuning: &TuningParameters, bucket: &mut [T], level:
 where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
-    let threads = tuning.cpus;
-    let chunk_size = (bucket.len() / threads) + 1;
-    let mut tmp_bucket = get_tmp_bucket::<T>(bucket.len());
+    let bucket_len = bucket.len();
+    let chunk_size = (bucket_len / tuning.cpus) + 1;
+    let mut tmp_bucket = get_tmp_bucket::<T>(bucket_len);
 
     let locals: Vec<([usize; 256], [usize; 256])> = bucket
         .par_chunks(chunk_size)
@@ -57,18 +57,18 @@ where
             }
         });
 
-    drop(tmp_bucket);
+    rayon::scope(|s| {
+        s.spawn(move |_| drop(tmp_bucket));
 
-    if level == 0 {
-        return;
-    }
+        if level == 0 {
+            return;
+        }
 
-    let len = bucket.len();
-
-    bucket
-        .arbitrary_chunks_mut(global_counts)
-        .par_bridge()
-        .for_each(|chunk| director(tuning, chunk, len, level - 1));
+        bucket
+            .arbitrary_chunks_mut(global_counts)
+            .par_bridge()
+            .for_each(|chunk| director(tuning, chunk, bucket_len, level - 1));
+    });
 }
 
 #[cfg(test)]
