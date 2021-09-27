@@ -7,6 +7,7 @@ use rdst::sorts::ska_sort::ska_sort_adapter;
 use rdst::test_utils::NumericTest;
 use rdst::tuning_parameters::TuningParameters;
 use rdst::utils::*;
+use rdst::sorts::regions_sort::regions_sort;
 
 fn tune_counts(c: &mut Criterion) {
     let tests: Vec<(&str, Box<dyn Fn(Vec<_>)>)> = vec![
@@ -34,6 +35,14 @@ where
     T: NumericTest<T>,
 {
     let tests: Vec<(&str, Box<dyn Fn(Vec<_>)>)> = vec![
+        (
+            "regions_sort",
+            Box::new(|mut input| {
+                let tuning = TuningParameters::new(4);
+                regions_sort(&tuning, &mut input, 3);
+                black_box(input);
+            }),
+        ),
         (
             "scanning_radix_sort",
             Box::new(|mut input| {
