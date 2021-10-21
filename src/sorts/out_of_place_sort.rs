@@ -6,7 +6,7 @@ pub fn out_of_place_sort<T>(bucket: &[T], tmp_bucket: &mut [T], counts: &[usize]
 where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
-    let mut prefix_sums = get_prefix_sums(&counts);
+    let mut prefix_sums = get_prefix_sums(counts);
 
     let chunks = bucket.chunks_exact(8);
     let rem = chunks.remainder();
@@ -39,7 +39,7 @@ where
         prefix_sums[h] += 1;
     });
 
-    rem.into_iter().for_each(|val| {
+    rem.iter().for_each(|val| {
         let bucket = val.get_level(level) as usize;
         tmp_bucket[prefix_sums[bucket]] = *val;
         prefix_sums[bucket] += 1;

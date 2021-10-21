@@ -10,7 +10,7 @@ pub fn ska_sort<T>(bucket: &mut [T], counts: &[usize], level: usize)
 where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
-    let mut prefix_sums = get_prefix_sums(&counts);
+    let mut prefix_sums = get_prefix_sums(counts);
     let mut end_offsets = [0usize; 256];
 
     end_offsets[0..255].copy_from_slice(&prefix_sums[1..256]);
