@@ -26,7 +26,7 @@ where
     let chunks = bucket.par_chunks(chunk_size);
     let len = chunks.len();
     let (tx, rx) = channel();
-    chunks.for_each_with(tx.clone(), |tx, chunk| {
+    chunks.for_each_with(tx, |tx, chunk| {
         let counts = get_counts(chunk, level);
         tx.send(counts).unwrap();
     });
@@ -68,7 +68,7 @@ where
         counts_4[d] += 1;
     });
 
-    rem.into_iter().for_each(|v| {
+    rem.iter().for_each(|v| {
         let b = v.get_level(level) as usize;
         counts_1[b] += 1;
     });

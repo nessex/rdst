@@ -48,7 +48,7 @@ fn get_scanner_buckets<'a, T>(
 }
 
 fn scanner_thread<T>(
-    scanner_buckets: &Vec<ScannerBucket<T>>,
+    scanner_buckets: &[ScannerBucket<T>],
     level: usize,
     scanner_read_size: isize,
     uniform_threshold: usize,
@@ -79,7 +79,7 @@ fn scanner_thread<T>(
             guard.locally_partitioned = true;
 
             let index = m.index as u8;
-            let start = partition_index(&mut guard.chunk, |v| v.get_level(level) == index);
+            let start = partition_index(guard.chunk, |v| v.get_level(level) == index);
 
             guard.read_head = start;
             guard.write_head = start;
@@ -140,7 +140,7 @@ fn scanner_thread<T>(
                     stash[h].push(chunk[7]);
                 });
 
-                rem.into_iter().for_each(|v| {
+                rem.iter().for_each(|v| {
                     let a = v.get_level(level) as usize;
                     stash[a].push(*v);
                 });

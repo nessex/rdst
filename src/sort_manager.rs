@@ -13,9 +13,7 @@ impl SortManager {
     where
         T: RadixKey + Sized + Send + Sync + Copy,
     {
-        if T::LEVELS == 0 {
-            panic!("RadixKey must have at least 1 level");
-        }
+        assert_ne!(T::LEVELS, 0, "RadixKey must have at least 1 level");
 
         Self {
             tuning: TuningParameters::new(T::LEVELS),

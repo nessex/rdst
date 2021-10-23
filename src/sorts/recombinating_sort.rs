@@ -50,7 +50,7 @@ where
                 let read_slice = &tmp_bucket[read_start..read_end];
                 let write_end = write_offset + read_slice.len();
 
-                global_chunk[write_offset..write_end].copy_from_slice(&read_slice);
+                global_chunk[write_offset..write_end].copy_from_slice(read_slice);
 
                 read_offset += chunk_size;
                 write_offset = write_end;
