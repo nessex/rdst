@@ -2,12 +2,12 @@ use criterion::*;
 use rdst::bench_utils::bench_common;
 use rdst::sorts::lsb_radix_sort::lsb_radix_sort_adapter;
 use rdst::sorts::recombinating_sort::recombinating_sort;
+use rdst::sorts::regions_sort::regions_sort;
 use rdst::sorts::scanning_radix_sort::scanning_radix_sort;
 use rdst::sorts::ska_sort::ska_sort_adapter;
 use rdst::test_utils::NumericTest;
 use rdst::tuning_parameters::TuningParameters;
 use rdst::utils::*;
-use rdst::sorts::regions_sort::regions_sort;
 
 fn tune_counts(c: &mut Criterion) {
     let tests: Vec<(&str, Box<dyn Fn(Vec<_>)>)> = vec![

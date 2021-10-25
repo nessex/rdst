@@ -63,10 +63,12 @@ where
 
     rayon::join(
         move || drop(tmp_bucket),
-        move || bucket
-            .arbitrary_chunks_mut(global_counts)
-            .par_bridge()
-            .for_each(|chunk| director(tuning, chunk, bucket_len, level - 1)),
+        move || {
+            bucket
+                .arbitrary_chunks_mut(global_counts)
+                .par_bridge()
+                .for_each(|chunk| director(tuning, chunk, bucket_len, level - 1))
+        },
     );
 }
 
