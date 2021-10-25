@@ -12,8 +12,7 @@
 //!             4.2.2.2/a: If they are the same size, continue
 //!             4.2.2.2/b: If I is bigger than O, keep the remainder of I in the queue and continue
 //!             4.2.2.2/c: If O is bigger than I, keep the remainder of O in the queue and continue
-//!             4.2.2.2/add.: If a remainder has been kept in the queue
-//!             4.2.2.3: Swap items in C destined for O with items in I destined for C
+//!             4.2.2.3: Swap items in C heading to O, with items in I destined for C (items in C may or may not be destined for O ultimately)
 
 use crate::director::director;
 use crate::sorts::ska_sort::ska_sort;
@@ -23,6 +22,7 @@ use crate::RadixKey;
 use arbitrary_chunks::ArbitraryChunks;
 use rayon::prelude::*;
 use std::cmp::{min, Ordering};
+use partition::partition_index;
 
 struct Edge<'bucket, T> {
     /// dst is the destination country index
@@ -52,9 +52,22 @@ fn generate_outbounds<'bucket, T>(
     while !(global_country == 255 && local_country == 255 && local_bucket == local_counts.len() - 1)
     {
         let step = min(target_global_dist, target_local_dist);
-        let dst_global = global_country;
-        let dst_local = local_country;
 
+        // 1. Add the current step to the outbounds
+        if step != 0 {
+            let (slice, rem) = rem_bucket.split_at_mut(step);
+            rem_bucket = rem;
+
+            if local_country != global_country {
+                outbounds[global_country].push(Edge {
+                    dst: local_country,
+                    init: global_country,
+                    slice,
+                });
+            }
+        }
+
+        // 2. Update target_global_dist
         if step == target_global_dist && global_country < 255 {
             global_country += 1;
             target_global_dist = global_counts[global_country];
@@ -62,6 +75,7 @@ fn generate_outbounds<'bucket, T>(
             target_global_dist -= step;
         }
 
+        // 3. Update target_local_dist
         if step == target_local_dist
             && !(local_bucket == local_counts.len() - 1 && local_country == 255)
         {
@@ -76,19 +90,6 @@ fn generate_outbounds<'bucket, T>(
         } else {
             target_local_dist -= step;
         }
-
-        if step != 0 {
-            let (slice, rem) = rem_bucket.split_at_mut(step);
-            rem_bucket = rem;
-
-            if dst_local != dst_global {
-                outbounds[dst_global].push(Edge {
-                    dst: dst_local,
-                    init: dst_global,
-                    slice,
-                });
-            }
-        }
     }
 
     outbounds
@@ -101,28 +102,15 @@ fn list_operations<T>(
 ) -> (Vec<Vec<Edge<T>>>, Vec<(Edge<T>, Edge<T>)>) {
     let mut inbounds = Vec::new();
     let mut current_outbounds = std::mem::take(&mut outbounds[country]);
-    let mut new_outbounds = Vec::new();
 
     // 1. Calculate inbounds for country
-    for country_outbound in outbounds {
-        let mut new_outbound_country = Vec::new();
-
-        for edge in country_outbound {
-            if edge.dst == country {
-                inbounds.push(edge);
-            } else {
-                new_outbound_country.push(edge);
-            }
-        }
-
-        new_outbounds.push(new_outbound_country);
+    for country_outbound in outbounds.iter_mut() {
+        let p = partition_index(country_outbound, |e| e.dst != country);
+        let mut new_in = country_outbound.split_off(p);
+        inbounds.append(&mut new_in);
     }
 
-    // 2. Sort inbounds & outbounds for country
-    // inbounds.sort_unstable_by_key(|v| v.slice.len());
-    // current_outbounds.sort_unstable_by_key(|v| v.slice.len());
-
-    // 3. Pair up inbounds & outbounds into an operation, returning unmatched data to the working arrays
+    // 2. Pair up inbounds & outbounds into an operation, returning unmatched data to the working arrays
     let mut operations = Vec::new();
 
     while let Some(i) = inbounds.pop() {
@@ -135,12 +123,11 @@ fn list_operations<T>(
             Ordering::Equal => (i, o),
             Ordering::Less => {
                 let (sl, rem) = o.slice.split_at_mut(i.slice.len());
-                let trunc = Edge {
+                current_outbounds.push(Edge {
                     dst: o.dst,
                     init: o.init,
                     slice: rem,
-                };
-                current_outbounds.push(trunc);
+                });
 
                 (
                     i,
@@ -153,12 +140,11 @@ fn list_operations<T>(
             }
             Ordering::Greater => {
                 let (sl, rem) = i.slice.split_at_mut(o.slice.len());
-                let trunc = Edge {
+                inbounds.push(Edge {
                     dst: i.dst,
                     init: i.init,
                     slice: rem,
-                };
-                inbounds.push(trunc);
+                });
 
                 (
                     Edge {
@@ -174,9 +160,8 @@ fn list_operations<T>(
         operations.push(op);
     }
 
-    // 4. Return the paired operations
-    operations.sort_unstable_by_key(|op| op.0.slice.len());
-    (new_outbounds, operations)
+    // 3. Return the paired operations
+    (outbounds, operations)
 }
 
 pub fn regions_sort<T>(tuning: &TuningParameters, bucket: &mut [T], level: usize)
@@ -184,6 +169,11 @@ where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
     let bucket_len = bucket.len();
+
+    if bucket_len <= 1 {
+        return;
+    }
+
     let chunk_size = (bucket_len / tuning.cpus) + 1;
 
     let local_counts: Vec<[usize; 256]> = bucket
@@ -210,9 +200,7 @@ where
         let (new_outbounds, mut operations) = list_operations(country, outbounds);
         outbounds = new_outbounds;
 
-        operations.par_iter_mut().for_each(|(o, i)| {
-            i.slice.swap_with_slice(o.slice);
-        });
+        operations.par_iter_mut().for_each(|(o, i)| i.slice.swap_with_slice(o.slice));
 
         // Create new edges for edges that were swapped to the wrong place
         for (i, mut o) in operations {
