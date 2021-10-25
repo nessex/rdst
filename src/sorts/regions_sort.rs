@@ -1,5 +1,10 @@
 //! Regions Sort
 //!
+//! Based on:
+//! Omar Obeya, Endrias Kahssay, Edward Fan, and Julian Shun.
+//! Theoretically-Efficient and Practical Parallel In-Place Radix Sorting.
+//! In ACM Symposium on Parallelism in Algorithms and Architectures (SPAA), 2019.
+//!
 //! 1. Split into buckets
 //! 2. Compute counts for each bucket and sort each bucket in-place
 //! 3. Generate global counts
@@ -20,9 +25,9 @@ use crate::tuning_parameters::TuningParameters;
 use crate::utils::*;
 use crate::RadixKey;
 use arbitrary_chunks::ArbitraryChunks;
+use partition::partition_index;
 use rayon::prelude::*;
 use std::cmp::{min, Ordering};
-use partition::partition_index;
 
 struct Edge<'bucket, T> {
     /// dst is the destination country index
@@ -200,7 +205,9 @@ where
         let (new_outbounds, mut operations) = list_operations(country, outbounds);
         outbounds = new_outbounds;
 
-        operations.par_iter_mut().for_each(|(o, i)| i.slice.swap_with_slice(o.slice));
+        operations
+            .par_iter_mut()
+            .for_each(|(o, i)| i.slice.swap_with_slice(o.slice));
 
         // Create new edges for edges that were swapped to the wrong place
         for (i, mut o) in operations {
