@@ -67,7 +67,7 @@ where
             bucket
                 .arbitrary_chunks_mut(global_counts)
                 .par_bridge()
-                .for_each(|chunk| director(tuning, chunk, bucket_len, level - 1))
+                .for_each(|chunk| director(tuning, false, chunk, bucket_len, level - 1))
         },
     );
 }

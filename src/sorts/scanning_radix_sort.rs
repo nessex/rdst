@@ -236,7 +236,7 @@ pub fn scanning_radix_sort<T>(
 
     average_chunks
         .into_par_iter()
-        .for_each(|chunk| director(tuning, chunk, len, level - 1));
+        .for_each(|chunk| director(tuning, false, chunk, len, level - 1));
 }
 
 #[cfg(test)]

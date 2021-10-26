@@ -119,3 +119,4 @@ mod sort_manager;
 // Public exports
 pub use radix_key::RadixKey;
 pub use radix_sort::RadixSort;
+pub use tuning_parameters::TuningParameters;

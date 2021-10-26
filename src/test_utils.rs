@@ -86,7 +86,7 @@ pub fn gen_bench_input_set<T>(shift: T) -> Vec<Vec<T>>
 where
     T: NumericTest<T>,
 {
-    let n = 50_000_000;
+    let n = 200_000_000;
     let half = n / 2;
     let inputs = gen_inputs(n, shift);
 

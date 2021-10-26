@@ -62,7 +62,7 @@ where
             "ska_sort",
             Box::new(|mut input| {
                 let tuning = TuningParameters::new(4);
-                ska_sort_adapter(&tuning, &mut input, 3);
+                ska_sort_adapter(&tuning, true, &mut input, 3);
                 black_box(input);
             }),
         ),

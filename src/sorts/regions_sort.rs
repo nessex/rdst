@@ -5,6 +5,7 @@
 //! Theoretically-Efficient and Practical Parallel In-Place Radix Sorting.
 //! In ACM Symposium on Parallelism in Algorithms and Architectures (SPAA), 2019.
 //!
+//! Summary:
 //! 1. Split into buckets
 //! 2. Compute counts for each bucket and sort each bucket in-place
 //! 3. Generate global counts
@@ -29,6 +30,12 @@ use partition::partition_index;
 use rayon::prelude::*;
 use std::cmp::{min, Ordering};
 
+/// Operation represents a pair of edges, which have content slices that need to be swapped.
+struct Operation<'bucket, T>(Edge<'bucket, T>, Edge<'bucket, T>);
+
+/// Edge represents an outbound bit of data from a "country", an edge in the regions
+/// graph. A "country" refers to a space which has been determined to be reserved for a particular
+/// byte value in the final array.
 struct Edge<'bucket, T> {
     /// dst is the destination country index
     dst: usize,
@@ -43,10 +50,8 @@ fn generate_outbounds<'bucket, T>(
     bucket: &'bucket mut [T],
     local_counts: &[[usize; 256]],
     global_counts: &[usize],
-) -> Vec<Vec<Edge<'bucket, T>>> {
-    let mut outbounds: Vec<Vec<Edge<T>>> = Vec::new();
-    outbounds.resize_with(256, Vec::new);
-
+) -> Vec<Edge<'bucket, T>> {
+    let mut outbounds: Vec<Edge<T>> = Vec::new();
     let mut rem_bucket = bucket;
     let mut local_bucket = 0;
     let mut local_country = 0;
@@ -64,7 +69,7 @@ fn generate_outbounds<'bucket, T>(
             rem_bucket = rem;
 
             if local_country != global_country {
-                outbounds[global_country].push(Edge {
+                outbounds.push(Edge {
                     dst: local_country,
                     init: global_country,
                     slice,
@@ -103,69 +108,81 @@ fn generate_outbounds<'bucket, T>(
 /// list_operations takes the lists of outbounds and turns it into a list of swaps to perform
 fn list_operations<T>(
     country: usize,
-    mut outbounds: Vec<Vec<Edge<T>>>,
-) -> (Vec<Vec<Edge<T>>>, Vec<(Edge<T>, Edge<T>)>) {
-    let mut inbounds = Vec::new();
-    let mut current_outbounds = std::mem::take(&mut outbounds[country]);
+    mut outbounds: Vec<Edge<T>>,
+) -> (Vec<Edge<T>>, Vec<Operation<T>>) {
+    // 1. Extract current country outbounds from full outbounds list
+    // NOTE(nathan): Partitioning a single array benched faster than
+    // keeping an array per country (256 arrays total).
+    let ob = partition_index(&mut outbounds, |e| e.init != country);
+    let mut current_outbounds = outbounds.split_off(ob);
 
-    // 1. Calculate inbounds for country
-    for country_outbound in outbounds.iter_mut() {
-        let p = partition_index(country_outbound, |e| e.dst != country);
-        let mut new_in = country_outbound.split_off(p);
-        inbounds.append(&mut new_in);
-    }
+    // 2. Calculate inbounds for country
+    let p = partition_index(&mut outbounds, |e| e.dst != country);
+    let mut inbounds = outbounds.split_off(p);
 
-    // 2. Pair up inbounds & outbounds into an operation, returning unmatched data to the working arrays
+    // 3. Pair up inbounds & outbounds into an operation, returning unmatched data to the working arrays
     let mut operations = Vec::new();
 
-    while let Some(i) = inbounds.pop() {
+    loop {
+        let i = match inbounds.pop() {
+            Some(i) => i,
+            None => {
+                outbounds.append(&mut current_outbounds);
+                break;
+            },
+        };
+
         let o = match current_outbounds.pop() {
             Some(o) => o,
-            None => break,
+            None => {
+                outbounds.push(i);
+                outbounds.append(&mut inbounds);
+                break;
+            },
         };
 
         let op = match i.slice.len().cmp(&o.slice.len()) {
-            Ordering::Equal => (i, o),
+            Ordering::Equal => Operation(i, o),
             Ordering::Less => {
                 let (sl, rem) = o.slice.split_at_mut(i.slice.len());
+
                 current_outbounds.push(Edge {
                     dst: o.dst,
                     init: o.init,
                     slice: rem,
                 });
 
-                (
-                    i,
-                    Edge {
-                        dst: o.dst,
-                        init: o.init,
-                        slice: sl,
-                    },
-                )
+                let o = Edge {
+                    dst: o.dst,
+                    init: o.init,
+                    slice: sl,
+                };
+
+                Operation(i, o)
             }
             Ordering::Greater => {
                 let (sl, rem) = i.slice.split_at_mut(o.slice.len());
+
                 inbounds.push(Edge {
                     dst: i.dst,
                     init: i.init,
                     slice: rem,
                 });
 
-                (
-                    Edge {
-                        dst: i.dst,
-                        init: i.init,
-                        slice: sl,
-                    },
-                    o,
-                )
+                let i = Edge {
+                    dst: i.dst,
+                    init: i.init,
+                    slice: sl,
+                };
+
+                Operation(i, o)
             }
         };
 
         operations.push(op);
     }
 
-    // 3. Return the paired operations
+    // 4. Return the paired operations
     (outbounds, operations)
 }
 
@@ -180,7 +197,6 @@ where
     }
 
     let chunk_size = (bucket_len / tuning.cpus) + 1;
-
     let local_counts: Vec<[usize; 256]> = bucket
         .par_chunks_mut(chunk_size)
         .map(|chunk| {
@@ -200,21 +216,41 @@ where
     });
 
     let mut outbounds = generate_outbounds(bucket, &local_counts, &global_counts);
+    let mut operations = Vec::new();
 
-    for country in 0..256 {
-        let (new_outbounds, mut operations) = list_operations(country, outbounds);
-        outbounds = new_outbounds;
+    // This loop calculates and executes all operations that can be done in parallel, each pass.
+    loop {
+        if outbounds.is_empty() {
+            break;
+        }
 
+        // List out all the operations that need to be executed in this pass
+        for country in 0..256 {
+            let (new_outbounds, mut new_ops) = list_operations(country, outbounds);
+            outbounds = new_outbounds;
+            operations.append(&mut new_ops);
+        }
+
+        if operations.is_empty() {
+            break;
+        }
+
+        // Execute all operations, swapping the paired slices (inbound/outbound edges)
+        let chunk_size = (operations.len() / tuning.cpus) + 1;
         operations
-            .par_iter_mut()
-            .for_each(|(o, i)| i.slice.swap_with_slice(o.slice));
+            .par_chunks_mut(chunk_size)
+            .for_each(|chunk| {
+                for Operation(o, i) in chunk {
+                    i.slice.swap_with_slice(o.slice)
+                }
+            });
 
-        // Create new edges for edges that were swapped to the wrong place
-        for (i, mut o) in operations {
+        // Create new edges for edges that were swapped somewhere other than their final destination
+        for Operation(i, mut o) in std::mem::take(&mut operations) {
             if o.dst != i.init {
                 o.init = i.init;
                 o.slice = i.slice;
-                outbounds[i.init].push(o);
+                outbounds.push(o);
             }
         }
     }
@@ -223,10 +259,29 @@ where
         return;
     }
 
-    bucket
-        .arbitrary_chunks_mut(global_counts)
-        .par_bridge()
-        .for_each(|chunk| director(tuning, chunk, bucket_len, level - 1));
+    // Work is being divided into oversized / long chunks and average sized chunks, to better balance
+    // resources in the case of a non-uniform distribution. Long chunks are processed sequentially
+    // first using the multi-threaded regions sort, and the remainder are processed in parallel
+    // using typical single-threaded algorithms like ska sort.
+    let mut long_chunks = Vec::new();
+    let mut average_chunks = Vec::with_capacity(256);
+    let len_limit = ((bucket_len / tuning.cpus) as f64 * 1.4) as usize;
+
+    for chunk in bucket.arbitrary_chunks_mut(global_counts.to_vec()) {
+        if chunk.len() > len_limit && chunk.len() > tuning.regions_sort_threshold {
+            long_chunks.push(chunk);
+        } else {
+            average_chunks.push(chunk);
+        }
+    }
+
+    long_chunks
+        .into_iter()
+        .for_each(|chunk| regions_sort(tuning, chunk, level - 1));
+
+    average_chunks
+        .into_par_iter()
+        .for_each(|chunk| director(tuning, true, chunk, bucket_len, level - 1));
 }
 
 #[cfg(test)]
