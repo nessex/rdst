@@ -14,7 +14,7 @@ where
     let mut end_offsets = [0usize; 256];
 
     end_offsets[0..255].copy_from_slice(&prefix_sums[1..256]);
-    end_offsets[255] = counts[255];
+    end_offsets[255] = counts[255] + prefix_sums[255];
 
     let mut finished = 1;
     let mut finished_map = [false; 256];
