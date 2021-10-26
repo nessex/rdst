@@ -50,7 +50,7 @@ pub trait RadixSort {
     ///
     /// This utilizes a variant of regions sort (Obeya, Kahssay, Fan and Shun. 2019), so it has
     /// significantly better performance than traditional (typically single-threaded) in-place
-    /// radix sorting algorithms.
+    /// radix sorting algorithms such as American Flag sort.
     ///
     /// ```
     /// use rdst::RadixSort;

@@ -4,6 +4,10 @@
 //!
 //! ## Usage
 //!
+//! ```ignore
+//! my_vec.radix_sort_unstable();
+//! ```
+//!
 //! In the simplest case, you can use this sort by simply calling `my_vec.radix_sort_unstable()`. If you have a custom type to sort, you may need to implement `RadixKey` for that type.
 //!
 //! ## Default Implementations
@@ -73,6 +77,14 @@
 //!     }
 //! }
 //! ```
+//!
+//! ## In-place Variant
+//!
+//! ```ignore
+//! my_vec.radix_sort_inplace_unstable();
+//! ```
+//!
+//! This library also includes a _mostly_ in-place variant of radix sort. This is useful in cases where memory or memory bandwidth are more limited. Generally, this algorithm is slightly slower than the standard algorithm, however in specific circumstances this can actually be slightly faster as well. Typically, this is seen for extremely un-even distributions of data, or on certain architectures.
 //!
 //! ## License
 //!
