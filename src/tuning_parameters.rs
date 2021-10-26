@@ -28,7 +28,7 @@ impl TuningParameters {
     }
 
     fn regions_sort_threshold() -> usize {
-        150_000
+        800_000
     }
 
     fn inplace_sort_lsb_threshold() -> usize {

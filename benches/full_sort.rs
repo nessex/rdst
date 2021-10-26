@@ -17,6 +17,13 @@ where
             }),
         ),
         (
+            "rdst_inplace",
+            Box::new(|mut input| {
+                input.radix_sort_inplace_unstable();
+                black_box(input);
+            }),
+        ),
+        (
             "voracious",
             Box::new(|mut input| {
                 input.voracious_mt_sort(num_cpus::get());

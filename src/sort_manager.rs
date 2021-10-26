@@ -4,6 +4,7 @@ use crate::sorts::regions_sort::regions_sort;
 use crate::sorts::scanning_radix_sort::scanning_radix_sort;
 use crate::tuning_parameters::TuningParameters;
 use crate::RadixKey;
+use crate::sorts::ska_sort::ska_sort_adapter;
 
 pub struct SortManager {
     tuning: TuningParameters,
@@ -50,7 +51,7 @@ impl SortManager {
             n if n >= self.tuning.recombinating_sort_threshold => {
                 recombinating_sort(&self.tuning, bucket, T::LEVELS - 1)
             }
-            _ => lsb_radix_sort_adapter(bucket, 0, T::LEVELS - 1),
+            _ => lsb_radix_sort_adapter(bucket, 0, T::LEVELS - 1)
         };
     }
 
@@ -64,6 +65,15 @@ impl SortManager {
             return;
         }
 
-        regions_sort(&self.tuning, bucket, T::LEVELS - 1);
+        match bucket_len {
+            n if n >= self.tuning.regions_sort_threshold => {
+                regions_sort(&self.tuning, bucket, T::LEVELS - 1)
+            }
+            n if n >= self.tuning.ska_sort_threshold => {
+                ska_sort_adapter(&self.tuning, true, bucket, T::LEVELS - 1)
+            }
+            _ => lsb_radix_sort_adapter(bucket, 0, T::LEVELS - 1)
+        }
+
     }
 }
