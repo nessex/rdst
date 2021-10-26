@@ -2,6 +2,7 @@ use criterion::*;
 use rdst::bench_utils::bench_common;
 use rdst::sorts::lsb_radix_sort::lsb_radix_sort_adapter;
 use rdst::sorts::recombinating_sort::recombinating_sort;
+use rdst::sorts::regions_sort::regions_sort;
 use rdst::sorts::scanning_radix_sort::scanning_radix_sort;
 use rdst::sorts::ska_sort::ska_sort_adapter;
 use rdst::test_utils::NumericTest;
@@ -35,6 +36,14 @@ where
 {
     let tests: Vec<(&str, Box<dyn Fn(Vec<_>)>)> = vec![
         (
+            "regions_sort",
+            Box::new(|mut input| {
+                let tuning = TuningParameters::new(4);
+                regions_sort(&tuning, &mut input, 3);
+                black_box(input);
+            }),
+        ),
+        (
             "scanning_radix_sort",
             Box::new(|mut input| {
                 let tuning = TuningParameters::new(4);
@@ -53,7 +62,7 @@ where
             "ska_sort",
             Box::new(|mut input| {
                 let tuning = TuningParameters::new(4);
-                ska_sort_adapter(&tuning, &mut input, 3);
+                ska_sort_adapter(&tuning, true, &mut input, 3);
                 black_box(input);
             }),
         ),
