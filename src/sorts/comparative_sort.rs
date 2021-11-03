@@ -2,13 +2,6 @@ use std::cmp::Ordering;
 use crate::RadixKey;
 
 
-pub fn comparative_sort_one_level<T>(bucket: &mut [T], level: usize)
-where
-    T: RadixKey + Sized + Send + Copy + Sync,
-{
-    bucket.sort_unstable_by(|a, b| a.get_level(level).cmp(&b.get_level(level)));
-}
-
 pub fn comparative_sort<T>(bucket: &mut [T], start_level: usize)
 where
     T: RadixKey + Sized + Send + Copy + Sync,
