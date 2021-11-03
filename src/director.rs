@@ -3,6 +3,7 @@ use crate::sorts::recombinating_sort::recombinating_sort;
 use crate::sorts::ska_sort::ska_sort_adapter;
 use crate::tuning_parameters::TuningParameters;
 use crate::RadixKey;
+use crate::sorts::comparative_sort::comparative_sort;
 
 pub fn director<T>(
     tuning: &TuningParameters,
@@ -14,7 +15,9 @@ pub fn director<T>(
     T: RadixKey + Sized + Send + Copy + Sync,
 {
     if inplace {
-        if bucket.len() < tuning.inplace_sort_lsb_threshold {
+        if bucket.len() < tuning.comparative_sort_threshold {
+            comparative_sort(bucket, level);
+        } else if bucket.len() < tuning.inplace_sort_lsb_threshold {
             lsb_radix_sort_adapter(bucket, 0, level);
         } else {
             ska_sort_adapter(tuning, inplace, bucket, level);
@@ -26,10 +29,12 @@ pub fn director<T>(
 
         if bucket.len() > len_limit && bucket.len() >= tuning.recombinating_sort_threshold {
             recombinating_sort(tuning, bucket, level);
-        } else if bucket.len() > tuning.ska_sort_threshold {
+        } else if bucket.len() >= tuning.ska_sort_threshold {
             ska_sort_adapter(tuning, inplace, bucket, level);
-        } else {
+        } else if bucket.len() >= tuning.comparative_sort_threshold {
             lsb_radix_sort_adapter(bucket, 0, level);
+        } else {
+            comparative_sort(bucket, level);
         }
     }
 }

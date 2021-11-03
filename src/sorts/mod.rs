@@ -4,3 +4,4 @@ pub mod recombinating_sort;
 pub mod regions_sort;
 pub mod scanning_radix_sort;
 pub mod ska_sort;
+pub mod comparative_sort;

@@ -3,6 +3,7 @@ use crate::tuning_parameters::TuningParameters;
 use crate::utils::*;
 use crate::RadixKey;
 use arbitrary_chunks::ArbitraryChunks;
+use rayon::prelude::*;
 
 // Based upon (with modifications):
 // https://probablydance.com/2016/12/27/i-wrote-a-faster-sorting-algorithm/
@@ -70,6 +71,7 @@ where
 
     bucket
         .arbitrary_chunks_mut(counts.to_vec())
+        .par_bridge()
         .for_each(|chunk| director(tuning, inplace, chunk, len, level - 1));
 }
 
