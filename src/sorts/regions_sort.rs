@@ -25,7 +25,6 @@ use crate::sorts::ska_sort::ska_sort;
 use crate::tuning_parameters::TuningParameters;
 use crate::utils::*;
 use crate::RadixKey;
-use arbitrary_chunks::ArbitraryChunks;
 use partition::partition_index;
 use rayon::prelude::*;
 use std::cmp::{min, Ordering};

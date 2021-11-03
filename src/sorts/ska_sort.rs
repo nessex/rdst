@@ -2,8 +2,6 @@ use crate::director::director;
 use crate::tuning_parameters::TuningParameters;
 use crate::utils::*;
 use crate::RadixKey;
-use arbitrary_chunks::ArbitraryChunks;
-use rayon::prelude::*;
 
 // Based upon (with modifications):
 // https://probablydance.com/2016/12/27/i-wrote-a-faster-sorting-algorithm/
@@ -66,8 +64,6 @@ where
     if level == 0 {
         return;
     }
-
-    let len = bucket.len();
 
     director(tuning, inplace, bucket, counts.to_vec(), level - 1);
 }

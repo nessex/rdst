@@ -46,9 +46,9 @@ pub fn director<T>(
         .into_par_iter()
         .for_each(|chunk| {
             if inplace {
-                if chunk.len() < tuning.comparative_sort_threshold {
+                if chunk.len() <= tuning.comparative_sort_threshold {
                     comparative_sort(chunk, level);
-                } else if chunk.len() < tuning.inplace_sort_lsb_threshold {
+                } else if chunk.len() <= tuning.inplace_sort_lsb_threshold {
                     lsb_radix_sort_adapter(chunk, 0, level);
                 } else {
                     ska_sort_adapter(tuning, inplace, chunk, level);
@@ -56,7 +56,7 @@ pub fn director<T>(
             } else {
                 if chunk.len() >= tuning.ska_sort_threshold {
                     ska_sort_adapter(tuning, inplace, chunk, level);
-                } else if chunk.len() >= tuning.comparative_sort_threshold {
+                } else if chunk.len() > tuning.comparative_sort_threshold {
                     lsb_radix_sort_adapter(chunk, 0, level);
                 } else {
                     comparative_sort(chunk, level);
