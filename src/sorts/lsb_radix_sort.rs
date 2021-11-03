@@ -7,9 +7,7 @@ fn lsb_radix_sort<T>(bucket: &mut [T], tmp_bucket: &mut [T], counts: &[usize], l
 where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
-    out_of_place_sort(bucket, tmp_bucket, counts, level);
-
-    bucket.copy_from_slice(tmp_bucket);
+    out_of_place_sort(tmp_bucket, bucket, counts, level);
 }
 
 pub fn lsb_radix_sort_adapter<T>(bucket: &mut [T], start_level: usize, end_level: usize)
@@ -20,7 +18,7 @@ where
         return;
     }
 
-    let mut tmp_bucket = get_tmp_bucket(bucket.len());
+    let mut tmp_bucket = bucket.to_vec();
     let levels: Vec<usize> = (start_level..=end_level).into_iter().collect();
 
     for l in levels {
