@@ -218,25 +218,7 @@ pub fn scanning_radix_sort<T>(
         return;
     }
 
-    let len_limit = ((len / tuning.cpus) as f64 * 1.4) as usize;
-    let mut long_chunks = Vec::new();
-    let mut average_chunks = Vec::with_capacity(256);
-
-    for chunk in bucket.arbitrary_chunks_mut(msb_counts.to_vec()) {
-        if chunk.len() > len_limit && chunk.len() > tuning.scanning_sort_threshold {
-            long_chunks.push(chunk);
-        } else {
-            average_chunks.push(chunk);
-        }
-    }
-
-    long_chunks
-        .into_iter()
-        .for_each(|chunk| scanning_radix_sort(tuning, chunk, level - 1, true));
-
-    average_chunks
-        .into_par_iter()
-        .for_each(|chunk| director(tuning, false, chunk, len, level - 1));
+    director(tuning, false, bucket, msb_counts.to_vec(), level - 1);
 }
 
 #[cfg(test)]

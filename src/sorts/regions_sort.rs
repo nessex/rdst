@@ -259,29 +259,7 @@ where
         return;
     }
 
-    // Work is being divided into oversized / long chunks and average sized chunks, to better balance
-    // resources in the case of a non-uniform distribution. Long chunks are processed sequentially
-    // first using the multi-threaded regions sort, and the remainder are processed in parallel
-    // using typical single-threaded algorithms like ska sort.
-    let mut long_chunks = Vec::new();
-    let mut average_chunks = Vec::with_capacity(256);
-    let len_limit = ((bucket_len / tuning.cpus) as f64 * 1.4) as usize;
-
-    for chunk in bucket.arbitrary_chunks_mut(global_counts.to_vec()) {
-        if chunk.len() > len_limit && chunk.len() > tuning.regions_sort_threshold {
-            long_chunks.push(chunk);
-        } else {
-            average_chunks.push(chunk);
-        }
-    }
-
-    long_chunks
-        .into_iter()
-        .for_each(|chunk| regions_sort(tuning, chunk, level - 1));
-
-    average_chunks
-        .into_par_iter()
-        .for_each(|chunk| director(tuning, true, chunk, bucket_len, level - 1));
+    director(tuning, true, bucket, global_counts, level - 1);
 }
 
 #[cfg(test)]

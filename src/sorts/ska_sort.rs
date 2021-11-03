@@ -69,10 +69,7 @@ where
 
     let len = bucket.len();
 
-    bucket
-        .arbitrary_chunks_mut(counts.to_vec())
-        .par_bridge()
-        .for_each(|chunk| director(tuning, inplace, chunk, len, level - 1));
+    director(tuning, inplace, bucket, counts.to_vec(), level - 1);
 }
 
 #[cfg(test)]
