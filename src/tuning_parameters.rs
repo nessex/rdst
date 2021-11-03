@@ -38,7 +38,7 @@ impl TuningParameters {
     }
 
     fn recombinating_sort_threshold() -> usize {
-        185_000
+        200_000
     }
 
     fn scanning_sort_threshold() -> usize {
@@ -50,7 +50,7 @@ impl TuningParameters {
     }
 
     fn comparative_sort_threshold() -> usize {
-        220
+        128
     }
 
     fn par_count_threshold() -> usize {
