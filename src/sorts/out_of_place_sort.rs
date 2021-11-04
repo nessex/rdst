@@ -40,8 +40,8 @@ where
     });
 
     rem.iter().for_each(|val| {
-        let bucket = val.get_level(level) as usize;
-        dst_bucket[prefix_sums[bucket]] = *val;
-        prefix_sums[bucket] += 1;
+        let b = val.get_level(level) as usize;
+        dst_bucket[prefix_sums[b]] = *val;
+        prefix_sums[b] += 1;
     });
 }
