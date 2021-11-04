@@ -119,7 +119,7 @@ where
 fn main() {
     let mut rng = WyRand::new();
     loop {
-        let input_size: usize = rng.generate_range(2..=100_000);
+        let input_size: usize = rng.generate_range(2..=200_000_000);
         let data_type = match rng.generate_range(0..=11) {
             0 => DataType::U8,
             1 => DataType::U16,
