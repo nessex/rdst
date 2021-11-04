@@ -1,6 +1,6 @@
 use arbitrary_chunks::ArbitraryChunks;
 use rayon::prelude::*;
-use crate::sorts::lsb_radix_sort::lsb_radix_sort_adapter;
+use crate::sorts::lsb_sort::lsb_sort_adapter;
 use crate::sorts::ska_sort::ska_sort_adapter;
 use crate::tuning_parameters::TuningParameters;
 use crate::RadixKey;
@@ -49,7 +49,7 @@ pub fn director<T>(
                 if chunk.len() <= tuning.comparative_sort_threshold {
                     comparative_sort(chunk, level);
                 } else if chunk.len() <= tuning.inplace_sort_lsb_threshold {
-                    lsb_radix_sort_adapter(chunk, 0, level);
+                    lsb_sort_adapter(chunk, 0, level);
                 } else {
                     ska_sort_adapter(tuning, inplace, chunk, level);
                 }
@@ -57,7 +57,7 @@ pub fn director<T>(
                 if chunk.len() >= tuning.ska_sort_threshold {
                     ska_sort_adapter(tuning, inplace, chunk, level);
                 } else if chunk.len() > tuning.comparative_sort_threshold {
-                    lsb_radix_sort_adapter(chunk, 0, level);
+                    lsb_sort_adapter(chunk, 0, level);
                 } else {
                     comparative_sort(chunk, level);
                 }

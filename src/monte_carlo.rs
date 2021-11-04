@@ -11,7 +11,7 @@ mod radix_key;
 mod radix_key_impl;
 
 use radix_key::RadixKey;
-use crate::sorts::lsb_radix_sort::lsb_radix_sort;
+use crate::sorts::lsb_sort::lsb_sort;
 use crate::utils::*;
 use crate::sorts::regions_sort::regions_sort;
 use crate::sorts::recombinating_sort::recombinating_sort;
@@ -71,7 +71,7 @@ where
         Algorithm::LsbSort => {
             let counts = get_counts(&data, level);
             let mut tmp_bucket = get_tmp_bucket::<T>(data.len());
-            lsb_radix_sort(&mut data, &mut tmp_bucket, &counts, level);
+            lsb_sort(&mut data, &mut tmp_bucket, &counts, level);
         }
         Algorithm::RegionsSort => {
             let _ = regions_sort(&tuning, &mut data, level);

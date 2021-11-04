@@ -1,7 +1,7 @@
 use criterion::*;
 use rdst::bench_utils::{bench_common, bench_comparative};
 use rdst::sorts::comparative_sort::comparative_sort;
-use rdst::sorts::lsb_radix_sort::lsb_radix_sort_adapter;
+use rdst::sorts::lsb_sort::lsb_sort_adapter;
 use rdst::sorts::recombinating_sort::recombinating_sort_adapter;
 use rdst::sorts::regions_sort::regions_sort_adapter;
 use rdst::sorts::scanning_sort::scanning_sort_adapter;
@@ -45,7 +45,7 @@ where
             }),
         ),
         (
-            "scanning_radix_sort",
+            "scanning_sort",
             Box::new(|mut input| {
                 let tuning = TuningParameters::new(4);
                 scanning_sort_adapter(&tuning, &mut input, 3, true);
@@ -53,9 +53,9 @@ where
             }),
         ),
         (
-            "lsb_radix_sort",
+            "lsb_sort",
             Box::new(|mut input| {
-                lsb_radix_sort_adapter(&mut input, 0, 3);
+                lsb_sort_adapter(&mut input, 0, 3);
                 black_box(input);
             }),
         ),
@@ -102,9 +102,9 @@ where
 {
     let tests: Vec<(&str, Box<dyn Fn(Vec<_>)>)> = vec![
         (
-            "lsb_radix_sort",
+            "lsb_sort",
             Box::new(|mut input| {
-                lsb_radix_sort_adapter(&mut input, 0, 3);
+                lsb_sort_adapter(&mut input, 0, 3);
                 black_box(input);
             }),
         ),

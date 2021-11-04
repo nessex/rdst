@@ -38,7 +38,7 @@ opt-level = 3
 
 [[bin]]
 name = "monte-carlo-tuning"
-path = "src/monte-carlo.rs"
+path = "src/monte_carlo.rs"
 required-features = [ "tuning" ]
 
 [[bench]]

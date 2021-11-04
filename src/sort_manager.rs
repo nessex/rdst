@@ -1,4 +1,4 @@
-use crate::sorts::lsb_radix_sort::lsb_radix_sort_adapter;
+use crate::sorts::lsb_sort::lsb_sort_adapter;
 use crate::sorts::recombinating_sort::recombinating_sort_adapter;
 use crate::sorts::regions_sort::regions_sort_adapter;
 use crate::tuning_parameters::TuningParameters;
@@ -52,7 +52,7 @@ impl SortManager {
             n if n >= self.tuning.recombinating_sort_threshold => {
                 recombinating_sort_adapter(&self.tuning, bucket, T::LEVELS - 1)
             }
-            _ => lsb_radix_sort_adapter(bucket, 0, T::LEVELS - 1)
+            _ => lsb_sort_adapter(bucket, 0, T::LEVELS - 1)
         };
     }
 
@@ -74,7 +74,7 @@ impl SortManager {
                 ska_sort_adapter(&self.tuning, true, bucket, T::LEVELS - 1)
             }
             n if n >= self.tuning.comparative_sort_threshold => {
-                lsb_radix_sort_adapter(bucket, 0, T::LEVELS - 1)
+                lsb_sort_adapter(bucket, 0, T::LEVELS - 1)
             }
             _ => comparative_sort(bucket, T::LEVELS - 1)
         }
