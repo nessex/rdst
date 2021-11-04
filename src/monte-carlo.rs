@@ -11,11 +11,11 @@ mod radix_key;
 mod radix_key_impl;
 
 use radix_key::RadixKey;
+use crate::sorts::lsb_radix_sort::lsb_radix_sort;
 use crate::utils::*;
 use crate::sorts::regions_sort::regions_sort;
 use crate::sorts::recombinating_sort::recombinating_sort;
 use crate::sorts::comparative_sort::comparative_sort;
-use crate::sorts::out_of_place_sort::out_of_place_sort;
 use crate::sorts::ska_sort::ska_sort;
 use crate::sorts::scanning_sort::scanning_sort;
 use crate::tuning_parameters::TuningParameters;
@@ -27,12 +27,12 @@ enum DataType {
     F32, F64
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 enum Algorithm {
     ScanningSort,
     RecombinatingSort,
     ComparativeSort,
-    OutOfPlaceSort,
+    LsbSort,
     RegionsSort,
     SkaSort,
 }
@@ -68,17 +68,16 @@ where
             let _ = recombinating_sort(&tuning, &mut data, level);
         }
         Algorithm::ComparativeSort => comparative_sort(&mut data, level),
-        Algorithm::OutOfPlaceSort => {
-            let counts = par_get_counts(&data, level);
+        Algorithm::LsbSort => {
+            let counts = get_counts(&data, level);
             let mut tmp_bucket = get_tmp_bucket::<T>(data.len());
-            out_of_place_sort(&mut data, &mut tmp_bucket, &counts, level);
-            data.copy_from_slice(&mut tmp_bucket);
+            lsb_radix_sort(&mut data, &mut tmp_bucket, &counts, level);
         }
         Algorithm::RegionsSort => {
             let _ = regions_sort(&tuning, &mut data, level);
         }
         Algorithm::SkaSort => {
-            let counts = par_get_counts(&data, level);
+            let counts = get_counts(&data, level);
             ska_sort(&mut data, &counts, level)
         },
     };
@@ -107,7 +106,7 @@ fn main() {
             _ => panic!(),
         };
 
-        let data_type = DataType::U32;
+        let data_type = DataType::U64;
 
         let level = match data_type {
             DataType::U8 => 0,
@@ -132,25 +131,32 @@ fn main() {
                 0 => Algorithm::ScanningSort,
                 1 => Algorithm::RecombinatingSort,
                 2 => Algorithm::ComparativeSort,
-                3 => Algorithm::OutOfPlaceSort,
+                3 => Algorithm::LsbSort,
                 4 => Algorithm::RegionsSort,
                 5 => Algorithm::SkaSort,
                 _ => panic!(),
             };
 
+            // Skip these as they are way out of their reasonable ranges
+            if (algorithm == Algorithm::ComparativeSort && input_size > 1_000) ||
+                (algorithm == Algorithm::LsbSort && input_size > 10_000_000) ||
+                (algorithm == Algorithm::SkaSort && input_size > 10_000_000) {
+                continue;
+            }
+
             let time = match data_type {
                 DataType::U8 => sort::<u8>(&algorithm, input_size, level),
-                DataType::U16 => sort::<u8>(&algorithm, input_size, level),
-                DataType::U32 => sort::<u8>(&algorithm, input_size, level),
-                DataType::U64 => sort::<u8>(&algorithm, input_size, level),
-                DataType::U128 => sort::<u8>(&algorithm, input_size, level),
-                DataType::I8 => sort::<u8>(&algorithm, input_size, level),
-                DataType::I16 => sort::<u8>(&algorithm, input_size, level),
-                DataType::I32 => sort::<u8>(&algorithm, input_size, level),
-                DataType::I64 => sort::<u8>(&algorithm, input_size, level),
-                DataType::I128 => sort::<u8>(&algorithm, input_size, level),
-                DataType::F32 => sort::<u8>(&algorithm, input_size, level),
-                DataType::F64 => sort::<u8>(&algorithm, input_size, level),
+                DataType::U16 => sort::<u16>(&algorithm, input_size, level),
+                DataType::U32 => sort::<u32>(&algorithm, input_size, level),
+                DataType::U64 => sort::<u64>(&algorithm, input_size, level),
+                DataType::U128 => sort::<u128>(&algorithm, input_size, level),
+                DataType::I8 => sort::<i8>(&algorithm, input_size, level),
+                DataType::I16 => sort::<i16>(&algorithm, input_size, level),
+                DataType::I32 => sort::<i32>(&algorithm, input_size, level),
+                DataType::I64 => sort::<i64>(&algorithm, input_size, level),
+                DataType::I128 => sort::<i128>(&algorithm, input_size, level),
+                DataType::F32 => sort::<f32>(&algorithm, input_size, level),
+                DataType::F64 => sort::<f64>(&algorithm, input_size, level),
             };
 
             if best_time.is_none() || time < best_time.unwrap() {

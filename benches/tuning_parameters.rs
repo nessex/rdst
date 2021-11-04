@@ -2,9 +2,9 @@ use criterion::*;
 use rdst::bench_utils::{bench_common, bench_comparative};
 use rdst::sorts::comparative_sort::comparative_sort;
 use rdst::sorts::lsb_radix_sort::lsb_radix_sort_adapter;
-use rdst::sorts::recombinating_sort::recombinating_sort;
-use rdst::sorts::regions_sort::regions_sort;
-use rdst::sorts::scanning_sort::scanning_radix_sort;
+use rdst::sorts::recombinating_sort::recombinating_sort_adapter;
+use rdst::sorts::regions_sort::regions_sort_adapter;
+use rdst::sorts::scanning_sort::scanning_sort_adapter;
 use rdst::sorts::ska_sort::ska_sort_adapter;
 use rdst::test_utils::NumericTest;
 use rdst::tuning_parameters::TuningParameters;
@@ -40,7 +40,7 @@ where
             "regions_sort",
             Box::new(|mut input| {
                 let tuning = TuningParameters::new(4);
-                regions_sort(&tuning, &mut input, 3);
+                regions_sort_adapter(&tuning, &mut input, 3);
                 black_box(input);
             }),
         ),
@@ -48,7 +48,7 @@ where
             "scanning_radix_sort",
             Box::new(|mut input| {
                 let tuning = TuningParameters::new(4);
-                scanning_radix_sort(&tuning, &mut input, 3, true);
+                scanning_sort_adapter(&tuning, &mut input, 3, true);
                 black_box(input);
             }),
         ),
@@ -71,7 +71,7 @@ where
             "recombinating_sort",
             Box::new(|mut input| {
                 let tuning = TuningParameters::new(4);
-                recombinating_sort(&tuning, &mut input, 3);
+                recombinating_sort_adapter(&tuning, &mut input, 3);
                 black_box(input);
             }),
         ),

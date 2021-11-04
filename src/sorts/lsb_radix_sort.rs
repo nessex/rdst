@@ -3,7 +3,7 @@ use crate::utils::*;
 use crate::RadixKey;
 
 #[inline]
-fn lsb_radix_sort<T>(bucket: &mut [T], tmp_bucket: &mut [T], counts: &[usize], level: usize)
+pub fn lsb_radix_sort<T>(bucket: &mut [T], tmp_bucket: &mut [T], counts: &[usize], level: usize)
 where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
