@@ -9,19 +9,14 @@ where
     bucket.sort_unstable_by(|a, b| -> Ordering {
         let mut level = start_level;
         loop {
-            let av = a.get_level(level);
-            let bv = b.get_level(level);
+            let cmp = a.get_level(level).cmp(&b.get_level(level));
 
-            match av.cmp(&bv) {
-                Ordering::Equal => {
-                    if level == 0 {
-                        return Ordering::Equal;
-                    } else {
-                        level -= 1;
-                    }
-                },
-                o => return o,
+            if level != 0 && cmp == Ordering::Equal {
+                level -= 1;
+                continue;
             }
+
+            return cmp;
         }
     });
 }
