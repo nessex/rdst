@@ -6,7 +6,7 @@ use crate::RadixKey;
 use arbitrary_chunks::ArbitraryChunks;
 use rayon::prelude::*;
 
-pub fn recombinating_sort<T>(tuning: &TuningParameters, bucket: &mut [T], level: usize)
+pub fn recombinating_sort<T>(tuning: &TuningParameters, bucket: &mut [T], level: usize) -> Vec<usize>
 where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
@@ -57,19 +57,25 @@ where
             }
         });
 
+    global_counts
+}
+
+pub fn recombinating_sort_adapter<T>(tuning: &TuningParameters, bucket: &mut [T], level: usize)
+where
+    T: RadixKey + Sized + Send + Copy + Sync,
+{
+    let global_counts = recombinating_sort(tuning, bucket, level);
+
     if level == 0 {
         return;
     }
 
-    rayon::join(
-        move || drop(tmp_bucket),
-        move || director(tuning, false, bucket, global_counts, level - 1),
-    );
+    director(tuning, false, bucket, global_counts, level - 1);
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::sorts::recombinating_sort::recombinating_sort;
+    use crate::sorts::recombinating_sort::recombinating_sort_adapter;
     use crate::test_utils::{sort_comparison_suite, NumericTest};
     use crate::tuning_parameters::TuningParameters;
 
@@ -79,7 +85,7 @@ mod tests {
     {
         let tuning = TuningParameters::new(T::LEVELS);
         sort_comparison_suite(shift, |inputs| {
-            recombinating_sort(&tuning, inputs, T::LEVELS - 1)
+            recombinating_sort_adapter(&tuning, inputs, T::LEVELS - 1)
         });
     }
 

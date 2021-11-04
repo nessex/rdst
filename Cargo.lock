@@ -392,6 +392,7 @@ dependencies = [
  "arbitrary-chunks",
  "block-pseudorand",
  "criterion",
+ "nanorand",
  "num_cpus",
  "partition",
  "rayon",

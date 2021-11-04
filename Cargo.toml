@@ -14,7 +14,7 @@ documentation = "https://docs.rs/rdst/"
 [features]
 default = ["default-implementations"]
 bench = ["criterion", "block-pseudorand"]
-tuning = []
+tuning = ["nanorand"]
 default-implementations = []
 
 [dependencies]
@@ -24,6 +24,7 @@ try-mutex = "0.4.0"
 partition = "0.1.2"
 criterion = { version = "0.3.5", optional = true }
 block-pseudorand = { version = "0.1.1", optional = true }
+nanorand = { version =  "0.6.1", optional = true }
 
 [dev-dependencies]
 voracious_radix_sort = { version = "1.1.0", features = ["voracious_multithread"] }
@@ -34,6 +35,11 @@ block-pseudorand = "0.1.1"
 [profile.release]
 codegen-units = 1
 opt-level = 3
+
+[[bin]]
+name = "monte-carlo-tuning"
+path = "src/monte-carlo.rs"
+required-features = [ "tuning" ]
 
 [[bench]]
 name = "full_sort"

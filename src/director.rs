@@ -1,13 +1,13 @@
 use arbitrary_chunks::ArbitraryChunks;
 use rayon::prelude::*;
 use crate::sorts::lsb_radix_sort::lsb_radix_sort_adapter;
-use crate::sorts::recombinating_sort::recombinating_sort;
 use crate::sorts::ska_sort::ska_sort_adapter;
 use crate::tuning_parameters::TuningParameters;
 use crate::RadixKey;
 use crate::sorts::comparative_sort::comparative_sort;
-use crate::sorts::regions_sort::regions_sort;
-use crate::sorts::scanning_radix_sort::scanning_radix_sort;
+use crate::sorts::recombinating_sort::recombinating_sort_adapter;
+use crate::sorts::regions_sort::regions_sort_adapter;
+use crate::sorts::scanning_sort::scanning_sort_adapter;
 
 pub fn director<T>(
     tuning: &TuningParameters,
@@ -34,11 +34,11 @@ pub fn director<T>(
         .into_iter()
         .for_each(|chunk| {
             if inplace {
-                regions_sort(tuning, chunk, level);
+                regions_sort_adapter(tuning, chunk, level);
             } else if chunk.len() >= tuning.scanning_sort_threshold {
-                scanning_radix_sort(tuning, chunk, level, true)
+                scanning_sort_adapter(tuning, chunk, level, true)
             } else {
-                recombinating_sort(tuning, chunk, level);
+                recombinating_sort_adapter(tuning, chunk, level);
             }
         });
 

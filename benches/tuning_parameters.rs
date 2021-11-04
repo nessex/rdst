@@ -4,7 +4,7 @@ use rdst::sorts::comparative_sort::comparative_sort;
 use rdst::sorts::lsb_radix_sort::lsb_radix_sort_adapter;
 use rdst::sorts::recombinating_sort::recombinating_sort;
 use rdst::sorts::regions_sort::regions_sort;
-use rdst::sorts::scanning_radix_sort::scanning_radix_sort;
+use rdst::sorts::scanning_sort::scanning_radix_sort;
 use rdst::sorts::ska_sort::ska_sort_adapter;
 use rdst::test_utils::NumericTest;
 use rdst::tuning_parameters::TuningParameters;

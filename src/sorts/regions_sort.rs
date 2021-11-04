@@ -185,16 +185,11 @@ fn list_operations<T>(
     (outbounds, operations)
 }
 
-pub fn regions_sort<T>(tuning: &TuningParameters, bucket: &mut [T], level: usize)
+pub fn regions_sort<T>(tuning: &TuningParameters, bucket: &mut [T], level: usize) -> Vec<usize>
 where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
     let bucket_len = bucket.len();
-
-    if bucket_len <= 1 {
-        return;
-    }
-
     let chunk_size = (bucket_len / tuning.cpus) + 1;
     let local_counts: Vec<[usize; 256]> = bucket
         .par_chunks_mut(chunk_size)
@@ -254,6 +249,19 @@ where
         }
     }
 
+    global_counts
+}
+
+pub fn regions_sort_adapter<T>(tuning: &TuningParameters, bucket: &mut [T], level: usize)
+where
+    T: RadixKey + Sized + Send + Copy + Sync,
+{
+    if bucket.len() <= 1 {
+        return;
+    }
+
+    let global_counts = regions_sort(tuning, bucket, level);
+
     if level == 0 {
         return;
     }
@@ -263,7 +271,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::sorts::regions_sort::regions_sort;
+    use crate::sorts::regions_sort::regions_sort_adapter;
     use crate::test_utils::{sort_comparison_suite, NumericTest};
     use crate::tuning_parameters::TuningParameters;
 
@@ -272,7 +280,7 @@ mod tests {
         T: NumericTest<T>,
     {
         let tuning = TuningParameters::new(T::LEVELS);
-        sort_comparison_suite(shift, |inputs| regions_sort(&tuning, inputs, T::LEVELS - 1));
+        sort_comparison_suite(shift, |inputs| regions_sort_adapter(&tuning, inputs, T::LEVELS - 1));
     }
 
     #[test]

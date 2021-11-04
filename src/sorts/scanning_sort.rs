@@ -179,10 +179,33 @@ fn scanner_thread<T>(
     }
 }
 
+pub fn scanning_sort<T>(
+    tuning: &TuningParameters,
+    bucket: &mut [T],
+    msb_counts: &[usize; 256],
+    level: usize,
+) where
+    T: RadixKey + Sized + Send + Copy + Sync,
+{
+    let len = bucket.len();
+    let uniform_threshold = ((len / tuning.cpus) as f64 * 1.4) as usize;
+    let scanner_buckets = get_scanner_buckets(msb_counts, bucket);
+    let threads = min(tuning.cpus, scanner_buckets.len());
+
+    (0..threads).into_par_iter().for_each(|_| {
+        scanner_thread(
+            &scanner_buckets,
+            level,
+            tuning.scanner_read_size as isize,
+            uniform_threshold,
+        );
+    });
+}
+
 // scanning_radix_sort does a parallel MSB-first sort. Following this, depending on the number of
 // elements remaining in each bucket, it will either do an MSB-sort or an LSB-sort, making this
 // a dynamic hybrid sort.
-pub fn scanning_radix_sort<T>(
+pub fn scanning_sort_adapter<T>(
     tuning: &TuningParameters,
     bucket: &mut [T],
     start_level: usize,
@@ -197,22 +220,7 @@ pub fn scanning_radix_sort<T>(
             return;
         };
 
-    let len = bucket.len();
-    let uniform_threshold = ((len / tuning.cpus) as f64 * 1.4) as usize;
-    let scanner_buckets = get_scanner_buckets(&msb_counts, bucket);
-    let threads = min(tuning.cpus, scanner_buckets.len());
-
-    (0..threads).into_par_iter().for_each(|_| {
-        scanner_thread(
-            &scanner_buckets,
-            level,
-            tuning.scanner_read_size as isize,
-            uniform_threshold,
-        );
-    });
-
-    // Drop some data before recursing to reduce memory usage
-    drop(scanner_buckets);
+    scanning_sort(tuning, bucket, &msb_counts, level);
 
     if level == 0 {
         return;
@@ -223,7 +231,7 @@ pub fn scanning_radix_sort<T>(
 
 #[cfg(test)]
 mod tests {
-    use crate::sorts::scanning_radix_sort::scanning_radix_sort;
+    use crate::sorts::scanning_sort::scanning_sort_adapter;
     use crate::test_utils::{sort_comparison_suite, NumericTest};
     use crate::tuning_parameters::TuningParameters;
 
@@ -233,7 +241,7 @@ mod tests {
     {
         let tuning = TuningParameters::new(T::LEVELS);
         sort_comparison_suite(shift, |inputs| {
-            scanning_radix_sort(&tuning, inputs, T::LEVELS - 1, false)
+            scanning_sort_adapter(&tuning, inputs, T::LEVELS - 1, false)
         });
     }
 
