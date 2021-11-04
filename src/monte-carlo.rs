@@ -106,8 +106,6 @@ fn main() {
             _ => panic!(),
         };
 
-        let data_type = DataType::U64;
-
         let level = match data_type {
             DataType::U8 => 0,
             DataType::U16 => rng.generate_range(0..=1),
