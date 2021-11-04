@@ -1,3 +1,33 @@
+//! # monte_carlo
+//!
+//! monte_carlo is intended for tuning diversions in the sorting algorithm.
+//!
+//! ## Usage
+//!
+//! ```
+//! # Create a TSV file with data on each sorting algorithm
+//! RUSTFLAGS="-C opt-level=3 -C target-cpu=native -C target-feature=+neon" cargo +nightly run --release --features=tuning | tee -a monte-carlo.tsv
+//!
+//! # Render the plot for analysis
+//! gnuplot -p monte-carlo.gnuplot
+//! ```
+//!
+//! Currently the random data does not quickly provide a good sample of all levels. You should manually
+//! adjust the input_size range +/- a digit or two to get good coverage quickly. This will eventually be automated.
+//!
+//! In addition, you may want to manually override the data_type to just be a single data type for cleaner results.
+//!
+//! ## Results
+//!
+//! So far this has produced a mediocre tuning, slightly more balanced, but slower overall than the hand-tuning
+//! performed previously. I expect this is a problem in how we deal with multi-tasking as ska sort in particular
+//! makes a big difference when many operations are ongoing (I'm not sure what specifically causes this), but
+//! not so much in isolation.
+//!
+//! The next step for improving this will be improving the framework upon which tuning results can be applied.
+//! By creating a framework that allows tuning based on the total number of levels + current level, as well as
+//! the number of threads, length of input, size of type etc. I expect some small wins can be found.
+
 use std::time::{Duration, Instant};
 use nanorand::{RandomGen, Rng, WyRand};
 
