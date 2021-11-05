@@ -1,7 +1,7 @@
 use crate::director::director;
-use crate::tuning_parameters::TuningParameters;
 use crate::utils::*;
 use crate::RadixKey;
+use crate::tuner::Tuner;
 
 // Based upon (with modifications):
 // https://probablydance.com/2016/12/27/i-wrote-a-faster-sorting-algorithm/
@@ -48,7 +48,7 @@ where
 }
 
 #[allow(dead_code)]
-pub fn ska_sort_adapter<T>(tuning: &TuningParameters, inplace: bool, bucket: &mut [T], level: usize)
+pub fn ska_sort_adapter<T>(tuner: &(dyn Tuner + Send + Sync), in_place: bool, bucket: &mut [T], level: usize)
 where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
@@ -65,22 +65,22 @@ where
         return;
     }
 
-    director(tuning, inplace, bucket, counts.to_vec(), level - 1);
+    director(tuner, in_place, bucket, counts.to_vec(), level - 1);
 }
 
 #[cfg(test)]
 mod tests {
     use crate::sorts::ska_sort::ska_sort_adapter;
     use crate::test_utils::{sort_comparison_suite, NumericTest};
-    use crate::tuning_parameters::TuningParameters;
+    use crate::tuner::DefaultTuner;
 
     fn test_ska_sort_adapter<T>(shift: T)
     where
         T: NumericTest<T>,
     {
-        let tuning = TuningParameters::new(T::LEVELS);
+        let tuner = DefaultTuner {};
         sort_comparison_suite(shift, |inputs| {
-            ska_sort_adapter(&tuning, true, inputs, T::LEVELS - 1)
+            ska_sort_adapter(&tuner, true, inputs, T::LEVELS - 1)
         });
     }
 

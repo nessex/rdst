@@ -1,29 +1,31 @@
 use arbitrary_chunks::ArbitraryChunks;
+use rayon::current_num_threads;
 use rayon::prelude::*;
 use crate::sorts::lsb_sort::lsb_sort_adapter;
 use crate::sorts::ska_sort::ska_sort_adapter;
-use crate::tuning_parameters::TuningParameters;
 use crate::RadixKey;
 use crate::sorts::comparative_sort::comparative_sort;
 use crate::sorts::recombinating_sort::recombinating_sort_adapter;
 use crate::sorts::regions_sort::regions_sort_adapter;
 use crate::sorts::scanning_sort::scanning_sort_adapter;
+use crate::tuner::{Algorithm, Tuner, TuningParams};
 
 pub fn director<T>(
-    tuning: &TuningParameters,
-    inplace: bool,
+    tuner: &(dyn Tuner + Send + Sync),
+    in_place: bool,
     bucket: &mut [T],
     counts: Vec<usize>,
     level: usize,
 ) where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
-    let len_limit = ((bucket.len() / tuning.cpus) as f64 * 1.4) as usize;
+    let len = bucket.len();
+    let len_limit = ((bucket.len() / current_num_threads()) as f64 * 1.4) as usize;
     let mut long_chunks = Vec::new();
     let mut average_chunks = Vec::with_capacity(256);
 
     for chunk in bucket.arbitrary_chunks_mut(counts) {
-        if chunk.len() > len_limit && chunk.len() >= tuning.recombinating_sort_threshold {
+        if chunk.len() > len_limit && level == T::LEVELS.saturating_sub(2) {
             long_chunks.push(chunk);
         } else {
             average_chunks.push(chunk);
@@ -33,34 +35,47 @@ pub fn director<T>(
     long_chunks
         .into_iter()
         .for_each(|chunk| {
-            if inplace {
-                regions_sort_adapter(tuning, chunk, level);
-            } else if chunk.len() >= tuning.scanning_sort_threshold {
-                scanning_sort_adapter(tuning, chunk, level, true)
-            } else {
-                recombinating_sort_adapter(tuning, chunk, level);
-            }
+            let tp = TuningParams {
+                threads: current_num_threads(),
+                level,
+                total_levels: T::LEVELS,
+                input_len: chunk.len(),
+                parent_len: len,
+                in_place,
+                serial: true,
+            };
+
+            match tuner.pick_algorithm(&tp) {
+                Algorithm::ScanningSort => scanning_sort_adapter(tuner, tp.in_place, chunk, tp.level),
+                Algorithm::RecombinatingSort => recombinating_sort_adapter(tuner, tp.in_place, chunk, tp.level),
+                Algorithm::LsbSort => lsb_sort_adapter(chunk, 0, tp.level),
+                Algorithm::SkaSort => ska_sort_adapter(tuner, tp.in_place, chunk, tp.level),
+                Algorithm::ComparativeSort => comparative_sort(chunk, tp.level),
+                Algorithm::RegionsSort => regions_sort_adapter(tuner, tp.in_place, chunk, tp.level),
+            };
         });
 
     average_chunks
         .into_par_iter()
-        .for_each(|chunk| {
-            if inplace {
-                if chunk.len() <= tuning.comparative_sort_threshold {
-                    comparative_sort(chunk, level);
-                } else if chunk.len() <= tuning.inplace_sort_lsb_threshold {
-                    lsb_sort_adapter(chunk, 0, level);
-                } else {
-                    ska_sort_adapter(tuning, inplace, chunk, level);
-                }
-            } else {
-                if chunk.len() >= tuning.ska_sort_threshold {
-                    ska_sort_adapter(tuning, inplace, chunk, level);
-                } else if chunk.len() > tuning.comparative_sort_threshold {
-                    lsb_sort_adapter(chunk, 0, level);
-                } else {
-                    comparative_sort(chunk, level);
-                }
-            }
-        });
+        .for_each(
+            |chunk| {
+                let tp = TuningParams {
+                    threads: current_num_threads(),
+                    level,
+                    total_levels: T::LEVELS,
+                    input_len: chunk.len(),
+                    parent_len: len,
+                    in_place,
+                    serial: false,
+                };
+
+                match tuner.pick_algorithm(&tp) {
+                    Algorithm::ScanningSort => scanning_sort_adapter(tuner, tp.in_place, chunk, tp.level),
+                    Algorithm::RecombinatingSort => recombinating_sort_adapter(tuner, tp.in_place, chunk, tp.level),
+                    Algorithm::LsbSort => lsb_sort_adapter(chunk, 0, tp.level),
+                    Algorithm::SkaSort => ska_sort_adapter(tuner, tp.in_place, chunk, tp.level),
+                    Algorithm::ComparativeSort => comparative_sort(chunk, tp.level),
+                    Algorithm::RegionsSort => regions_sort_adapter(tuner, tp.in_place, chunk, tp.level),
+                };
+            });
 }

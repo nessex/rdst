@@ -17,9 +17,9 @@ where
             }),
         ),
         (
-            "rdst_inplace",
+            "rdst_in_place",
             Box::new(|mut input| {
-                input.radix_sort_inplace_unstable();
+                input.radix_sort_in_place_unstable();
                 black_box(input);
             }),
         ),

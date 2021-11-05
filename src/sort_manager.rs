@@ -1,14 +1,15 @@
+use rayon::current_num_threads;
 use crate::sorts::lsb_sort::lsb_sort_adapter;
 use crate::sorts::recombinating_sort::recombinating_sort_adapter;
 use crate::sorts::regions_sort::regions_sort_adapter;
-use crate::tuning_parameters::TuningParameters;
 use crate::RadixKey;
 use crate::sorts::comparative_sort::comparative_sort;
 use crate::sorts::scanning_sort::scanning_sort_adapter;
 use crate::sorts::ska_sort::ska_sort_adapter;
+use crate::tuner::{Algorithm, DefaultTuner, Tuner, TuningParams};
 
 pub struct SortManager {
-    tuning: TuningParameters,
+    tuner: Box<dyn Tuner + Send + Sync>,
 }
 
 impl SortManager {
@@ -19,18 +20,18 @@ impl SortManager {
         assert_ne!(T::LEVELS, 0, "RadixKey must have at least 1 level");
 
         Self {
-            tuning: TuningParameters::new(T::LEVELS),
+            tuner: Box::new(DefaultTuner {}),
         }
     }
 
     #[cfg(feature = "tuning")]
-    pub fn new_with_tuning<T>(tuning: TuningParameters) -> Self
+    pub fn new_with_tuning<T>(tuner: Box<dyn Tuner + Send + Sync>) -> Self
     where
         T: RadixKey + Sized + Send + Sync + Copy,
     {
         assert_ne!(T::LEVELS, 0, "RadixKey must have at least 1 level");
 
-        Self { tuning }
+        Self { tuner }
     }
 
     pub fn sort<T>(&self, bucket: &mut [T])
@@ -43,20 +44,27 @@ impl SortManager {
             return;
         }
 
-        let parallel_count = bucket_len >= self.tuning.par_count_threshold;
+        let tp = TuningParams {
+            threads: current_num_threads(),
+            level: T::LEVELS - 1,
+            total_levels: T::LEVELS,
+            input_len: bucket.len(),
+            parent_len: bucket.len(),
+            in_place: false,
+            serial: true,
+        };
 
-        match bucket_len {
-            n if n >= self.tuning.scanning_sort_threshold => {
-                scanning_sort_adapter(&self.tuning, bucket, T::LEVELS - 1, parallel_count)
-            }
-            n if n >= self.tuning.recombinating_sort_threshold => {
-                recombinating_sort_adapter(&self.tuning, bucket, T::LEVELS - 1)
-            }
-            _ => lsb_sort_adapter(bucket, 0, T::LEVELS - 1)
+        match self.tuner.pick_algorithm(&tp) {
+            Algorithm::ScanningSort => scanning_sort_adapter(&*self.tuner, tp.in_place, bucket, tp.level),
+            Algorithm::RecombinatingSort => recombinating_sort_adapter(&*self.tuner, tp.in_place, bucket, tp.level),
+            Algorithm::LsbSort => lsb_sort_adapter(bucket, 0, tp.level),
+            Algorithm::SkaSort => ska_sort_adapter(&*self.tuner, tp.in_place, bucket, tp.level),
+            Algorithm::ComparativeSort => comparative_sort(bucket, tp.level),
+            Algorithm::RegionsSort => regions_sort_adapter(&*self.tuner, tp.in_place, bucket, tp.level),
         };
     }
 
-    pub fn sort_inplace<T>(&self, bucket: &mut [T])
+    pub fn sort_in_place<T>(&self, bucket: &mut [T])
     where
         T: RadixKey + Sized + Send + Sync + Copy,
     {
@@ -66,18 +74,23 @@ impl SortManager {
             return;
         }
 
-        match bucket_len {
-            n if n >= self.tuning.regions_sort_threshold => {
-                regions_sort_adapter(&self.tuning, bucket, T::LEVELS - 1)
-            }
-            n if n >= self.tuning.ska_sort_threshold => {
-                ska_sort_adapter(&self.tuning, true, bucket, T::LEVELS - 1)
-            }
-            n if n >= self.tuning.comparative_sort_threshold => {
-                lsb_sort_adapter(bucket, 0, T::LEVELS - 1)
-            }
-            _ => comparative_sort(bucket, T::LEVELS - 1)
-        }
+        let tp = TuningParams {
+            threads: current_num_threads(),
+            level: T::LEVELS - 1,
+            total_levels: T::LEVELS,
+            input_len: bucket.len(),
+            parent_len: bucket.len(),
+            in_place: true,
+            serial: true,
+        };
 
+        match self.tuner.pick_algorithm(&tp) {
+            Algorithm::ScanningSort => scanning_sort_adapter(&*self.tuner, tp.in_place, bucket, tp.level),
+            Algorithm::RecombinatingSort => recombinating_sort_adapter(&*self.tuner, tp.in_place, bucket, tp.level),
+            Algorithm::LsbSort => lsb_sort_adapter(bucket, 0, tp.level),
+            Algorithm::SkaSort => ska_sort_adapter(&*self.tuner, tp.in_place, bucket, tp.level),
+            Algorithm::ComparativeSort => comparative_sort(bucket, tp.level),
+            Algorithm::RegionsSort => regions_sort_adapter(&*self.tuner, tp.in_place, bucket, tp.level),
+        };
     }
 }

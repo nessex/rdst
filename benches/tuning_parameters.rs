@@ -7,7 +7,7 @@ use rdst::sorts::regions_sort::regions_sort_adapter;
 use rdst::sorts::scanning_sort::scanning_sort_adapter;
 use rdst::sorts::ska_sort::ska_sort_adapter;
 use rdst::test_utils::NumericTest;
-use rdst::tuning_parameters::TuningParameters;
+use rdst::tuner::DefaultTuner;
 use rdst::utils::*;
 
 fn tune_counts(c: &mut Criterion) {
@@ -39,16 +39,16 @@ where
         (
             "regions_sort",
             Box::new(|mut input| {
-                let tuning = TuningParameters::new(4);
-                regions_sort_adapter(&tuning, &mut input, 3);
+                let tuner = DefaultTuner {};
+                regions_sort_adapter(&tuner, true, &mut input, 3);
                 black_box(input);
             }),
         ),
         (
             "scanning_sort",
             Box::new(|mut input| {
-                let tuning = TuningParameters::new(4);
-                scanning_sort_adapter(&tuning, &mut input, 3, true);
+                let tuner = DefaultTuner {};
+                scanning_sort_adapter(&tuner, false, &mut input, 3);
                 black_box(input);
             }),
         ),
@@ -62,16 +62,16 @@ where
         (
             "ska_sort",
             Box::new(|mut input| {
-                let tuning = TuningParameters::new(4);
-                ska_sort_adapter(&tuning, true, &mut input, 3);
+                let tuner = DefaultTuner {};
+                ska_sort_adapter(&tuner, true, &mut input, 3);
                 black_box(input);
             }),
         ),
         (
             "recombinating_sort",
             Box::new(|mut input| {
-                let tuning = TuningParameters::new(4);
-                recombinating_sort_adapter(&tuning, &mut input, 3);
+                let tuner = DefaultTuner {};
+                recombinating_sort_adapter(&tuner, false, &mut input, 3);
                 black_box(input);
             }),
         ),

@@ -1,12 +1,13 @@
 use crate::director::director;
-use crate::tuning_parameters::TuningParameters;
 use crate::utils::*;
 use crate::RadixKey;
 use arbitrary_chunks::ArbitraryChunks;
 use partition::partition_index;
 use rayon::prelude::*;
-use std::cmp::min;
+use std::cmp::{max, min};
+use rayon::current_num_threads;
 use try_mutex::TryMutex;
+use crate::tuner::Tuner;
 
 struct ScannerBucketInner<'a, T> {
     write_head: usize,
@@ -180,7 +181,6 @@ fn scanner_thread<T>(
 }
 
 pub fn scanning_sort<T>(
-    tuning: &TuningParameters,
     bucket: &mut [T],
     msb_counts: &[usize; 256],
     level: usize,
@@ -188,15 +188,18 @@ pub fn scanning_sort<T>(
     T: RadixKey + Sized + Send + Copy + Sync,
 {
     let len = bucket.len();
-    let uniform_threshold = ((len / tuning.cpus) as f64 * 1.4) as usize;
+    let threads = current_num_threads();
+    let uniform_threshold = ((len / threads) as f64 * 1.4) as usize;
     let scanner_buckets = get_scanner_buckets(msb_counts, bucket);
-    let threads = min(tuning.cpus, scanner_buckets.len());
+    let threads = min(threads, scanner_buckets.len());
+    let scaling_factor = max(1, (threads as f32).log2().ceil() as isize) as usize;
+    let scanner_read_size = (32768 / scaling_factor) as isize;
 
     (0..threads).into_par_iter().for_each(|_| {
         scanner_thread(
             &scanner_buckets,
             level,
-            tuning.scanner_read_size as isize,
+            scanner_read_size,
             uniform_threshold,
         );
     });
@@ -206,42 +209,42 @@ pub fn scanning_sort<T>(
 // elements remaining in each bucket, it will either do an MSB-sort or an LSB-sort, making this
 // a dynamic hybrid sort.
 pub fn scanning_sort_adapter<T>(
-    tuning: &TuningParameters,
+    tuner: &(dyn Tuner + Send + Sync),
+    in_place: bool,
     bucket: &mut [T],
     start_level: usize,
-    parallel_count: bool,
 ) where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
     let (msb_counts, level) =
-        if let Some(s) = get_counts_and_level_descending(bucket, start_level, 0, parallel_count) {
+        if let Some(s) = get_counts_and_level_descending(bucket, start_level, 0, true) {
             s
         } else {
             return;
         };
 
-    scanning_sort(tuning, bucket, &msb_counts, level);
+    scanning_sort(bucket, &msb_counts, level);
 
     if level == 0 {
         return;
     }
 
-    director(tuning, false, bucket, msb_counts.to_vec(), level - 1);
+    director(tuner, in_place, bucket, msb_counts.to_vec(), level - 1);
 }
 
 #[cfg(test)]
 mod tests {
     use crate::sorts::scanning_sort::scanning_sort_adapter;
     use crate::test_utils::{sort_comparison_suite, NumericTest};
-    use crate::tuning_parameters::TuningParameters;
+    use crate::tuner::DefaultTuner;
 
     fn test_scanning_sort<T>(shift: T)
     where
         T: NumericTest<T>,
     {
-        let tuning = TuningParameters::new(T::LEVELS);
+        let tuner = DefaultTuner {};
         sort_comparison_suite(shift, |inputs| {
-            scanning_sort_adapter(&tuning, inputs, T::LEVELS - 1, false)
+            scanning_sort_adapter(&tuner, true, inputs, T::LEVELS - 1)
         });
     }
 
