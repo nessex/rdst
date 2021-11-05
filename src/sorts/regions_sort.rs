@@ -190,6 +190,10 @@ pub fn regions_sort<T>(bucket: &mut [T], level: usize) -> Vec<usize>
 where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
+    if bucket.len() == 0 {
+        return get_counts(bucket, level).to_vec();
+    }
+
     let threads = current_num_threads();
     let bucket_len = bucket.len();
     let chunk_size = (bucket_len / threads) + 1;

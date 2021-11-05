@@ -28,9 +28,12 @@
 //! By creating a framework that allows tuning based on the total number of levels + current level, as well as
 //! the number of threads, length of input, size of type etc. I expect some small wins can be found.
 
+#![feature(int_log)]
+
+use std::any::type_name;
 use std::time::{Duration, Instant};
+use bit_vec::BitVec;
 use nanorand::{RandomGen, Rng, WyRand};
-use rayon::current_num_threads;
 use rayon::prelude::*;
 
 mod director;
@@ -52,13 +55,6 @@ use crate::sorts::comparative_sort::comparative_sort;
 use crate::sorts::ska_sort::ska_sort;
 use crate::sorts::scanning_sort::scanning_sort;
 
-#[derive(Debug)]
-enum DataType {
-    U8, U16, U32, U64, U128,
-    I8, I16, I32, I64, I128,
-    F32, F64
-}
-
 fn get_data<T>(len: usize) -> Vec<T>
 where
     T: RadixKey + RandomGen<WyRand> + Send + Sync + Copy
@@ -73,13 +69,54 @@ where
     data
 }
 
-fn sort<T>(algorithm: Algorithm, input_size: usize, level: usize, serial: bool) -> Duration
+// get_seq generates a space covering sequence of integers from 0 to `end`.
+// This sequence is intended to slowly over time fill in gaps in the tested integers to get uniform
+// and complete coverage.
+fn get_seq(end: usize) -> Vec<usize> {
+    let mut out: Vec<usize> = Vec::new();
+    let final_pow = end.log2();
+    let mut inserted = BitVec::from_elem(end + 1, false);
+
+    eprintln!("Generating sequence");
+
+    let _ = out.push(0);
+    let _ = out.push(end);
+
+    // Insert in order based upon distance
+    for pow in 1..final_pow {
+        let denominator = 2_u64 << pow;
+
+        for numerator in 1..denominator {
+            let new_val = (end as f64 * (numerator as f64 / denominator as f64)) as usize;
+
+            if inserted.get(new_val).unwrap() {
+                continue;
+            }
+
+            inserted.set(new_val, true);
+
+            out.push(new_val);
+        }
+    }
+
+    // Fill in the remaining gaps
+    for i in 1..end {
+        if !inserted.get(i).unwrap() {
+            out.push(i);
+        }
+    }
+
+    eprintln!("Finished generating sequence");
+
+    out
+}
+
+fn sort<T>(algorithm: Algorithm, data: &[T], level: usize, serial: bool) -> Duration
 where
     T: RadixKey + RandomGen<WyRand> + Send + Sync + Copy
 {
-
     let algo = |algorithm| {
-        let mut data: Vec<T> = get_data(input_size);
+        let mut data = data.to_vec();
         match algorithm {
             Algorithm::ScanningSort => {
                 let counts = par_get_counts(&data, level);
@@ -120,48 +157,19 @@ where
 
 
 fn main() {
-    let mut rng = WyRand::new();
-    loop {
-        let input_size: usize = rng.generate_range(2..=10_000_000);
-        let serial = true;
-        let data_type = match rng.generate_range(0..=11) {
-            0 => DataType::U8,
-            1 => DataType::U16,
-            2 => DataType::U32,
-            3 => DataType::U64,
-            4 => DataType::U128,
-            5 => DataType::I8,
-            6 => DataType::I16,
-            7 => DataType::I32,
-            8 => DataType::I64,
-            9 => DataType::I128,
-            10 => DataType::F32,
-            11 => DataType::F64,
-            _ => panic!(),
-        };
-
-        let data_type = DataType::U32;
-
-        let level = match data_type {
-            DataType::U8 => 0,
-            DataType::U16 => rng.generate_range(0..=1),
-            DataType::U32 => rng.generate_range(0..=3),
-            DataType::U64 => rng.generate_range(0..=7),
-            DataType::U128 => rng.generate_range(0..=15),
-            DataType::I8 => 0,
-            DataType::I16 => rng.generate_range(0..=1),
-            DataType::I32 => rng.generate_range(0..=3),
-            DataType::I64 => rng.generate_range(0..=7),
-            DataType::I128 => rng.generate_range(0..=15),
-            DataType::F32 => rng.generate_range(0..=3),
-            DataType::F64 => rng.generate_range(0..=7),
-        };
-
+    let input_size: usize = 200_000_000;
+    let serial = true;
+    let level = 0;
+    type DataType = u32;
+    let data = get_data::<DataType>(input_size);
+    for i in get_seq(input_size) {
         let mut best_time = None;
         let mut best_algo = None;
 
-        for i in 3..=5usize {
-            let algorithm = match i {
+        for algo in 0..=5usize {
+            let slice = &data[0..i];
+
+            let algorithm = match algo {
                 0 => Algorithm::ScanningSort,
                 1 => Algorithm::RecombinatingSort,
                 2 => Algorithm::LsbSort,
@@ -178,20 +186,7 @@ fn main() {
                 continue;
             }
 
-            let time = match data_type {
-                DataType::U8 => sort::<u8>(algorithm, input_size, level, serial),
-                DataType::U16 => sort::<u16>(algorithm, input_size, level, serial),
-                DataType::U32 => sort::<u32>(algorithm, input_size, level, serial),
-                DataType::U64 => sort::<u64>(algorithm, input_size, level, serial),
-                DataType::U128 => sort::<u128>(algorithm, input_size, level, serial),
-                DataType::I8 => sort::<i8>(algorithm, input_size, level, serial),
-                DataType::I16 => sort::<i16>(algorithm, input_size, level, serial),
-                DataType::I32 => sort::<i32>(algorithm, input_size, level, serial),
-                DataType::I64 => sort::<i64>(algorithm, input_size, level, serial),
-                DataType::I128 => sort::<i128>(algorithm, input_size, level, serial),
-                DataType::F32 => sort::<f32>(algorithm, input_size, level, serial),
-                DataType::F64 => sort::<f64>(algorithm, input_size, level, serial),
-            };
+            let time = sort::<DataType>(algorithm, &slice, level, serial);
 
             if best_time.is_none() || time < best_time.unwrap() {
                 best_time = Some(time);
@@ -199,6 +194,6 @@ fn main() {
             }
         }
 
-        println!("{:?}\t{:?}\t{:?}\t{:?}", input_size, best_time.unwrap().as_nanos(), best_algo.unwrap(), data_type);
+        println!("{:?}\t{:?}\t{:?}\t{:?}", i, best_time.unwrap().as_nanos(), best_algo.unwrap(), type_name::<DataType>());
     }
 }

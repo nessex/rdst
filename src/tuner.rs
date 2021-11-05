@@ -25,8 +25,8 @@ pub trait Tuner {
             match p.input_len {
                 0..=20 => Algorithm::ComparativeSort,
                 21..=50_000 => Algorithm::LsbSort,
-                50_001..=800_000 => Algorithm::SkaSort,
-                800_001..=usize::MAX => Algorithm::RegionsSort,
+                50_001..=150_000 => Algorithm::SkaSort,
+                150_001..=usize::MAX => Algorithm::RegionsSort,
                 _ => Algorithm::SkaSort,
             }
         } else if p.in_place && !p.serial {
