@@ -32,9 +32,9 @@
 
 use std::any::type_name;
 use std::time::{Duration, Instant};
-use bit_vec::BitVec;
 use nanorand::{RandomGen, Rng, WyRand};
 use rayon::prelude::*;
+use rlp_iter::RlpIterator;
 
 mod director;
 mod utils;
@@ -67,48 +67,6 @@ where
     }
 
     data
-}
-
-// get_seq generates a space covering sequence of integers from 0 to `end`.
-// This sequence is intended to slowly over time fill in gaps in the tested integers to get uniform
-// and complete coverage.
-fn get_seq(end: usize) -> Vec<usize> {
-    let mut out: Vec<usize> = Vec::new();
-    let final_pow = end.log2();
-    let mut inserted = BitVec::from_elem(end + 1, false);
-
-    eprintln!("Generating sequence");
-
-    let _ = out.push(0);
-    let _ = out.push(end);
-
-    // Insert in order based upon distance
-    for pow in 1..final_pow {
-        let denominator = 2_u64 << pow;
-
-        for numerator in 1..denominator {
-            let new_val = (end as f64 * (numerator as f64 / denominator as f64)) as usize;
-
-            if inserted.get(new_val).unwrap() {
-                continue;
-            }
-
-            inserted.set(new_val, true);
-
-            out.push(new_val);
-        }
-    }
-
-    // Fill in the remaining gaps
-    for i in 1..end {
-        if !inserted.get(i).unwrap() {
-            out.push(i);
-        }
-    }
-
-    eprintln!("Finished generating sequence");
-
-    out
 }
 
 fn sort<T>(algorithm: Algorithm, data: &[T], level: usize, serial: bool) -> Duration
@@ -162,7 +120,7 @@ fn main() {
     let level = 0;
     type DataType = u32;
     let data = get_data::<DataType>(input_size);
-    for i in get_seq(input_size) {
+    for i in (0..=input_size).rlp_iter() {
         let mut best_time = None;
         let mut best_algo = None;
 
