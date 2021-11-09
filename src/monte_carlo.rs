@@ -30,34 +30,34 @@
 
 #![feature(int_log)]
 
-use std::any::type_name;
-use std::time::{Duration, Instant};
 use nanorand::{RandomGen, Rng, WyRand};
 use rayon::prelude::*;
 use rlp_iter::RlpIterator;
+use std::any::type_name;
+use std::time::{Duration, Instant};
 
 mod director;
-mod utils;
-mod sorts;
-mod sort_manager;
-mod tuner;
-mod radix_sort;
 mod radix_key;
 mod radix_key_impl;
+mod radix_sort;
+mod sort_manager;
+mod sorts;
+mod tuner;
+mod utils;
 
+use crate::sorts::comparative_sort::comparative_sort;
+use crate::sorts::lsb_sort::lsb_sort;
+use crate::sorts::recombinating_sort::recombinating_sort;
+use crate::sorts::regions_sort::regions_sort;
+use crate::sorts::scanning_sort::scanning_sort;
+use crate::sorts::ska_sort::ska_sort;
+use crate::utils::*;
 use radix_key::RadixKey;
 use rdst::tuner::Algorithm;
-use crate::sorts::lsb_sort::lsb_sort;
-use crate::utils::*;
-use crate::sorts::regions_sort::regions_sort;
-use crate::sorts::recombinating_sort::recombinating_sort;
-use crate::sorts::comparative_sort::comparative_sort;
-use crate::sorts::ska_sort::ska_sort;
-use crate::sorts::scanning_sort::scanning_sort;
 
 fn get_data<T>(len: usize) -> Vec<T>
 where
-    T: RadixKey + RandomGen<WyRand> + Send + Sync + Copy
+    T: RadixKey + RandomGen<WyRand> + Send + Sync + Copy,
 {
     let mut rng = WyRand::new();
     let mut data: Vec<T> = Vec::with_capacity(len);
@@ -71,7 +71,7 @@ where
 
 fn sort<T>(algorithm: Algorithm, data: &[T], level: usize, serial: bool) -> Duration
 where
-    T: RadixKey + RandomGen<WyRand> + Send + Sync + Copy
+    T: RadixKey + RandomGen<WyRand> + Send + Sync + Copy,
 {
     let algo = |algorithm| {
         let mut data = data.to_vec();
@@ -79,7 +79,7 @@ where
             Algorithm::ScanningSort => {
                 let counts = par_get_counts(&data, level);
                 scanning_sort(&mut data, &counts, level)
-            },
+            }
             Algorithm::RecombinatingSort => {
                 let _ = recombinating_sort(&mut data, level);
             }
@@ -95,7 +95,7 @@ where
             Algorithm::SkaSort => {
                 let counts = get_counts(&data, level);
                 ska_sort(&mut data, &counts, level)
-            },
+            }
         };
     };
 
@@ -103,16 +103,13 @@ where
     if serial {
         algo(algorithm);
     } else {
-        (0..256)
-            .into_par_iter()
-            .for_each(|_| {
-                algo(algorithm);
-            })
+        (0..256).into_par_iter().for_each(|_| {
+            algo(algorithm);
+        })
     }
 
     start.elapsed()
 }
-
 
 fn main() {
     let input_size: usize = 200_000_000;
@@ -138,9 +135,10 @@ fn main() {
             };
 
             // Skip these as they are way out of their reasonable ranges
-            if (algorithm == Algorithm::ComparativeSort && input_size > 1_000) ||
-                (algorithm == Algorithm::LsbSort && input_size > 10_000_000) ||
-                (algorithm == Algorithm::SkaSort && input_size > 10_000_000) {
+            if (algorithm == Algorithm::ComparativeSort && input_size > 1_000)
+                || (algorithm == Algorithm::LsbSort && input_size > 10_000_000)
+                || (algorithm == Algorithm::SkaSort && input_size > 10_000_000)
+            {
                 continue;
             }
 
@@ -152,6 +150,12 @@ fn main() {
             }
         }
 
-        println!("{:?}\t{:?}\t{:?}\t{:?}", i, best_time.unwrap().as_nanos(), best_algo.unwrap(), type_name::<DataType>());
+        println!(
+            "{:?}\t{:?}\t{:?}\t{:?}",
+            i,
+            best_time.unwrap().as_nanos(),
+            best_algo.unwrap(),
+            type_name::<DataType>()
+        );
     }
 }

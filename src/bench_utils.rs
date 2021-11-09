@@ -34,8 +34,8 @@ where
 }
 
 pub fn gen_bench_comparative_input_set<T>(shift: T) -> Vec<Vec<T>>
-    where
-        T: NumericTest<T>,
+where
+    T: NumericTest<T>,
 {
     let n = 1_000;
     let half = n / 2;

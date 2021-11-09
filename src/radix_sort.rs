@@ -1,7 +1,7 @@
 use crate::sort_manager::SortManager;
-use crate::RadixKey;
 #[cfg(feature = "tuning")]
 use crate::tuner::Tuner;
+use crate::RadixKey;
 
 pub trait RadixSort {
     /// radix_sort_unstable runs a radix sort based upon the `rdst::RadixKey` implementation
@@ -133,8 +133,8 @@ mod tests {
     }
 
     fn test_in_place_full_sort<T>(shift: T)
-        where
-            T: NumericTest<T>,
+    where
+        T: NumericTest<T>,
     {
         sort_comparison_suite(shift, |inputs| inputs.radix_sort_in_place_unstable());
     }

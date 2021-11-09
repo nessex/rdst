@@ -44,9 +44,7 @@ mod tests {
     where
         T: NumericTest<T>,
     {
-        sort_comparison_suite(shift, |inputs| {
-            lsb_sort_adapter(inputs, 0, T::LEVELS - 1)
-        });
+        sort_comparison_suite(shift, |inputs| lsb_sort_adapter(inputs, 0, T::LEVELS - 1));
     }
 
     #[test]

@@ -1,7 +1,7 @@
 use crate::director::director;
+use crate::tuner::Tuner;
 use crate::utils::*;
 use crate::RadixKey;
-use crate::tuner::Tuner;
 
 // Based upon (with modifications):
 // https://probablydance.com/2016/12/27/i-wrote-a-faster-sorting-algorithm/
@@ -48,8 +48,12 @@ where
 }
 
 #[allow(dead_code)]
-pub fn ska_sort_adapter<T>(tuner: &(dyn Tuner + Send + Sync), in_place: bool, bucket: &mut [T], level: usize)
-where
+pub fn ska_sort_adapter<T>(
+    tuner: &(dyn Tuner + Send + Sync),
+    in_place: bool,
+    bucket: &mut [T],
+    level: usize,
+) where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
     let (counts, level) = if let Some(s) = get_counts_and_level_descending(bucket, level, 0, false)

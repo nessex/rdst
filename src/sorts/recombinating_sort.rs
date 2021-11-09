@@ -1,11 +1,11 @@
 use crate::director::director;
 use crate::sorts::out_of_place_sort::out_of_place_sort;
+use crate::tuner::Tuner;
 use crate::utils::*;
 use crate::RadixKey;
 use arbitrary_chunks::ArbitraryChunks;
 use rayon::current_num_threads;
 use rayon::prelude::*;
-use crate::tuner::Tuner;
 
 pub fn recombinating_sort<T>(bucket: &mut [T], level: usize) -> Vec<usize>
 where
@@ -61,8 +61,12 @@ where
     global_counts
 }
 
-pub fn recombinating_sort_adapter<T>(tuner: &(dyn Tuner + Send + Sync), in_place: bool, bucket: &mut [T], level: usize)
-where
+pub fn recombinating_sort_adapter<T>(
+    tuner: &(dyn Tuner + Send + Sync),
+    in_place: bool,
+    bucket: &mut [T],
+    level: usize,
+) where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
     let global_counts = recombinating_sort(bucket, level);

@@ -117,7 +117,12 @@ where
         ),
     ];
 
-    bench_comparative(c, shift, &("tune_comparative_".to_owned() + name_suffix), tests);
+    bench_comparative(
+        c,
+        shift,
+        &("tune_comparative_".to_owned() + name_suffix),
+        tests,
+    );
 }
 
 fn tune_sort_comparative_u32(c: &mut Criterion) {

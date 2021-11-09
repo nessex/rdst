@@ -59,3 +59,27 @@ pub trait Tuner {
 
 pub struct DefaultTuner {}
 impl Tuner for DefaultTuner {}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct Point {
+    pub level: usize,
+    pub algorithm: Algorithm,
+    pub start: usize,
+}
+
+#[derive(Clone, Debug)]
+pub struct MLTuner {
+    pub points: Vec<Point>,
+}
+
+impl Tuner for MLTuner {
+    fn pick_algorithm(&self, p: &TuningParams) -> Algorithm {
+        for point in self.points.iter() {
+            if p.level == point.level && p.input_len >= point.start {
+                return point.algorithm;
+            }
+        }
+
+        return Algorithm::LsbSort;
+    }
+}

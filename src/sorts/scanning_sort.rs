@@ -1,13 +1,13 @@
 use crate::director::director;
+use crate::tuner::Tuner;
 use crate::utils::*;
 use crate::RadixKey;
 use arbitrary_chunks::ArbitraryChunks;
 use partition::partition_index;
+use rayon::current_num_threads;
 use rayon::prelude::*;
 use std::cmp::{max, min};
-use rayon::current_num_threads;
 use try_mutex::TryMutex;
-use crate::tuner::Tuner;
 
 struct ScannerBucketInner<'a, T> {
     write_head: usize,
@@ -180,11 +180,8 @@ fn scanner_thread<T>(
     }
 }
 
-pub fn scanning_sort<T>(
-    bucket: &mut [T],
-    msb_counts: &[usize; 256],
-    level: usize,
-) where
+pub fn scanning_sort<T>(bucket: &mut [T], msb_counts: &[usize; 256], level: usize)
+where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
     let len = bucket.len();

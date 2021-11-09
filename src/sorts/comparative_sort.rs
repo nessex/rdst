@@ -1,6 +1,5 @@
-use std::cmp::Ordering;
 use crate::RadixKey;
-
+use std::cmp::Ordering;
 
 pub fn comparative_sort<T>(bucket: &mut [T], start_level: usize)
 where
@@ -30,9 +29,7 @@ mod tests {
     where
         T: NumericTest<T>,
     {
-        sort_comparison_suite(shift, |inputs| {
-            comparative_sort(inputs, T::LEVELS - 1)
-        });
+        sort_comparison_suite(shift, |inputs| comparative_sort(inputs, T::LEVELS - 1));
     }
 
     #[test]
