@@ -25,7 +25,108 @@ impl SortManager {
 
         Self {
             tuner: Box::new(MLTuner {
-                points: vec![Point { depth: 3, algorithm: ScanningSort, start: 100000 }, Point { depth: 3, algorithm: RegionsSort, start: 100000 }, Point { depth: 3, algorithm: RecombinatingSort, start: 0 }, Point { depth: 3, algorithm: LsbSort, start: 0 }, Point { depth: 3, algorithm: SkaSort, start: 0 }, Point { depth: 2, algorithm: RegionsSort, start: 900000000 }, Point { depth: 2, algorithm: ScanningSort, start: 35642635 }, Point { depth: 2, algorithm: RecombinatingSort, start: 1559909 }, Point { depth: 2, algorithm: LsbSort, start: 10000 }, Point { depth: 2, algorithm: SkaSort, start: 0 }, Point { depth: 1, algorithm: RegionsSort, start: 900000000 }, Point { depth: 1, algorithm: ScanningSort, start: 44339106 }, Point { depth: 1, algorithm: RecombinatingSort, start: 900000 }, Point { depth: 1, algorithm: SkaSort, start: 50000 }, Point { depth: 1, algorithm: LsbSort, start: 10000 }, Point { depth: 0, algorithm: RegionsSort, start: 900000000 }, Point { depth: 0, algorithm: RecombinatingSort, start: 900000 }, Point { depth: 0, algorithm: LsbSort, start: 710609 }, Point { depth: 0, algorithm: SkaSort, start: 0 }, Point { depth: 0, algorithm: ScanningSort, start: 0 }],
+                points: vec![
+                    Point {
+                        depth: 3,
+                        algorithm: RegionsSort,
+                        start: 1_000_000_000,
+                    },
+                    Point {
+                        depth: 3,
+                        algorithm: ScanningSort,
+                        start: 100_000_000,
+                    },
+                    Point {
+                        depth: 3,
+                        algorithm: RecombinatingSort,
+                        start: 10_000_000,
+                    },
+                    Point {
+                        depth: 3,
+                        algorithm: SkaSort,
+                        start: 50_000,
+                    },
+                    Point {
+                        depth: 3,
+                        algorithm: LsbSort,
+                        start: 0,
+                    },
+                    Point {
+                        depth: 2,
+                        algorithm: RegionsSort,
+                        start: 1_000_000_000,
+                    },
+                    Point {
+                        depth: 2,
+                        algorithm: ScanningSort,
+                        start: 100_000_000,
+                    },
+                    Point {
+                        depth: 2,
+                        algorithm: RecombinatingSort,
+                        start: 10_000_000,
+                    },
+                    Point {
+                        depth: 2,
+                        algorithm: SkaSort,
+                        start: 50_000,
+                    },
+                    Point {
+                        depth: 2,
+                        algorithm: LsbSort,
+                        start: 0,
+                    },
+                    Point {
+                        depth: 1,
+                        algorithm: RegionsSort,
+                        start: 1_000_000_000,
+                    },
+                    Point {
+                        depth: 1,
+                        algorithm: ScanningSort,
+                        start: 50_000_000,
+                    },
+                    Point {
+                        depth: 1,
+                        algorithm: RecombinatingSort,
+                        start: 10_000_000,
+                    },
+                    Point {
+                        depth: 1,
+                        algorithm: SkaSort,
+                        start: 50_000,
+                    },
+                    Point {
+                        depth: 1,
+                        algorithm: LsbSort,
+                        start: 0,
+                    },
+                    Point {
+                        depth: 0,
+                        algorithm: RegionsSort,
+                        start: 1_000_000_000,
+                    },
+                    Point {
+                        depth: 0,
+                        algorithm: ScanningSort,
+                        start: 40_000_000,
+                    },
+                    Point {
+                        depth: 0,
+                        algorithm: RecombinatingSort,
+                        start: 260_000,
+                    },
+                    Point {
+                        depth: 0,
+                        algorithm: SkaSort,
+                        start: 50_000,
+                    },
+                    Point {
+                        depth: 0,
+                        algorithm: LsbSort,
+                        start: 0,
+                    },
+                ],
             }),
         }
     }
