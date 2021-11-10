@@ -7,7 +7,7 @@ use crate::sorts::ska_sort::ska_sort_adapter;
 use crate::tuner::{
     Algorithm,
     Algorithm::{LsbSort, RecombinatingSort, RegionsSort, ScanningSort, SkaSort},
-    DefaultTuner, MLTuner, Point, Tuner, TuningParams,
+    MLTuner, Point, Tuner, TuningParams,
 };
 use crate::RadixKey;
 use rayon::current_num_threads;

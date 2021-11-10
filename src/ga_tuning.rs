@@ -1,6 +1,5 @@
 use block_pseudorand::block_rand;
 use lazy_static::lazy_static;
-use nanorand::{Rng as WyRng, WyRand};
 use oxigen::{
     AgeFunctions, AgeSlope, AgeThreshold, GeneticExecution, Genotype, MutationRates,
     SelectionFunctions, SelectionRates, SlopeParams,
@@ -11,7 +10,7 @@ use rand::Rng;
 use rayon::prelude::*;
 use rdst::tuner::Algorithm::{LsbSort, RecombinatingSort, RegionsSort, ScanningSort, SkaSort};
 use rdst::tuner::{Algorithm, Tuner, TuningParams};
-use rdst::{RadixKey, RadixSort};
+use rdst::RadixSort;
 use std::fmt::{Debug, Display, Formatter};
 use std::fs::File;
 use std::ops::{Shr, ShrAssign};
@@ -76,7 +75,7 @@ impl Genotype<f64> for GeneticSort {
         self.intervals = iter.collect();
     }
 
-    fn generate(size: &Self::ProblemSize) -> Self {
+    fn generate(_size: &Self::ProblemSize) -> Self {
         let points = get_nodes();
         let intervals = points.iter().map(|v| v.start as f64).collect();
         Self {
@@ -222,7 +221,7 @@ fn fitness(ml_tuner: MLTuner) -> u128 {
     let mut total = 0;
     let lens = [100, 1000, 10000, 100000, 1000000, 10000000, 100000000];
 
-    for mut len in lens {
+    for len in lens {
         let offset = len / 2;
         let end = DATA.len() - offset;
         let mut d = DATA[offset..end].to_vec();
