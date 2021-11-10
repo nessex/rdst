@@ -5,9 +5,8 @@ use oxigen::{
     SelectionFunctions, SelectionRates, SlopeParams, StopCriteria,
 };
 use rand::prelude::*;
-use rand::Rng;
 use rayon::prelude::*;
-use rdst::tuner::Algorithm::{LsbSort, RecombinatingSort, RegionsSort, ScanningSort, SkaSort};
+use rdst::tuner::Algorithm::{RecombinatingSort, RegionsSort, ScanningSort, SkaSort};
 use rdst::tuner::{Algorithm, Tuner, TuningParams};
 use rdst::RadixSort;
 use rlp_iter::RlpIterator;
@@ -20,7 +19,10 @@ use std::vec::IntoIter;
 
 static N: usize = 40_000_000;
 lazy_static! {
-    static ref DATA: Vec<u32> = gen_inputs(N, 16u32);
+    static ref DATA_U32: Vec<u32> = gen_inputs(N, 0u32);
+    static ref DATA_U32_BIMODAL: Vec<u32> = gen_inputs(N, 16u32);
+    static ref DATA_U64: Vec<u64> = gen_inputs(N, 0u64);
+    static ref DATA_U64_BIMODAL: Vec<u64> = gen_inputs(N, 32u64);
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -39,6 +41,14 @@ struct MLTuner {
 struct GeneticSort {
     tuner: MLTuner,
     intervals: Vec<f64>,
+}
+
+impl MLTuner {
+    fn new(points: Vec<Point>) -> Self {
+        Self {
+            points: points.into_iter().filter(|v| v.start != 0).collect(),
+        }
+    }
 }
 
 impl Display for GeneticSort {
@@ -79,7 +89,7 @@ impl Genotype<f64> for GeneticSort {
         let points = get_nodes();
         let intervals = points.iter().map(|v| v.start as f64).collect();
         Self {
-            tuner: MLTuner { points },
+            tuner: MLTuner::new(points),
             intervals,
         }
     }
@@ -119,6 +129,102 @@ impl Genotype<f64> for GeneticSort {
 fn get_nodes() -> Vec<Point> {
     let out = vec![
         Point {
+            depth: 7,
+            algorithm: RegionsSort,
+            // start: 1_000_000_000,
+            start: 0,
+        },
+        Point {
+            depth: 7,
+            algorithm: ScanningSort,
+            // start: 100_000_000,
+            start: 0,
+        },
+        Point {
+            depth: 7,
+            algorithm: RecombinatingSort,
+            // start: 10_000_000,
+            start: 0,
+        },
+        Point {
+            depth: 7,
+            algorithm: SkaSort,
+            // start: 50_000,
+            start: 0,
+        },
+        Point {
+            depth: 6,
+            algorithm: RegionsSort,
+            // start: 1_000_000_000,
+            start: 0,
+        },
+        Point {
+            depth: 6,
+            algorithm: ScanningSort,
+            // start: 100_000_000,
+            start: 0,
+        },
+        Point {
+            depth: 6,
+            algorithm: RecombinatingSort,
+            // start: 10_000_000,
+            start: 0,
+        },
+        Point {
+            depth: 6,
+            algorithm: SkaSort,
+            // start: 50_000,
+            start: 0,
+        },
+        Point {
+            depth: 5,
+            algorithm: RegionsSort,
+            // start: 1_000_000_000,
+            start: 0,
+        },
+        Point {
+            depth: 5,
+            algorithm: ScanningSort,
+            // start: 100_000_000,
+            start: 0,
+        },
+        Point {
+            depth: 5,
+            algorithm: RecombinatingSort,
+            // start: 10_000_000,
+            start: 0,
+        },
+        Point {
+            depth: 5,
+            algorithm: SkaSort,
+            // start: 50_000,
+            start: 0,
+        },
+        Point {
+            depth: 4,
+            algorithm: RegionsSort,
+            // start: 1_000_000_000,
+            start: 0,
+        },
+        Point {
+            depth: 4,
+            algorithm: ScanningSort,
+            // start: 100_000_000,
+            start: 0,
+        },
+        Point {
+            depth: 4,
+            algorithm: RecombinatingSort,
+            // start: 10_000_000,
+            start: 0,
+        },
+        Point {
+            depth: 4,
+            algorithm: SkaSort,
+            // start: 50_000,
+            start: 0,
+        },
+        Point {
             depth: 3,
             algorithm: RegionsSort,
             // start: 1_000_000_000,
@@ -143,12 +249,6 @@ fn get_nodes() -> Vec<Point> {
             start: 0,
         },
         Point {
-            depth: 3,
-            algorithm: LsbSort,
-            // start: 0,
-            start: 0,
-        },
-        Point {
             depth: 2,
             algorithm: RegionsSort,
             // start: 1_000_000_000,
@@ -170,12 +270,6 @@ fn get_nodes() -> Vec<Point> {
             depth: 2,
             algorithm: SkaSort,
             // start: 50_000,
-            start: 0,
-        },
-        Point {
-            depth: 2,
-            algorithm: LsbSort,
-            // start: 0,
             start: 0,
         },
         Point {
@@ -203,12 +297,6 @@ fn get_nodes() -> Vec<Point> {
             start: 0,
         },
         Point {
-            depth: 1,
-            algorithm: LsbSort,
-            // start: 0,
-            start: 0,
-        },
-        Point {
             depth: 0,
             algorithm: RegionsSort,
             // start: 1_000_000_000,
@@ -232,12 +320,6 @@ fn get_nodes() -> Vec<Point> {
             // start: 50_000,
             start: 0,
         },
-        Point {
-            depth: 0,
-            algorithm: LsbSort,
-            // start: 0,
-            start: 0,
-        },
     ];
 
     out
@@ -255,13 +337,32 @@ fn fitness(ml_tuner: MLTuner) -> u128 {
     ];
 
     for len in lens {
-        let offset = (DATA.len() - len) / 2;
+        let offset = (N - len) / 2;
         let end = offset + len;
-        let mut d = DATA[offset..end].to_vec();
 
+        let mut d = DATA_U32[offset..end].to_vec();
         let start = Instant::now();
         d.radix_sort_unstable_with_tuning(Box::new(ml_tuner.clone()));
         total += start.elapsed().as_nanos();
+        drop(d);
+
+        let mut d = DATA_U32_BIMODAL[offset..end].to_vec();
+        let start = Instant::now();
+        d.radix_sort_unstable_with_tuning(Box::new(ml_tuner.clone()));
+        total += start.elapsed().as_nanos();
+        drop(d);
+
+        let mut d = DATA_U64[offset..end].to_vec();
+        let start = Instant::now();
+        d.radix_sort_unstable_with_tuning(Box::new(ml_tuner.clone()));
+        total += start.elapsed().as_nanos();
+        drop(d);
+
+        let mut d = DATA_U64_BIMODAL[offset..end].to_vec();
+        let start = Instant::now();
+        d.radix_sort_unstable_with_tuning(Box::new(ml_tuner.clone()));
+        total += start.elapsed().as_nanos();
+        drop(d);
     }
 
     total
@@ -283,8 +384,8 @@ fn main() {
 
     let (solutions, generation, progress, _population) =
         GeneticExecution::<f64, GeneticSort>::new()
-            .population_size(20)
-            .genotype_size(20)
+            .population_size(32)
+            .genotype_size(32)
             .mutation_rate(Box::new(MutationRates::Linear(SlopeParams {
                 start: 0.1_f64,
                 bound: 0.005,
