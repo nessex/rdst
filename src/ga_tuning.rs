@@ -19,14 +19,14 @@ use std::slice::Iter;
 use std::time::Instant;
 use std::vec::IntoIter;
 
-static N: usize = 2_000_000;
+static N: usize = 100_000_000;
 lazy_static! {
-    static ref DATA: Vec<Vec<u32>> = gen_tests(N, 16u32);
+    static ref DATA: Vec<u32> = gen_inputs(N, 16u32);
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 struct Point {
-    level: usize,
+    depth: usize,
     algorithm: Algorithm,
     start: usize,
 }
@@ -50,8 +50,9 @@ impl Display for GeneticSort {
 
 impl Tuner for MLTuner {
     fn pick_algorithm(&self, p: &TuningParams) -> Algorithm {
+        let depth = p.total_levels - p.level;
         for point in self.points.iter() {
-            if p.level == point.level && p.input_len >= point.start {
+            if depth == point.depth && p.input_len >= point.start {
                 return point.algorithm;
             }
         }
@@ -76,11 +77,11 @@ impl Genotype<f64> for GeneticSort {
     }
 
     fn generate(size: &Self::ProblemSize) -> Self {
+        let points = get_nodes();
+        let intervals = points.iter().map(|v| v.start as f64).collect();
         Self {
-            tuner: MLTuner {
-                points: get_nodes(),
-            },
-            intervals: vec![0f64; *size],
+            tuner: MLTuner { points },
+            intervals,
         }
     }
 
@@ -108,102 +109,102 @@ impl Genotype<f64> for GeneticSort {
 fn get_nodes() -> Vec<Point> {
     let out = vec![
         Point {
-            level: 3,
+            depth: 3,
             algorithm: RegionsSort,
             start: 100000,
         },
         Point {
-            level: 3,
+            depth: 3,
             algorithm: ScanningSort,
             start: 100000,
         },
         Point {
-            level: 3,
+            depth: 3,
             algorithm: SkaSort,
             start: 50000,
         },
         Point {
-            level: 3,
+            depth: 3,
             algorithm: LsbSort,
             start: 10000,
         },
         Point {
-            level: 3,
+            depth: 3,
             algorithm: RecombinatingSort,
             start: 0,
         },
         Point {
-            level: 2,
+            depth: 2,
             algorithm: RegionsSort,
             start: 900000000,
         },
         Point {
-            level: 2,
+            depth: 2,
             algorithm: ScanningSort,
             start: 35642635,
         },
         Point {
-            level: 2,
+            depth: 2,
             algorithm: RecombinatingSort,
             start: 1559909,
         },
         Point {
-            level: 2,
+            depth: 2,
             algorithm: LsbSort,
             start: 10000,
         },
         Point {
-            level: 2,
+            depth: 2,
             algorithm: SkaSort,
             start: 0,
         },
         Point {
-            level: 1,
+            depth: 1,
             algorithm: RegionsSort,
             start: 900000000,
         },
         Point {
-            level: 1,
+            depth: 1,
             algorithm: ScanningSort,
             start: 44339106,
         },
         Point {
-            level: 1,
+            depth: 1,
             algorithm: RecombinatingSort,
             start: 900000,
         },
         Point {
-            level: 1,
+            depth: 1,
             algorithm: SkaSort,
             start: 50000,
         },
         Point {
-            level: 1,
+            depth: 1,
             algorithm: LsbSort,
             start: 10000,
         },
         Point {
-            level: 0,
+            depth: 0,
             algorithm: RegionsSort,
             start: 900000000,
         },
         Point {
-            level: 0,
+            depth: 0,
             algorithm: ScanningSort,
             start: 40000000,
         },
         Point {
-            level: 0,
+            depth: 0,
             algorithm: RecombinatingSort,
             start: 900000,
         },
         Point {
-            level: 0,
+            depth: 0,
             algorithm: LsbSort,
             start: 710609,
         },
         Point {
-            level: 0,
+            depth: 0,
             algorithm: SkaSort,
             start: 50000,
         },
@@ -212,64 +213,24 @@ fn get_nodes() -> Vec<Point> {
     out
 }
 
-fn mutate_nodes(nodes: &mut Vec<Point>) {
-    let mut rng = WyRand::new();
-    let level = rng.generate_range(0..=3);
-    let algo = rng.generate_range(1..=5);
-    let algorithm = match algo {
-        0 => Algorithm::ComparativeSort,
-        1 => Algorithm::LsbSort,
-        2 => Algorithm::SkaSort,
-        3 => Algorithm::RecombinatingSort,
-        4 => Algorithm::RegionsSort,
-        5 => Algorithm::ScanningSort,
-        _ => panic!(),
-    };
-    let action: usize = rng.generate_range(0..=1);
-    let mut last_level = 0;
-    let mut last_start = 100_000;
-    let mut repl_i = 0;
-    let mut repl_start = 100_000;
-    for (i, mut node) in nodes.iter_mut().enumerate() {
-        if algorithm == node.algorithm && level == node.level {
-            let offset = (node.start as f64 * 0.1) as usize + rng.generate_range(0..1_000_000);
-
-            match action {
-                0 => node.start = node.start.saturating_add(offset),
-                1 => node.start = node.start.saturating_sub(offset),
-                2 => {
-                    if last_level == node.level && i > 0 {
-                        repl_i = i - 1;
-                        repl_start = node.start;
-                        node.start = last_start;
-                    }
-                }
-                _ => panic!(),
-            };
-        } else {
-            last_level = node.level;
-            last_start = node.start;
-        }
-    }
-
-    nodes[repl_i].start = repl_start;
-}
-
 fn sort_nodes(nodes: &mut Vec<Point>) {
-    nodes.sort_unstable_by(|a, b| a.level.cmp(&b.level).then(a.start.cmp(&b.start)));
+    nodes.sort_unstable_by(|a, b| a.depth.cmp(&b.depth).then(a.start.cmp(&b.start)));
     nodes.reverse();
 }
 
 fn fitness(ml_tuner: MLTuner) -> u128 {
     let mut total = 0;
-    let mut data = DATA.clone();
+    let lens = [100, 1000, 10000, 100000, 1000000, 10000000, 100000000];
 
-    for mut row in data.into_iter() {
+    for mut len in lens {
+        let offset = len / 2;
+        let end = DATA.len() - offset;
+        let mut d = DATA[offset..end].to_vec();
         let start = Instant::now();
-        row.radix_sort_unstable_with_tuning(Box::new(ml_tuner.clone()));
+        d.radix_sort_unstable_with_tuning(Box::new(ml_tuner.clone()));
         let el = start.elapsed().as_nanos();
 
-        total += el / (row.len() / 100) as u128;
+        total += el / (len / 100) as u128;
     }
 
     total
@@ -282,27 +243,6 @@ where
     let mut inputs: Vec<T> = block_rand(n);
     inputs[0..(n / 2)].par_iter_mut().for_each(|v| *v >>= shift);
     inputs
-}
-
-fn gen_tests<T>(n: usize, shift: T) -> Vec<Vec<T>>
-where
-    T: Copy + Sized + Send + Sync + Shr<Output = T> + ShrAssign,
-{
-    let raw_data = gen_inputs::<T>(n, shift);
-    let mut data = Vec::new();
-    data.push(raw_data.clone());
-
-    let mut i = 10;
-    loop {
-        data.push(raw_data[(n / i)..(n - (n / i))].to_vec());
-        i = i + (i / 2);
-
-        if i > n {
-            break;
-        }
-    }
-
-    data
 }
 
 fn main() {

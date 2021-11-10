@@ -4,7 +4,11 @@ use crate::sorts::recombinating_sort::recombinating_sort_adapter;
 use crate::sorts::regions_sort::regions_sort_adapter;
 use crate::sorts::scanning_sort::scanning_sort_adapter;
 use crate::sorts::ska_sort::ska_sort_adapter;
-use crate::tuner::{Algorithm, DefaultTuner, MLTuner, Point, Tuner, TuningParams};
+use crate::tuner::{
+    Algorithm,
+    Algorithm::{LsbSort, RecombinatingSort, RegionsSort, ScanningSort, SkaSort},
+    DefaultTuner, MLTuner, Point, Tuner, TuningParams,
+};
 use crate::RadixKey;
 use rayon::current_num_threads;
 
@@ -24,102 +28,102 @@ impl SortManager {
                 points: vec![
                     Point {
                         level: 3,
-                        algorithm: Algorithm::SkaSort,
-                        start: 2257303,
+                        algorithm: ScanningSort,
+                        start: 36404009,
                     },
                     Point {
                         level: 3,
-                        algorithm: Algorithm::ScanningSort,
-                        start: 1646704,
+                        algorithm: LsbSort,
+                        start: 4118246,
                     },
                     Point {
                         level: 3,
-                        algorithm: Algorithm::RecombinatingSort,
-                        start: 544756,
+                        algorithm: SkaSort,
+                        start: 3770741,
                     },
                     Point {
                         level: 3,
-                        algorithm: Algorithm::RegionsSort,
-                        start: 216495,
+                        algorithm: RecombinatingSort,
+                        start: 0,
                     },
                     Point {
                         level: 3,
-                        algorithm: Algorithm::LsbSort,
+                        algorithm: RegionsSort,
                         start: 0,
                     },
                     Point {
                         level: 2,
-                        algorithm: Algorithm::SkaSort,
-                        start: 3284072,
+                        algorithm: RecombinatingSort,
+                        start: 14083510,
                     },
                     Point {
                         level: 2,
-                        algorithm: Algorithm::ScanningSort,
-                        start: 500810,
+                        algorithm: ScanningSort,
+                        start: 2040035,
                     },
                     Point {
                         level: 2,
-                        algorithm: Algorithm::RegionsSort,
-                        start: 410166,
-                    },
-                    Point {
-                        level: 2,
-                        algorithm: Algorithm::LsbSort,
+                        algorithm: SkaSort,
                         start: 0,
                     },
                     Point {
                         level: 2,
-                        algorithm: Algorithm::RecombinatingSort,
+                        algorithm: LsbSort,
+                        start: 0,
+                    },
+                    Point {
+                        level: 2,
+                        algorithm: RegionsSort,
                         start: 0,
                     },
                     Point {
                         level: 1,
-                        algorithm: Algorithm::LsbSort,
-                        start: 7620565,
+                        algorithm: SkaSort,
+                        start: 21232126,
                     },
                     Point {
                         level: 1,
-                        algorithm: Algorithm::ScanningSort,
-                        start: 3830901,
+                        algorithm: RecombinatingSort,
+                        start: 16235292,
                     },
                     Point {
                         level: 1,
-                        algorithm: Algorithm::RegionsSort,
-                        start: 3024038,
+                        algorithm: ScanningSort,
+                        start: 12676474,
                     },
                     Point {
                         level: 1,
-                        algorithm: Algorithm::SkaSort,
-                        start: 692593,
+                        algorithm: LsbSort,
+                        start: 3491346,
                     },
                     Point {
                         level: 1,
-                        algorithm: Algorithm::RecombinatingSort,
-                        start: 172735,
-                    },
-                    Point {
-                        level: 0,
-                        algorithm: Algorithm::RegionsSort,
-                        start: 1771548,
-                    },
-                    Point {
-                        level: 0,
-                        algorithm: Algorithm::SkaSort,
-                        start: 1226143,
-                    },
-                    Point {
-                        level: 0,
-                        algorithm: Algorithm::ScanningSort,
-                        start: 680218,
-                    },
-                    Point {
-                        level: 0,
-                        algorithm: Algorithm::LsbSort,
+                        algorithm: RegionsSort,
                         start: 0,
                     },
                     Point {
                         level: 0,
-                        algorithm: Algorithm::RecombinatingSort,
+                        algorithm: ScanningSort,
+                        start: 41892246,
+                    },
+                    Point {
+                        level: 0,
+                        algorithm: SkaSort,
+                        start: 13424419,
+                    },
+                    Point {
+                        level: 0,
+                        algorithm: RecombinatingSort,
+                        start: 11165210,
+                    },
+                    Point {
+                        level: 0,
+                        algorithm: LsbSort,
+                        start: 0,
+                    },
+                    Point {
+                        level: 0,
+                        algorithm: RegionsSort,
                         start: 0,
                     },
                 ],
