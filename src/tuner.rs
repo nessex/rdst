@@ -62,7 +62,7 @@ impl Tuner for DefaultTuner {}
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Point {
-    pub level: usize,
+    pub depth: usize,
     pub algorithm: Algorithm,
     pub start: usize,
 }
@@ -74,8 +74,9 @@ pub struct MLTuner {
 
 impl Tuner for MLTuner {
     fn pick_algorithm(&self, p: &TuningParams) -> Algorithm {
+        let depth = p.total_levels - p.level;
         for point in self.points.iter() {
-            if p.level == point.level && p.input_len >= point.start {
+            if depth == point.depth && p.input_len >= point.start {
                 return point.algorithm;
             }
         }

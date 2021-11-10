@@ -1,9 +1,6 @@
 use block_pseudorand::block_rand;
 use lazy_static::lazy_static;
-use oxigen::{
-    AgeFunctions, AgeSlope, AgeThreshold, GeneticExecution, Genotype, MutationRates,
-    SelectionFunctions, SelectionRates, SlopeParams,
-};
+use oxigen::{AgeFunctions, AgeSlope, AgeThreshold, GeneticExecution, Genotype, MutationRates, SelectionFunctions, SelectionRates, SlopeParams, StopCriteria};
 use rand::distributions::Exp1;
 use rand::prelude::*;
 use rand::Rng;
@@ -85,7 +82,7 @@ impl Genotype<f64> for GeneticSort {
     }
 
     fn fitness(&self) -> f64 {
-        (1_000_000_000u32 - (fitness(self.tuner.clone()) as u32)) as f64
+        (1_000_000_000_000u64 - (fitness(self.tuner.clone()) as u64)) as f64
     }
 
     fn mutate(&mut self, rgen: &mut SmallRng, index: usize) {
@@ -100,8 +97,8 @@ impl Genotype<f64> for GeneticSort {
         self.tuner.points = nodes;
     }
 
-    fn is_solution(&self, fitness: f64) -> bool {
-        fitness > 999_999_999.0
+    fn is_solution(&self, _fitness: f64) -> bool {
+        false
     }
 }
 
@@ -248,11 +245,10 @@ fn main() {
     let progress_log = File::create("progress.csv").expect("Error creating progress log file");
     let population_log =
         File::create("population.txt").expect("Error creating population log file");
-    let population_size = 10;
 
     let (solutions, generation, progress, _population) =
         GeneticExecution::<f64, GeneticSort>::new()
-            .population_size(population_size)
+            .population_size(10)
             .genotype_size(N)
             .mutation_rate(Box::new(MutationRates::Linear(SlopeParams {
                 start: 0.1_f64,
@@ -271,6 +267,7 @@ fn main() {
             )))
             .progress_log(1, progress_log)
             .population_log(1, population_log)
+            .stop_criterion(Box::new(StopCriteria::SolutionFound))
             .run();
 
     println!("{:?} {} {}", solutions, generation, progress);
