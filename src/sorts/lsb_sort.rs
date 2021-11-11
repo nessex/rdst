@@ -2,15 +2,6 @@ use crate::sorts::out_of_place_sort::out_of_place_sort;
 use crate::utils::*;
 use crate::RadixKey;
 
-#[inline]
-pub fn lsb_sort<T>(bucket: &mut [T], tmp_bucket: &mut [T], counts: &[usize], level: usize)
-where
-    T: RadixKey + Sized + Send + Copy + Sync,
-{
-    out_of_place_sort(bucket, tmp_bucket, counts, level);
-
-    bucket.copy_from_slice(tmp_bucket);
-}
 
 pub fn lsb_sort_adapter<T>(bucket: &mut [T], start_level: usize, end_level: usize)
 where
@@ -23,6 +14,7 @@ where
     let mut tmp_bucket = get_tmp_bucket(bucket.len());
 
     let levels: Vec<usize> = (start_level..=end_level).into_iter().collect();
+    let mut invert = false;
 
     for l in levels {
         let (counts, level) = if let Some(s) = get_counts_and_level_ascending(bucket, l, l, false) {
@@ -31,7 +23,14 @@ where
             continue;
         };
 
-        lsb_sort(bucket, &mut tmp_bucket, &counts, level);
+        let (src, dst) = if invert { (&mut *tmp_bucket.as_mut_slice(), &mut *bucket) } else { (&mut *bucket, &mut *tmp_bucket.as_mut_slice()) };
+        invert = !invert;
+
+        out_of_place_sort(src, dst, &counts, level);
+    }
+
+    if invert {
+        bucket.copy_from_slice(&tmp_bucket);
     }
 }
 
