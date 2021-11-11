@@ -95,16 +95,22 @@ impl Genotype<f64> for GeneticSort {
     }
 
     fn fitness(&self) -> f64 {
-        (1_000_000_000_000u64 - (fitness(self.tuner.clone()) as u64)) as f64
+        (1_000_000_000_000_000u64 - (fitness(self.tuner.clone()) as u64)) as f64
     }
 
-    fn mutate(&mut self, _rgen: &mut SmallRng, index: usize) {
-        //let set = [0, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000];
+    fn mutate(&mut self, rgen: &mut SmallRng, index: usize) {
         let mut last = None;
+        let mut skip = rgen.gen_range(0, 5);
         for v in (0..=N).rlp_iter() {
             if let Some(last) = last {
                 if self.intervals[index].sub(last as f64).abs() < 0.5 {
+                    if skip > 0 {
+                        skip -= 1;
+                        continue;
+                    }
+
                     self.intervals[index] = v as f64;
+
                     break;
                 }
             }
@@ -384,7 +390,7 @@ fn main() {
 
     let (solutions, generation, progress, _population) =
         GeneticExecution::<f64, GeneticSort>::new()
-            .population_size(32)
+            .population_size(10)
             .genotype_size(32)
             .mutation_rate(Box::new(MutationRates::Linear(SlopeParams {
                 start: 0.1_f64,
