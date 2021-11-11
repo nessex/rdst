@@ -401,7 +401,7 @@ fn main() {
 
     let (solutions, generation, progress, _population) =
         GeneticExecution::<f64, GeneticSort>::new()
-            .population_size(10)
+            .population_size(50)
             .genotype_size(32)
             .global_cache(true)
             .cache_fitness(true)
