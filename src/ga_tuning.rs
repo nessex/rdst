@@ -1,3 +1,4 @@
+use std::collections::hash_map::DefaultHasher;
 use block_pseudorand::block_rand;
 use lazy_static::lazy_static;
 use oxigen::{
@@ -12,6 +13,7 @@ use rdst::RadixSort;
 use rlp_iter::RlpIterator;
 use std::fmt::{Debug, Display, Formatter};
 use std::fs::File;
+use std::hash::Hasher;
 use std::ops::{Shr, ShrAssign, Sub};
 use std::slice::Iter;
 use std::time::Instant;
@@ -32,7 +34,7 @@ struct Point {
     start: usize,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 struct MLTuner {
     points: Vec<Point>,
 }
@@ -72,6 +74,7 @@ impl Tuner for MLTuner {
 
 impl Genotype<f64> for GeneticSort {
     type ProblemSize = usize;
+    type GenotypeHash = u64;
 
     fn iter(&self) -> Iter<f64> {
         self.intervals.iter()
@@ -129,6 +132,14 @@ impl Genotype<f64> for GeneticSort {
 
     fn is_solution(&self, _fitness: f64) -> bool {
         false
+    }
+
+    fn hash(&self) -> Self::GenotypeHash {
+        let mut hasher = DefaultHasher::new();
+        self.intervals.iter().map(|v| *v as usize)
+            .for_each(|v| hasher.write_usize(v));
+
+        hasher.finish()
     }
 }
 
@@ -392,6 +403,8 @@ fn main() {
         GeneticExecution::<f64, GeneticSort>::new()
             .population_size(10)
             .genotype_size(32)
+            .global_cache(true)
+            .cache_fitness(true)
             .mutation_rate(Box::new(MutationRates::Linear(SlopeParams {
                 start: 0.1_f64,
                 bound: 0.005,
