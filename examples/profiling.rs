@@ -1,5 +1,3 @@
-use std::thread::sleep;
-use std::time::{Duration, Instant};
 /// NOTE: The primary use-case for this example is for running a large sort with cargo-instruments.
 /// It must be run with `--features=bench`.
 ///
@@ -9,6 +7,8 @@ use std::time::{Duration, Instant};
 /// ```
 use rdst::test_utils::gen_inputs;
 use rdst::RadixSort;
+use std::thread::sleep;
+use std::time::{Duration, Instant};
 
 fn main() {
     // Randomly generate an array of

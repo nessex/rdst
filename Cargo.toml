@@ -14,7 +14,7 @@ documentation = "https://docs.rs/rdst/"
 [features]
 default = ["default-implementations"]
 bench = ["criterion", "block-pseudorand"]
-tuning = []
+tuning = ["nanorand", "rlp-iter", "block-pseudorand", "oxigen", "rand", "lazy_static"]
 default-implementations = []
 
 [dependencies]
@@ -24,6 +24,11 @@ try-mutex = "0.4.0"
 partition = "0.1.2"
 criterion = { version = "0.3.5", optional = true }
 block-pseudorand = { version = "0.1.1", optional = true }
+nanorand = { version =  "0.6.1", optional = true }
+rlp-iter = { version = "0.2.0", optional = true }
+oxigen = { git = "https://github.com/Nessex/oxigen.git", branch = "nessex-single-threaded", optional = true, features=["global_cache"] }
+rand = { version = "0.7", optional = true, features = ["small_rng"] }
+lazy_static = { version = "1.4.0", optional = true }
 
 [dev-dependencies]
 voracious_radix_sort = { version = "1.1.0", features = ["voracious_multithread"] }
@@ -34,6 +39,16 @@ block-pseudorand = "0.1.1"
 [profile.release]
 codegen-units = 1
 opt-level = 3
+
+[[bin]]
+name = "monte-carlo-tuning"
+path = "src/monte_carlo.rs"
+required-features = [ "tuning" ]
+
+[[bin]]
+name = "ga-tuning"
+path = "src/ga_tuning.rs"
+required-features = [ "tuning" ]
 
 [[bench]]
 name = "full_sort"

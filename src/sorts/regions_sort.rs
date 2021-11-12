@@ -22,11 +22,11 @@
 
 use crate::director::director;
 use crate::sorts::ska_sort::ska_sort;
-use crate::tuning_parameters::TuningParameters;
+use crate::tuner::Tuner;
 use crate::utils::*;
 use crate::RadixKey;
-use arbitrary_chunks::ArbitraryChunks;
 use partition::partition_index;
+use rayon::current_num_threads;
 use rayon::prelude::*;
 use std::cmp::{min, Ordering};
 
@@ -129,7 +129,7 @@ fn list_operations<T>(
             None => {
                 outbounds.append(&mut current_outbounds);
                 break;
-            },
+            }
         };
 
         let o = match current_outbounds.pop() {
@@ -138,7 +138,7 @@ fn list_operations<T>(
                 outbounds.push(i);
                 outbounds.append(&mut inbounds);
                 break;
-            },
+            }
         };
 
         let op = match i.slice.len().cmp(&o.slice.len()) {
@@ -186,17 +186,17 @@ fn list_operations<T>(
     (outbounds, operations)
 }
 
-pub fn regions_sort<T>(tuning: &TuningParameters, bucket: &mut [T], level: usize)
+pub fn regions_sort<T>(bucket: &mut [T], level: usize) -> Vec<usize>
 where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
-    let bucket_len = bucket.len();
-
-    if bucket_len <= 1 {
-        return;
+    if bucket.len() == 0 {
+        return get_counts(bucket, level).to_vec();
     }
 
-    let chunk_size = (bucket_len / tuning.cpus) + 1;
+    let threads = current_num_threads();
+    let bucket_len = bucket.len();
+    let chunk_size = (bucket_len / threads) + 1;
     let local_counts: Vec<[usize; 256]> = bucket
         .par_chunks_mut(chunk_size)
         .map(|chunk| {
@@ -236,14 +236,12 @@ where
         }
 
         // Execute all operations, swapping the paired slices (inbound/outbound edges)
-        let chunk_size = (operations.len() / tuning.cpus) + 1;
-        operations
-            .par_chunks_mut(chunk_size)
-            .for_each(|chunk| {
-                for Operation(o, i) in chunk {
-                    i.slice.swap_with_slice(o.slice)
-                }
-            });
+        let chunk_size = (operations.len() / threads) + 1;
+        operations.par_chunks_mut(chunk_size).for_each(|chunk| {
+            for Operation(o, i) in chunk {
+                i.slice.swap_with_slice(o.slice)
+            }
+        });
 
         // Create new edges for edges that were swapped somewhere other than their final destination
         for Operation(i, mut o) in std::mem::take(&mut operations) {
@@ -255,47 +253,44 @@ where
         }
     }
 
+    global_counts
+}
+
+pub fn regions_sort_adapter<T>(
+    tuner: &(dyn Tuner + Send + Sync),
+    in_place: bool,
+    bucket: &mut [T],
+    level: usize,
+) where
+    T: RadixKey + Sized + Send + Copy + Sync,
+{
+    if bucket.len() <= 1 {
+        return;
+    }
+
+    let global_counts = regions_sort(bucket, level);
+
     if level == 0 {
         return;
     }
 
-    // Work is being divided into oversized / long chunks and average sized chunks, to better balance
-    // resources in the case of a non-uniform distribution. Long chunks are processed sequentially
-    // first using the multi-threaded regions sort, and the remainder are processed in parallel
-    // using typical single-threaded algorithms like ska sort.
-    let mut long_chunks = Vec::new();
-    let mut average_chunks = Vec::with_capacity(256);
-    let len_limit = ((bucket_len / tuning.cpus) as f64 * 1.4) as usize;
-
-    for chunk in bucket.arbitrary_chunks_mut(global_counts.to_vec()) {
-        if chunk.len() > len_limit && chunk.len() > tuning.regions_sort_threshold {
-            long_chunks.push(chunk);
-        } else {
-            average_chunks.push(chunk);
-        }
-    }
-
-    long_chunks
-        .into_iter()
-        .for_each(|chunk| regions_sort(tuning, chunk, level - 1));
-
-    average_chunks
-        .into_par_iter()
-        .for_each(|chunk| director(tuning, true, chunk, bucket_len, level - 1));
+    director(tuner, in_place, bucket, global_counts, level - 1);
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::sorts::regions_sort::regions_sort;
+    use crate::sorts::regions_sort::regions_sort_adapter;
     use crate::test_utils::{sort_comparison_suite, NumericTest};
-    use crate::tuning_parameters::TuningParameters;
+    use crate::tuner::DefaultTuner;
 
     fn test_regions_sort<T>(shift: T)
     where
         T: NumericTest<T>,
     {
-        let tuning = TuningParameters::new(T::LEVELS);
-        sort_comparison_suite(shift, |inputs| regions_sort(&tuning, inputs, T::LEVELS - 1));
+        let tuner = DefaultTuner {};
+        sort_comparison_suite(shift, |inputs| {
+            regions_sort_adapter(&tuner, true, inputs, T::LEVELS - 1)
+        });
     }
 
     #[test]

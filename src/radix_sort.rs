@@ -1,7 +1,7 @@
 use crate::sort_manager::SortManager;
-use crate::RadixKey;
 #[cfg(feature = "tuning")]
-use crate::tuning_parameters::TuningParameters;
+use crate::tuner::Tuner;
+use crate::RadixKey;
 
 pub trait RadixSort {
     /// radix_sort_unstable runs a radix sort based upon the `rdst::RadixKey` implementation
@@ -29,7 +29,7 @@ pub trait RadixSort {
     ///     ska_sort_threshold: 10_000,
     ///     par_count_threshold: 10_000,
     ///     scanner_read_size: 10_000,
-    ///     inplace_sort_lsb_threshold: 10_000,
+    ///     in_place_sort_lsb_threshold: 10_000,
     /// };
     ///
     /// let mut values = [3, 1, 2];
@@ -38,7 +38,7 @@ pub trait RadixSort {
     /// assert_eq!(values, [1, 2, 3]);
     /// ```
     #[cfg(feature = "tuning")]
-    fn radix_sort_unstable_with_tuning(&mut self, tuning: TuningParameters);
+    fn radix_sort_unstable_with_tuning(&mut self, tuner: Box<dyn Tuner + Send + Sync>);
 
     /// radix_sort_unstable runs the actual radix sort based upon the `rdst::RadixKey` implementation
     /// of `T` in your `Vec<T>` or `[T]`.
@@ -60,10 +60,10 @@ pub trait RadixSort {
     ///
     /// assert_eq!(values, [1, 2, 3]);
     /// ```
-    fn radix_sort_inplace_unstable(&mut self);
+    fn radix_sort_in_place_unstable(&mut self);
 
     #[cfg(feature = "tuning")]
-    fn radix_sort_inplace_unstable_with_tuning(&mut self, tuning: TuningParameters);
+    fn radix_sort_in_place_unstable_with_tuning(&mut self, tuner: Box<dyn Tuner + Send + Sync>);
 }
 
 impl<T> RadixSort for Vec<T>
@@ -76,20 +76,20 @@ where
     }
 
     #[cfg(feature = "tuning")]
-    fn radix_sort_unstable_with_tuning(&mut self, tuning: TuningParameters) {
-        let sm = SortManager::new_with_tuning::<T>(tuning);
+    fn radix_sort_unstable_with_tuning(&mut self, tuner: Box<dyn Tuner + Send + Sync>) {
+        let sm = SortManager::new_with_tuning::<T>(tuner);
         sm.sort(self);
     }
 
-    fn radix_sort_inplace_unstable(&mut self) {
+    fn radix_sort_in_place_unstable(&mut self) {
         let sm = SortManager::new::<T>();
-        sm.sort_inplace(self);
+        sm.sort_in_place(self);
     }
 
     #[cfg(feature = "tuning")]
-    fn radix_sort_inplace_unstable_with_tuning(&mut self, tuning: TuningParameters) {
-        let sm = SortManager::new_with_tuning::<T>(tuning);
-        sm.sort_inplace(self);
+    fn radix_sort_in_place_unstable_with_tuning(&mut self, tuner: Box<dyn Tuner + Send + Sync>) {
+        let sm = SortManager::new_with_tuning::<T>(tuner);
+        sm.sort_in_place(self);
     }
 }
 
@@ -103,20 +103,20 @@ where
     }
 
     #[cfg(feature = "tuning")]
-    fn radix_sort_unstable_with_tuning(&mut self, tuning: TuningParameters) {
-        let sm = SortManager::new_with_tuning::<T>(tuning);
+    fn radix_sort_unstable_with_tuning(&mut self, tuner: Box<dyn Tuner + Send + Sync>) {
+        let sm = SortManager::new_with_tuning::<T>(tuner);
         sm.sort(self);
     }
 
-    fn radix_sort_inplace_unstable(&mut self) {
+    fn radix_sort_in_place_unstable(&mut self) {
         let sm = SortManager::new::<T>();
-        sm.sort_inplace(self);
+        sm.sort_in_place(self);
     }
 
     #[cfg(feature = "tuning")]
-    fn radix_sort_inplace_unstable_with_tuning(&mut self, tuning: TuningParameters) {
-        let sm = SortManager::new_with_tuning::<T>(tuning);
-        sm.sort_inplace(self);
+    fn radix_sort_in_place_unstable_with_tuning(&mut self, tuner: Box<dyn Tuner + Send + Sync>) {
+        let sm = SortManager::new_with_tuning::<T>(tuner);
+        sm.sort_in_place(self);
     }
 }
 
@@ -132,11 +132,11 @@ mod tests {
         sort_comparison_suite(shift, |inputs| inputs.radix_sort_unstable());
     }
 
-    fn test_inplace_full_sort<T>(shift: T)
-        where
-            T: NumericTest<T>,
+    fn test_in_place_full_sort<T>(shift: T)
+    where
+        T: NumericTest<T>,
     {
-        sort_comparison_suite(shift, |inputs| inputs.radix_sort_inplace_unstable());
+        sort_comparison_suite(shift, |inputs| inputs.radix_sort_in_place_unstable());
     }
 
     #[test]
@@ -210,72 +210,72 @@ mod tests {
     }
 
     #[test]
-    pub fn test_inplace_u8() {
-        test_inplace_full_sort(0u8);
+    pub fn test_in_place_u8() {
+        test_in_place_full_sort(0u8);
     }
 
     #[test]
-    pub fn test_inplace_u16() {
-        test_inplace_full_sort(8u16);
+    pub fn test_in_place_u16() {
+        test_in_place_full_sort(8u16);
     }
 
     #[test]
-    pub fn test_inplace_u32() {
-        test_inplace_full_sort(16u32);
+    pub fn test_in_place_u32() {
+        test_in_place_full_sort(16u32);
     }
 
     #[test]
-    pub fn test_inplace_u64() {
-        test_inplace_full_sort(32u64);
+    pub fn test_in_place_u64() {
+        test_in_place_full_sort(32u64);
     }
 
     #[test]
-    pub fn test_inplace_u128() {
-        test_inplace_full_sort(64u128);
+    pub fn test_in_place_u128() {
+        test_in_place_full_sort(64u128);
     }
 
     #[test]
-    pub fn test_inplace_usize() {
-        test_inplace_full_sort(32usize);
+    pub fn test_in_place_usize() {
+        test_in_place_full_sort(32usize);
     }
 
     #[test]
-    pub fn test_inplace_i8() {
-        test_inplace_full_sort(0i8);
+    pub fn test_in_place_i8() {
+        test_in_place_full_sort(0i8);
     }
 
     #[test]
-    pub fn test_inplace_i16() {
-        test_inplace_full_sort(8i16);
+    pub fn test_in_place_i16() {
+        test_in_place_full_sort(8i16);
     }
 
     #[test]
-    pub fn test_inplace_i32() {
-        test_inplace_full_sort(16i32);
+    pub fn test_in_place_i32() {
+        test_in_place_full_sort(16i32);
     }
 
     #[test]
-    pub fn test_inplace_i64() {
-        test_inplace_full_sort(32i64);
+    pub fn test_in_place_i64() {
+        test_in_place_full_sort(32i64);
     }
 
     #[test]
-    pub fn test_inplace_i128() {
-        test_inplace_full_sort(64i128);
+    pub fn test_in_place_i128() {
+        test_in_place_full_sort(64i128);
     }
 
     #[test]
-    pub fn test_inplace_isize() {
-        test_inplace_full_sort(32isize);
+    pub fn test_in_place_isize() {
+        test_in_place_full_sort(32isize);
     }
 
     #[test]
-    pub fn test_inplace_f32() {
-        test_inplace_full_sort(16u32);
+    pub fn test_in_place_f32() {
+        test_in_place_full_sort(16u32);
     }
 
     #[test]
-    pub fn test_inplace_f64() {
-        test_inplace_full_sort(32u64);
+    pub fn test_in_place_f64() {
+        test_in_place_full_sort(32u64);
     }
 }
