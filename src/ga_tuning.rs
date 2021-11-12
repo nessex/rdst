@@ -1,4 +1,3 @@
-use std::collections::hash_map::DefaultHasher;
 use block_pseudorand::block_rand;
 use lazy_static::lazy_static;
 use oxigen::{
@@ -11,6 +10,7 @@ use rdst::tuner::Algorithm::{RecombinatingSort, RegionsSort, ScanningSort, SkaSo
 use rdst::tuner::{Algorithm, Tuner, TuningParams};
 use rdst::RadixSort;
 use rlp_iter::RlpIterator;
+use std::collections::hash_map::DefaultHasher;
 use std::fmt::{Debug, Display, Formatter};
 use std::fs::File;
 use std::hash::Hasher;
@@ -19,12 +19,13 @@ use std::slice::Iter;
 use std::time::Instant;
 use std::vec::IntoIter;
 
-static N: usize = 40_000_000;
+static N: usize = 200_000_000;
 lazy_static! {
     static ref DATA_U32: Vec<u32> = gen_inputs(N, 0u32);
     static ref DATA_U32_BIMODAL: Vec<u32> = gen_inputs(N, 16u32);
     static ref DATA_U64: Vec<u64> = gen_inputs(N, 0u64);
     static ref DATA_U64_BIMODAL: Vec<u64> = gen_inputs(N, 32u64);
+    static ref ITER: Vec<usize> = (0..=N).rlp_iter().collect();
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -61,7 +62,7 @@ impl Display for GeneticSort {
 
 impl Tuner for MLTuner {
     fn pick_algorithm(&self, p: &TuningParams) -> Algorithm {
-        let depth = p.total_levels - p.level;
+        let depth = p.total_levels - 1 - p.level;
         for point in self.points.iter() {
             if depth == point.depth && p.input_len >= point.start {
                 return point.algorithm;
@@ -103,8 +104,8 @@ impl Genotype<f64> for GeneticSort {
 
     fn mutate(&mut self, rgen: &mut SmallRng, index: usize) {
         let mut last = None;
-        let mut skip = rgen.gen_range(0, 5);
-        for v in (0..=N).rlp_iter() {
+        let mut skip = rgen.gen_range(0, 20);
+        for v in ITER.iter() {
             if let Some(last) = last {
                 if self.intervals[index].sub(last as f64).abs() < 0.5 {
                     if skip > 0 {
@@ -112,13 +113,13 @@ impl Genotype<f64> for GeneticSort {
                         continue;
                     }
 
-                    self.intervals[index] = v as f64;
+                    self.intervals[index] = *v as f64;
 
                     break;
                 }
             }
 
-            last = Some(v);
+            last = Some(*v);
         }
 
         let mut nodes = get_nodes();
@@ -136,7 +137,9 @@ impl Genotype<f64> for GeneticSort {
 
     fn hash(&self) -> Self::GenotypeHash {
         let mut hasher = DefaultHasher::new();
-        self.intervals.iter().map(|v| *v as usize)
+        self.intervals
+            .iter()
+            .map(|v| *v as usize)
             .for_each(|v| hasher.write_usize(v));
 
         hasher.finish()
@@ -147,195 +150,163 @@ fn get_nodes() -> Vec<Point> {
     let out = vec![
         Point {
             depth: 7,
-            algorithm: RegionsSort,
-            // start: 1_000_000_000,
-            start: 0,
-        },
-        Point {
-            depth: 7,
-            algorithm: ScanningSort,
-            // start: 100_000_000,
-            start: 0,
-        },
-        Point {
-            depth: 7,
             algorithm: RecombinatingSort,
-            // start: 10_000_000,
+            start: 0,
+        },
+        Point {
+            depth: 7,
+            algorithm: RegionsSort,
             start: 0,
         },
         Point {
             depth: 7,
             algorithm: SkaSort,
-            // start: 50_000,
             start: 0,
         },
         Point {
-            depth: 6,
-            algorithm: RegionsSort,
-            // start: 1_000_000_000,
-            start: 0,
-        },
-        Point {
-            depth: 6,
+            depth: 7,
             algorithm: ScanningSort,
-            // start: 100_000_000,
-            start: 0,
-        },
-        Point {
-            depth: 6,
-            algorithm: RecombinatingSort,
-            // start: 10_000_000,
             start: 0,
         },
         Point {
             depth: 6,
             algorithm: SkaSort,
-            // start: 50_000,
             start: 0,
         },
         Point {
-            depth: 5,
+            depth: 6,
             algorithm: RegionsSort,
-            // start: 1_000_000_000,
             start: 0,
         },
         Point {
-            depth: 5,
+            depth: 6,
             algorithm: ScanningSort,
-            // start: 100_000_000,
             start: 0,
         },
         Point {
-            depth: 5,
+            depth: 6,
             algorithm: RecombinatingSort,
-            // start: 10_000_000,
             start: 0,
         },
         Point {
             depth: 5,
             algorithm: SkaSort,
-            // start: 50_000,
+            start: 0,
+        },
+        Point {
+            depth: 5,
+            algorithm: RegionsSort,
+            start: 0,
+        },
+        Point {
+            depth: 5,
+            algorithm: ScanningSort,
+            start: 0,
+        },
+        Point {
+            depth: 5,
+            algorithm: RecombinatingSort,
+            start: 0,
+        },
+        Point {
+            depth: 4,
+            algorithm: RecombinatingSort,
             start: 0,
         },
         Point {
             depth: 4,
             algorithm: RegionsSort,
-            // start: 1_000_000_000,
-            start: 0,
-        },
-        Point {
-            depth: 4,
-            algorithm: ScanningSort,
-            // start: 100_000_000,
-            start: 0,
-        },
-        Point {
-            depth: 4,
-            algorithm: RecombinatingSort,
-            // start: 10_000_000,
             start: 0,
         },
         Point {
             depth: 4,
             algorithm: SkaSort,
-            // start: 50_000,
             start: 0,
         },
         Point {
-            depth: 3,
-            algorithm: RegionsSort,
-            // start: 1_000_000_000,
-            start: 0,
-        },
-        Point {
-            depth: 3,
+            depth: 4,
             algorithm: ScanningSort,
-            // start: 100_000_000,
             start: 0,
         },
         Point {
             depth: 3,
             algorithm: RecombinatingSort,
-            // start: 10_000_000,
+            start: 0,
+        },
+        Point {
+            depth: 3,
+            algorithm: RegionsSort,
+            start: 0,
+        },
+        Point {
+            depth: 3,
+            algorithm: ScanningSort,
             start: 0,
         },
         Point {
             depth: 3,
             algorithm: SkaSort,
-            // start: 50_000,
             start: 0,
         },
         Point {
             depth: 2,
             algorithm: RegionsSort,
-            // start: 1_000_000_000,
-            start: 0,
-        },
-        Point {
-            depth: 2,
-            algorithm: ScanningSort,
-            // start: 100_000_000,
-            start: 0,
-        },
-        Point {
-            depth: 2,
-            algorithm: RecombinatingSort,
-            // start: 10_000_000,
             start: 0,
         },
         Point {
             depth: 2,
             algorithm: SkaSort,
-            // start: 50_000,
+            start: 0,
+        },
+        Point {
+            depth: 2,
+            algorithm: ScanningSort,
+            start: 0,
+        },
+        Point {
+            depth: 2,
+            algorithm: RecombinatingSort,
+            start: 0,
+        },
+        Point {
+            depth: 1,
+            algorithm: ScanningSort,
             start: 0,
         },
         Point {
             depth: 1,
             algorithm: RegionsSort,
-            // start: 1_000_000_000,
-            start: 0,
-        },
-        Point {
-            depth: 1,
-            algorithm: ScanningSort,
-            // start: 50_000_000,
             start: 0,
         },
         Point {
             depth: 1,
             algorithm: RecombinatingSort,
-            // start: 10_000_000,
             start: 0,
         },
         Point {
             depth: 1,
             algorithm: SkaSort,
-            // start: 50_000,
             start: 0,
+        },
+        Point {
+            depth: 0,
+            algorithm: SkaSort,
+            start: 50_000,
+        },
+        Point {
+            depth: 0,
+            algorithm: ScanningSort,
+            start: 40_000_000,
         },
         Point {
             depth: 0,
             algorithm: RegionsSort,
-            // start: 1_000_000_000,
-            start: 0,
-        },
-        Point {
-            depth: 0,
-            algorithm: ScanningSort,
-            // start: 40_000_000,
-            start: 0,
+            start: 100_000_000,
         },
         Point {
             depth: 0,
             algorithm: RecombinatingSort,
-            // start: 260_000,
-            start: 0,
-        },
-        Point {
-            depth: 0,
-            algorithm: SkaSort,
-            // start: 50_000,
-            start: 0,
+            start: 260_000,
         },
     ];
 
@@ -350,7 +321,14 @@ fn sort_nodes(nodes: &mut Vec<Point>) {
 fn fitness(ml_tuner: MLTuner) -> u128 {
     let mut total = 0;
     let lens = [
-        100, 1_000, 10_000, 100_000, 1_000_000, 10_000_000, 40_000_000,
+        100,
+        1_000,
+        10_000,
+        100_000,
+        1_000_000,
+        10_000_000,
+        100_000_000,
+        200_000_000,
     ];
 
     for len in lens {
@@ -401,8 +379,8 @@ fn main() {
 
     let (solutions, generation, progress, _population) =
         GeneticExecution::<f64, GeneticSort>::new()
-            .population_size(50)
-            .genotype_size(32)
+            .population_size(100)
+            .genotype_size(1)
             .global_cache(true)
             .cache_fitness(true)
             .mutation_rate(Box::new(MutationRates::Linear(SlopeParams {
@@ -411,7 +389,7 @@ fn main() {
                 coefficient: -0.0002,
             })))
             .selection_rate(Box::new(SelectionRates::Linear(SlopeParams {
-                start: 3_f64,
+                start: 4_f64,
                 bound: 1.5,
                 coefficient: -0.0005,
             })))

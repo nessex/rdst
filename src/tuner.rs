@@ -74,7 +74,7 @@ pub struct MLTuner {
 
 impl Tuner for MLTuner {
     fn pick_algorithm(&self, p: &TuningParams) -> Algorithm {
-        let depth = p.total_levels - p.level;
+        let depth = p.total_levels - 1 - p.level;
         for point in self.points.iter() {
             if depth == point.depth && p.input_len >= point.start {
                 return point.algorithm;
