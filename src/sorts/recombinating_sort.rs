@@ -7,15 +7,15 @@ use arbitrary_chunks::ArbitraryChunks;
 use rayon::current_num_threads;
 use rayon::prelude::*;
 
-pub fn recombinating_sort<T>(bucket: &mut [T], level: usize) -> Vec<usize>
+#[inline]
+pub fn recombinating_sort<T>(bucket: &mut [T], tmp_bucket: &mut [T], level: usize) -> Vec<usize>
 where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
     let bucket_len = bucket.len();
     let chunk_size = (bucket_len / current_num_threads()) + 1;
-    let mut tmp_bucket = get_tmp_bucket::<T>(bucket_len);
 
-    let locals: Vec<([usize; 256], [usize; 256])> = bucket
+    let locals: Vec<[usize; 256]> = bucket
         .par_chunks(chunk_size)
         .zip(tmp_bucket.par_chunks_mut(chunk_size))
         .map(|(chunk, tmp_chunk)| {
@@ -23,39 +23,41 @@ where
 
             out_of_place_sort(chunk, tmp_chunk, &counts, level);
 
-            let sums = get_prefix_sums(&counts);
-
-            (counts, sums)
+            counts
         })
         .collect();
 
     let mut global_counts = vec![0usize; 256];
+    let mut local_indexes = Vec::with_capacity(locals.len() * 256);
+    let mut local_counts = Vec::with_capacity(locals.len() * 256);
 
-    locals.iter().for_each(|(counts, _)| {
+    locals.iter().for_each(|counts| {
         for (i, c) in counts.iter().enumerate() {
-            global_counts[i] += *c;
+            if *c != 0 {
+                local_indexes.push(i);
+                local_counts.push(*c);
+                global_counts[i] += *c;
+            }
         }
     });
 
+    let mut tmp_chunks: Vec<(usize, &mut [T])> = local_indexes
+        .into_iter()
+        .zip(tmp_bucket.arbitrary_chunks_mut(local_counts))
+        .collect();
+
+    // NOTE(nathan): This must be a stable sort to preserve the LSB radix sort stable property
+    // This sort is used to bring all the partial radix chunks together so they can
+    // be mapped to the global count regions.
+    tmp_chunks.sort_by_key(|(i, _)| *i);
+    let prefixes: Vec<usize> = tmp_chunks.iter().map(|(_, c)| c.len()).collect();
+
     bucket
-        .arbitrary_chunks_mut(global_counts.clone())
-        .enumerate()
+        .arbitrary_chunks_mut(prefixes)
+        .zip(tmp_chunks.into_iter())
         .par_bridge()
-        .for_each(|(index, global_chunk)| {
-            let mut read_offset = 0;
-            let mut write_offset = 0;
-
-            for (counts, sums) in locals.iter() {
-                let read_start = read_offset + sums[index];
-                let read_end = read_start + counts[index];
-                let read_slice = &tmp_bucket[read_start..read_end];
-                let write_end = write_offset + read_slice.len();
-
-                global_chunk[write_offset..write_end].copy_from_slice(read_slice);
-
-                read_offset += chunk_size;
-                write_offset = write_end;
-            }
+        .for_each(|(chunk, (_, tmp_chunk))| {
+            chunk.copy_from_slice(tmp_chunk);
         });
 
     global_counts
@@ -69,7 +71,8 @@ pub fn recombinating_sort_adapter<T>(
 ) where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
-    let global_counts = recombinating_sort(bucket, level);
+    let mut tmp_bucket = get_tmp_bucket::<T>(bucket.len());
+    let global_counts = recombinating_sort(bucket, &mut tmp_bucket, level);
 
     if level == 0 {
         return;
@@ -78,9 +81,27 @@ pub fn recombinating_sort_adapter<T>(
     director(tuner, in_place, bucket, global_counts, level - 1);
 }
 
+pub fn recombinating_sort_lsb_adapter<T>(
+    bucket: &mut [T],
+    start_level: usize,
+    end_level: usize,
+) where
+    T: RadixKey + Sized + Send + Copy + Sync,
+{
+    if bucket.len() < 2 {
+        return;
+    }
+
+    let mut tmp_bucket = get_tmp_bucket(bucket.len());
+
+    for l in start_level..=end_level {
+        recombinating_sort(bucket, &mut tmp_bucket, l);
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::sorts::recombinating_sort::recombinating_sort_adapter;
+    use crate::sorts::recombinating_sort::{recombinating_sort_adapter, recombinating_sort_lsb_adapter};
     use crate::test_utils::{sort_comparison_suite, NumericTest};
     use crate::tuner::DefaultTuner;
 
@@ -91,6 +112,10 @@ mod tests {
         let tuner = DefaultTuner {};
         sort_comparison_suite(shift, |inputs| {
             recombinating_sort_adapter(&tuner, false, inputs, T::LEVELS - 1)
+        });
+
+        sort_comparison_suite(shift, |inputs| {
+            recombinating_sort_lsb_adapter(inputs, 0, T::LEVELS - 1)
         });
     }
 

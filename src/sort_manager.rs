@@ -1,6 +1,6 @@
 use crate::sorts::comparative_sort::comparative_sort;
 use crate::sorts::lsb_sort::lsb_sort_adapter;
-use crate::sorts::recombinating_sort::recombinating_sort_adapter;
+use crate::sorts::recombinating_sort::{recombinating_sort_adapter, recombinating_sort_lsb_adapter};
 use crate::sorts::regions_sort::regions_sort_adapter;
 use crate::sorts::scanning_sort::scanning_sort_adapter;
 use crate::sorts::ska_sort::ska_sort_adapter;
@@ -221,20 +221,12 @@ impl SortManager {
             serial: true,
         };
 
-        match self.tuner.pick_algorithm(&tp) {
-            Algorithm::ScanningSort => {
-                scanning_sort_adapter(&*self.tuner, tp.in_place, bucket, tp.level)
-            }
-            Algorithm::RecombinatingSort => {
-                recombinating_sort_adapter(&*self.tuner, tp.in_place, bucket, tp.level)
-            }
-            Algorithm::LsbSort => lsb_sort_adapter(bucket, 0, tp.level),
-            Algorithm::SkaSort => ska_sort_adapter(&*self.tuner, tp.in_place, bucket, tp.level),
-            Algorithm::ComparativeSort => comparative_sort(bucket, tp.level),
-            Algorithm::RegionsSort => {
-                regions_sort_adapter(&*self.tuner, tp.in_place, bucket, tp.level)
-            }
-        };
+
+        if bucket.len() > 120_000 {
+            recombinating_sort_lsb_adapter(bucket, 0, tp.level);
+        } else {
+            lsb_sort_adapter(bucket, 0, tp.level);
+        }
     }
 
     pub fn sort_in_place<T>(&self, bucket: &mut [T])
