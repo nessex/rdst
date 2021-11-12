@@ -104,16 +104,12 @@ impl Genotype<f64> for GeneticSort {
 
     fn mutate(&mut self, rgen: &mut SmallRng, index: usize) {
         let mut last = None;
-        let mut skip = rgen.gen_range(0, 20);
-        for v in ITER.iter() {
+        let skip = rgen.gen_range(-5, 20);
+        let mut last_idx = 0;
+        for (i, v) in ITER.iter().enumerate() {
             if let Some(last) = last {
                 if self.intervals[index].sub(last as f64).abs() < 0.5 {
-                    if skip > 0 {
-                        skip -= 1;
-                        continue;
-                    }
-
-                    self.intervals[index] = *v as f64;
+                    last_idx = i as i64;
 
                     break;
                 }
@@ -121,6 +117,8 @@ impl Genotype<f64> for GeneticSort {
 
             last = Some(*v);
         }
+
+        self.intervals[index] = ITER[last_idx.saturating_add(skip) as usize] as f64;
 
         let mut nodes = get_nodes();
         for (node, interval) in nodes.iter_mut().zip(self.intervals.iter()) {
