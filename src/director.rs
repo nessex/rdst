@@ -19,13 +19,14 @@ pub fn director<T>(
 ) where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
+    let depth = T::LEVELS - 1 - level;
     let len = bucket.len();
     let len_limit = ((bucket.len() / current_num_threads()) as f64 * 1.4) as usize;
     let mut long_chunks = Vec::new();
     let mut average_chunks = Vec::with_capacity(256);
 
     for chunk in bucket.arbitrary_chunks_mut(counts) {
-        if chunk.len() > len_limit && level == T::LEVELS.saturating_sub(2) {
+        if chunk.len() > len_limit && depth <= 2 {
             long_chunks.push(chunk);
         } else {
             average_chunks.push(chunk);

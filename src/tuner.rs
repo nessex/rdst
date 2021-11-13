@@ -23,34 +23,28 @@ pub trait Tuner {
     fn pick_algorithm(&self, p: &TuningParams) -> Algorithm {
         if p.in_place && p.serial {
             match p.input_len {
-                0..=20 => Algorithm::ComparativeSort,
-                21..=50_000 => Algorithm::LsbSort,
-                50_001..=150_000 => Algorithm::SkaSort,
-                150_001..=usize::MAX => Algorithm::RegionsSort,
+                0..=1_000_000 => Algorithm::SkaSort,
+                1_000_001..=usize::MAX => Algorithm::RegionsSort,
                 _ => Algorithm::SkaSort,
             }
         } else if p.in_place && !p.serial {
             match p.input_len {
-                0..=20 => Algorithm::ComparativeSort,
-                21..=50_000 => Algorithm::LsbSort,
-                50_001..=800_000 => Algorithm::SkaSort,
-                _ => Algorithm::SkaSort,
+                0..=50_000 => Algorithm::LsbSort,
+                50_001..=usize::MAX => Algorithm::SkaSort,
+                _ => Algorithm::LsbSort,
             }
         } else if !p.in_place && p.serial {
             match p.input_len {
-                0..=20 => Algorithm::ComparativeSort,
-                21..=50_000 => Algorithm::LsbSort,
-                50_001..=260_000 => Algorithm::SkaSort,
+                0..=260_000 => Algorithm::SkaSort,
                 260_001..=40_000_000 => Algorithm::RecombinatingSort,
                 40_000_001..=usize::MAX => Algorithm::ScanningSort,
                 _ => Algorithm::LsbSort,
             }
         } else {
             match p.input_len {
-                0..=20 => Algorithm::ComparativeSort,
-                21..=50_000 => Algorithm::LsbSort,
-                50_001..=260_000 => Algorithm::SkaSort,
-                260_001..=usize::MAX => Algorithm::RecombinatingSort,
+                0..=50_000 => Algorithm::LsbSort,
+                50_001..=800_000 => Algorithm::SkaSort,
+                800_001..=usize::MAX => Algorithm::RecombinatingSort,
                 _ => Algorithm::LsbSort,
             }
         }

@@ -1,3 +1,4 @@
+use std::cmp::min;
 use block_pseudorand::block_rand;
 use lazy_static::lazy_static;
 use oxigen::{
@@ -118,7 +119,8 @@ impl Genotype<f64> for GeneticSort {
             last = Some(*v);
         }
 
-        self.intervals[index] = ITER[last_idx.saturating_add(skip) as usize] as f64;
+        let skip_idx = min(last_idx.saturating_add(skip) as usize, N);
+        self.intervals[index] = ITER[skip_idx] as f64;
 
         let mut nodes = get_nodes();
         for (node, interval) in nodes.iter_mut().zip(self.intervals.iter()) {
@@ -149,162 +151,162 @@ fn get_nodes() -> Vec<Point> {
         Point {
             depth: 7,
             algorithm: RecombinatingSort,
-            start: 0,
+            start: 26875000,
         },
         Point {
             depth: 7,
             algorithm: RegionsSort,
-            start: 0,
+            start: 8437500,
         },
         Point {
             depth: 7,
             algorithm: SkaSort,
-            start: 0,
+            start: 5312500,
         },
         Point {
             depth: 7,
             algorithm: ScanningSort,
-            start: 0,
+            start: 312500,
         },
         Point {
             depth: 6,
             algorithm: SkaSort,
-            start: 0,
+            start: 33125000,
         },
         Point {
             depth: 6,
             algorithm: RegionsSort,
-            start: 0,
+            start: 14062500,
         },
         Point {
             depth: 6,
             algorithm: ScanningSort,
-            start: 0,
+            start: 14062500,
         },
         Point {
             depth: 6,
             algorithm: RecombinatingSort,
-            start: 0,
+            start: 12812500,
         },
         Point {
             depth: 5,
             algorithm: SkaSort,
-            start: 0,
+            start: 25937500,
         },
         Point {
             depth: 5,
             algorithm: RegionsSort,
-            start: 0,
+            start: 24062500,
         },
         Point {
             depth: 5,
             algorithm: ScanningSort,
-            start: 0,
+            start: 9687500,
         },
         Point {
             depth: 5,
             algorithm: RecombinatingSort,
-            start: 0,
+            start: 312500,
         },
         Point {
             depth: 4,
             algorithm: RecombinatingSort,
-            start: 0,
+            start: 27187500,
         },
         Point {
             depth: 4,
             algorithm: RegionsSort,
-            start: 0,
+            start: 26875000,
         },
         Point {
             depth: 4,
             algorithm: SkaSort,
-            start: 0,
+            start: 25625000,
         },
         Point {
             depth: 4,
             algorithm: ScanningSort,
-            start: 0,
-        },
-        Point {
-            depth: 3,
-            algorithm: RecombinatingSort,
-            start: 0,
+            start: 1250000,
         },
         Point {
             depth: 3,
             algorithm: RegionsSort,
-            start: 0,
+            start: 1_000_000_000,
         },
         Point {
             depth: 3,
             algorithm: ScanningSort,
-            start: 0,
+            start: 50_000_000,
+        },
+        Point {
+            depth: 3,
+            algorithm: RecombinatingSort,
+            start: 260_000,
         },
         Point {
             depth: 3,
             algorithm: SkaSort,
-            start: 0,
+            start: 50_000,
         },
         Point {
             depth: 2,
             algorithm: RegionsSort,
-            start: 0,
-        },
-        Point {
-            depth: 2,
-            algorithm: SkaSort,
-            start: 0,
+            start: 1_000_000_000,
         },
         Point {
             depth: 2,
             algorithm: ScanningSort,
-            start: 0,
+            start: 50_000_000,
         },
         Point {
             depth: 2,
             algorithm: RecombinatingSort,
-            start: 0,
+            start: 800_000,
         },
         Point {
-            depth: 1,
-            algorithm: ScanningSort,
-            start: 0,
+            depth: 2,
+            algorithm: SkaSort,
+            start: 1_000_000,
         },
         Point {
             depth: 1,
             algorithm: RegionsSort,
-            start: 0,
+            start: 1_000_000_000,
+        },
+        Point {
+            depth: 1,
+            algorithm: ScanningSort,
+            start: 50_000_000,
         },
         Point {
             depth: 1,
             algorithm: RecombinatingSort,
-            start: 0,
+            start: 800_000,
         },
         Point {
             depth: 1,
-            algorithm: SkaSort,
-            start: 0,
-        },
-        Point {
-            depth: 0,
             algorithm: SkaSort,
             start: 50_000,
         },
         Point {
             depth: 0,
-            algorithm: ScanningSort,
-            start: 40_000_000,
+            algorithm: RegionsSort,
+            start: 1_000_000_000,
         },
         Point {
             depth: 0,
-            algorithm: RegionsSort,
-            start: 100_000_000,
+            algorithm: ScanningSort,
+            start: 50_000_000,
         },
         Point {
             depth: 0,
             algorithm: RecombinatingSort,
             start: 260_000,
+        },
+        Point {
+            depth: 0,
+            algorithm: SkaSort,
+            start: 50_000,
         },
     ];
 
