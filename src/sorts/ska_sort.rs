@@ -28,6 +28,11 @@ where
         }
     }
 
+    if largest == bucket.len() {
+        // Already sorted
+        return;
+    }
+
     finished_map[largest_index] = true;
 
     while finished != 256 {
