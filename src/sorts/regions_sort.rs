@@ -201,7 +201,9 @@ where
         .par_chunks_mut(chunk_size)
         .map(|chunk| {
             let counts = get_counts(chunk, level);
-            ska_sort(chunk, &counts, level);
+            let plateaus = detect_plateaus(chunk, level);
+            let (mut prefix_sums, end_offsets) = apply_plateaus(chunk, &counts, &plateaus);
+            ska_sort(chunk, &mut prefix_sums, &end_offsets, level);
 
             counts
         })

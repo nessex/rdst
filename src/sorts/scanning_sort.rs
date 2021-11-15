@@ -24,21 +24,28 @@ struct ScannerBucket<'a, T> {
 
 #[inline]
 fn get_scanner_buckets<'a, T>(
-    counts: &[usize; 256],
+    counts: &[usize],
+    prefix_sums: &[usize],
     bucket: &'a mut [T],
 ) -> Vec<ScannerBucket<'a, T>> {
+    let mut running_count = 0;
     let mut out: Vec<_> = bucket
         .arbitrary_chunks_mut(counts.to_vec())
         .enumerate()
-        .map(|(index, chunk)| ScannerBucket {
-            index,
-            len: chunk.len() as isize,
-            inner: TryMutex::new(ScannerBucketInner {
-                write_head: 0,
-                read_head: 0,
-                chunk,
-                locally_partitioned: false,
-            }),
+        .map(|(index, chunk)| {
+            let head = prefix_sums[index] - running_count;
+            running_count += chunk.len();
+
+            ScannerBucket {
+                index,
+                len: chunk.len() as isize,
+                inner: TryMutex::new(ScannerBucketInner {
+                    write_head: head,
+                    read_head: head,
+                    chunk,
+                    locally_partitioned: false,
+                }),
+            }
         })
         .collect();
 
@@ -180,14 +187,16 @@ fn scanner_thread<T>(
     }
 }
 
-pub fn scanning_sort<T>(bucket: &mut [T], msb_counts: &[usize; 256], level: usize)
+pub fn scanning_sort<T>(bucket: &mut [T], msb_counts: &[usize], level: usize)
 where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
     let len = bucket.len();
     let threads = current_num_threads();
     let uniform_threshold = ((len / threads) as f64 * 1.4) as usize;
-    let scanner_buckets = get_scanner_buckets(msb_counts, bucket);
+    let plateaus = detect_plateaus(bucket, level);
+    let (prefix_sums, _) = apply_plateaus(bucket, &msb_counts, &plateaus);
+    let scanner_buckets = get_scanner_buckets(msb_counts, &prefix_sums, bucket);
     let threads = min(threads, scanner_buckets.len());
     let scaling_factor = max(1, (threads as f32).log2().ceil() as isize) as usize;
     let scanner_read_size = (32768 / scaling_factor) as isize;

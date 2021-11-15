@@ -5,26 +5,29 @@ use crate::RadixKey;
 
 // Based upon (with modifications):
 // https://probablydance.com/2016/12/27/i-wrote-a-faster-sorting-algorithm/
-pub fn ska_sort<T>(bucket: &mut [T], counts: &[usize], level: usize)
+pub fn ska_sort<T>(bucket: &mut [T], prefix_sums: &mut [usize], end_offsets: &[usize], level: usize)
 where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
-    let mut prefix_sums = get_prefix_sums(counts);
-    let mut end_offsets = [0usize; 256];
-
-    end_offsets[0..255].copy_from_slice(&prefix_sums[1..256]);
-    end_offsets[255] = counts[255] + prefix_sums[255];
-
     let mut finished = 1;
     let mut finished_map = [false; 256];
     let mut largest = 0;
     let mut largest_index = 0;
 
-    for (i, c) in counts.iter().enumerate() {
-        if *c > largest {
-            largest = *c;
+    for i in 0..256 {
+        let rem = end_offsets[i] - prefix_sums[i];
+        if rem == 0 {
+            finished_map[i] = true;
+            finished += 1;
+        } else if rem > largest {
+            largest = rem;
             largest_index = i;
         }
+    }
+
+    if largest == bucket.len() {
+        // Already sorted
+        return;
     }
 
     finished_map[largest_index] = true;
@@ -63,7 +66,10 @@ pub fn ska_sort_adapter<T>(
         return;
     };
 
-    ska_sort(bucket, &counts, level);
+    let plateaus = detect_plateaus(bucket, level);
+    let (mut prefix_sums, end_offsets) = apply_plateaus(bucket, &counts, &plateaus);
+
+    ska_sort(bucket, &mut prefix_sums, &end_offsets, level);
 
     if level == 0 {
         return;
