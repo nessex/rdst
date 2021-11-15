@@ -1,6 +1,7 @@
 use crate::sorts::out_of_place_sort::out_of_place_sort;
 use crate::utils::*;
 use crate::RadixKey;
+use crate::sorts::ska_sort::ska_sort;
 
 pub fn lsb_sort_adapter<T>(bucket: &mut [T], start_level: usize, end_level: usize)
 where
@@ -11,7 +12,6 @@ where
     }
 
     let mut tmp_bucket = get_tmp_bucket(bucket.len());
-
     let levels: Vec<usize> = (start_level..=end_level).into_iter().collect();
     let mut invert = false;
 
@@ -22,14 +22,22 @@ where
             continue;
         };
 
-        let (src, dst) = if invert {
-            (&mut *tmp_bucket.as_mut_slice(), &mut *bucket)
+        if l == start_level && (end_level - start_level) % 2 == 0 {
+            // Use ska sort if the levels in question here will likely require an additional copy
+            // at the end.
+            let plateaus = detect_plateaus(bucket, l);
+            let (mut prefix_sums, end_offsets) = apply_plateaus(bucket, &counts, &plateaus);
+            ska_sort(bucket, &mut prefix_sums, &end_offsets, l);
         } else {
-            (&mut *bucket, &mut *tmp_bucket.as_mut_slice())
-        };
-        invert = !invert;
+            let (src, dst) = if invert {
+                (&mut *tmp_bucket.as_mut_slice(), &mut *bucket)
+            } else {
+                (&mut *bucket, &mut *tmp_bucket.as_mut_slice())
+            };
+            invert = !invert;
 
-        out_of_place_sort(src, dst, &counts, level);
+            out_of_place_sort(src, dst, &counts, level);
+        }
     }
 
     if invert {
