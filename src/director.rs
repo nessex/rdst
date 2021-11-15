@@ -1,3 +1,4 @@
+use std::cmp::max;
 use crate::sorts::comparative_sort::comparative_sort;
 use crate::sorts::lsb_sort::lsb_sort_adapter;
 use crate::sorts::recombinating_sort::recombinating_sort_adapter;
@@ -21,7 +22,7 @@ pub fn director<T>(
 {
     let depth = T::LEVELS - 1 - level;
     let len = bucket.len();
-    let len_limit = ((bucket.len() / current_num_threads()) as f64 * 1.4) as usize;
+    let len_limit = max(260_000, ((bucket.len() / current_num_threads()) as f64 * 1.4) as usize);
     let mut long_chunks = Vec::new();
     let mut average_chunks = Vec::with_capacity(256);
 

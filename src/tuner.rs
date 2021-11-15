@@ -64,12 +64,20 @@ pub struct Point {
 #[derive(Clone, Debug)]
 pub struct MLTuner {
     pub points: Vec<Point>,
+    pub points_in_place: Vec<Point>,
 }
 
 impl Tuner for MLTuner {
     fn pick_algorithm(&self, p: &TuningParams) -> Algorithm {
         let depth = p.total_levels - 1 - p.level;
-        for point in self.points.iter() {
+
+        let points = if p.in_place {
+            self.points_in_place.iter()
+        } else {
+            self.points.iter()
+        };
+
+        for point in points {
             if depth == point.depth && p.input_len >= point.start {
                 return point.algorithm;
             }
