@@ -23,21 +23,28 @@ struct ScannerBucket<'a, T> {
 
 #[inline]
 fn get_scanner_buckets<'a, T>(
-    counts: &[usize; 256],
+    counts: &[usize],
+    prefix_sums: &[usize],
     bucket: &'a mut [T],
 ) -> Vec<ScannerBucket<'a, T>> {
+    let mut running_count = 0;
     let mut out: Vec<_> = bucket
         .arbitrary_chunks_mut(counts.to_vec())
         .enumerate()
-        .map(|(index, chunk)| ScannerBucket {
-            index,
-            len: chunk.len() as isize,
-            inner: TryMutex::new(ScannerBucketInner {
-                write_head: 0,
-                read_head: 0,
-                chunk,
-                locally_partitioned: false,
-            }),
+        .map(|(index, chunk)| {
+            let head = prefix_sums[index] - running_count;
+            running_count += chunk.len();
+
+            ScannerBucket {
+                index,
+                len: chunk.len() as isize,
+                inner: TryMutex::new(ScannerBucketInner {
+                    write_head: head,
+                    read_head: head,
+                    chunk,
+                    locally_partitioned: false,
+                }),
+            }
         })
         .collect();
 
@@ -197,9 +204,12 @@ pub fn scanning_radix_sort<T>(
             return;
         };
 
+    let plateaus = detect_plateaus(bucket, level);
+    let (prefix_sums, _) = apply_plateaus(bucket, &msb_counts, &plateaus);
+
     let len = bucket.len();
     let uniform_threshold = ((len / tuning.cpus) as f64 * 1.4) as usize;
-    let scanner_buckets = get_scanner_buckets(&msb_counts, bucket);
+    let scanner_buckets = get_scanner_buckets(&msb_counts, &prefix_sums, bucket);
     let threads = min(tuning.cpus, scanner_buckets.len());
 
     (0..threads).into_par_iter().for_each(|_| {
