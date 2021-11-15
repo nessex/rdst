@@ -165,7 +165,7 @@ where
 }
 
 pub fn detect_plateaus<T>(
-    bucket: &mut [T],
+    bucket: &[T],
     level: usize,
 ) -> Vec<(u8, usize, usize)>
 where

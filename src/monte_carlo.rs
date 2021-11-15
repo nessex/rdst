@@ -46,13 +46,13 @@ mod tuner;
 mod utils;
 
 use crate::sorts::comparative_sort::comparative_sort;
-use crate::sorts::lsb_sort::lsb_sort;
 use crate::sorts::recombinating_sort::recombinating_sort;
 use crate::sorts::regions_sort::regions_sort;
 use crate::sorts::scanning_sort::scanning_sort;
 use crate::sorts::ska_sort::ska_sort;
 use crate::utils::*;
 use radix_key::RadixKey;
+use crate::sorts::out_of_place_sort::out_of_place_sort;
 use rdst::tuner::Algorithm;
 
 fn get_data<T>(len: usize) -> Vec<T>
@@ -87,14 +87,16 @@ where
             Algorithm::LsbSort => {
                 let counts = get_counts(&data, level);
                 let mut tmp_bucket = get_tmp_bucket::<T>(data.len());
-                lsb_sort(&mut data, &mut tmp_bucket, &counts, level);
+                out_of_place_sort(&mut data, &mut tmp_bucket, &counts, level);
             }
             Algorithm::RegionsSort => {
                 let _ = regions_sort(&mut data, level);
             }
             Algorithm::SkaSort => {
                 let counts = get_counts(&data, level);
-                ska_sort(&mut data, &counts, level)
+                let plateaus = detect_plateaus(&mut data, level);
+                let (mut prefix_sums, end_offsets) = apply_plateaus(&mut data, &counts, &plateaus);
+                ska_sort(&mut data, &mut prefix_sums, &end_offsets, level)
             }
         };
     };
