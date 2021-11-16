@@ -13,21 +13,27 @@ where
 
     let mut tmp_bucket = get_tmp_bucket(bucket.len());
     let levels: Vec<usize> = (start_level..=end_level).into_iter().collect();
+    let mut first = true;
     let mut invert = false;
+    let mut all_counts = get_all_counts(bucket, start_level, end_level);
+    all_counts.reverse();
 
-    for l in levels {
-        let (counts, level) = if let Some(s) = get_counts_and_level_ascending(bucket, l, l, false) {
-            s
-        } else {
-            continue;
-        };
+    for level in levels {
+        let counts = all_counts.pop().unwrap();
 
-        if l == start_level && (end_level - start_level) % 2 == 0 {
+        for c in counts {
+            if c == bucket.len() {
+                // This level has only identical values, so we can skip it
+                continue;
+            }
+        }
+
+        if first == true && (end_level - start_level) % 2 == 0 {
             // Use ska sort if the levels in question here will likely require an additional copy
             // at the end.
-            let plateaus = detect_plateaus(bucket, l);
+            let plateaus = detect_plateaus(bucket, level);
             let (mut prefix_sums, end_offsets) = apply_plateaus(bucket, &counts, &plateaus);
-            ska_sort(bucket, &mut prefix_sums, &end_offsets, l);
+            ska_sort(bucket, &mut prefix_sums, &end_offsets, level);
         } else {
             if invert {
                 out_of_place_sort(&mut tmp_bucket, bucket, &counts, level);
@@ -37,6 +43,8 @@ where
 
             invert = !invert;
         }
+
+        first = false;
     }
 
     if invert {

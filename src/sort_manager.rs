@@ -13,7 +13,7 @@ pub struct SortManager {
 }
 
 impl SortManager {
-    fn in_place_points() -> Vec<Point> {
+    fn in_place_serial_points() -> Vec<Point> {
         vec![
             Point {
                 depth: 7,
@@ -98,7 +98,92 @@ impl SortManager {
         ]
     }
 
-    fn standard_points() -> Vec<Point> {
+    fn in_place_parallel_points() -> Vec<Point> {
+        vec![
+            Point {
+                depth: 7,
+                algorithm: RegionsSort,
+                start: 800_000,
+            },
+            Point {
+                depth: 7,
+                algorithm: SkaSort,
+                start: 50_000,
+            },
+            Point {
+                depth: 6,
+                algorithm: RegionsSort,
+                start: 800_000,
+            },
+            Point {
+                depth: 6,
+                algorithm: SkaSort,
+                start: 50_000,
+            },
+            Point {
+                depth: 5,
+                algorithm: RegionsSort,
+                start: 800_000,
+            },
+            Point {
+                depth: 5,
+                algorithm: SkaSort,
+                start: 50_000,
+            },
+            Point {
+                depth: 4,
+                algorithm: RegionsSort,
+                start: 800_000,
+            },
+            Point {
+                depth: 4,
+                algorithm: SkaSort,
+                start: 50_000,
+            },
+            Point {
+                depth: 3,
+                algorithm: RegionsSort,
+                start: 800_000,
+            },
+            Point {
+                depth: 3,
+                algorithm: SkaSort,
+                start: 50_000,
+            },
+            Point {
+                depth: 2,
+                algorithm: RegionsSort,
+                start: 800_000,
+            },
+            Point {
+                depth: 2,
+                algorithm: SkaSort,
+                start: 1_000_000,
+            },
+            Point {
+                depth: 1,
+                algorithm: RegionsSort,
+                start: 800_000,
+            },
+            Point {
+                depth: 1,
+                algorithm: SkaSort,
+                start: 50_000,
+            },
+            Point {
+                depth: 0,
+                algorithm: RegionsSort,
+                start: 800_000,
+            },
+            Point {
+                depth: 0,
+                algorithm: SkaSort,
+                start: 50_000,
+            },
+        ]
+    }
+
+    fn standard_serial_points() -> Vec<Point> {
         vec![
             Point {
                 depth: 7,
@@ -188,7 +273,7 @@ impl SortManager {
             Point {
                 depth: 2,
                 algorithm: SkaSort,
-                start: 1_000_000,
+                start: 300_000,
             },
             Point {
                 depth: 1,
@@ -198,12 +283,7 @@ impl SortManager {
             Point {
                 depth: 1,
                 algorithm: RecombinatingSort,
-                start: 800_000,
-            },
-            Point {
-                depth: 1,
-                algorithm: SkaSort,
-                start: 50_000,
+                start: 260_000,
             },
             Point {
                 depth: 0,
@@ -213,12 +293,52 @@ impl SortManager {
             Point {
                 depth: 0,
                 algorithm: RecombinatingSort,
-                start: 800_000,
+                start: 260_000,
+            },
+        ]
+    }
+
+    fn standard_parallel_points() -> Vec<Point> {
+        vec![
+            Point {
+                depth: 7,
+                algorithm: SkaSort,
+                start: 300_000,
+            },
+            Point {
+                depth: 6,
+                algorithm: SkaSort,
+                start: 300_000,
+            },
+            Point {
+                depth: 5,
+                algorithm: SkaSort,
+                start: 300_000,
+            },
+            Point {
+                depth: 4,
+                algorithm: SkaSort,
+                start: 300_000,
+            },
+            Point {
+                depth: 3,
+                algorithm: SkaSort,
+                start: 300_000,
+            },
+            Point {
+                depth: 2,
+                algorithm: SkaSort,
+                start: 300_000,
+            },
+            Point {
+                depth: 1,
+                algorithm: SkaSort,
+                start: 300_000,
             },
             Point {
                 depth: 0,
                 algorithm: SkaSort,
-                start: 50_000,
+                start: 300_000,
             },
         ]
     }
@@ -230,10 +350,11 @@ impl SortManager {
         assert_ne!(T::LEVELS, 0, "RadixKey must have at least 1 level");
 
         Self {
-            // tuner: Box::new(DefaultTuner {})
             tuner: Box::new(MLTuner {
-                points: Self::standard_points(),
-                points_in_place: Self::in_place_points(),
+                points_standard_serial: Self::standard_serial_points(),
+                points_in_place_serial: Self::in_place_serial_points(),
+                points_standard_parallel: Self::standard_parallel_points(),
+                points_in_place_parallel: Self::in_place_parallel_points(),
             }),
         }
     }

@@ -63,18 +63,21 @@ pub struct Point {
 
 #[derive(Clone, Debug)]
 pub struct MLTuner {
-    pub points: Vec<Point>,
-    pub points_in_place: Vec<Point>,
+    pub points_standard_serial: Vec<Point>,
+    pub points_in_place_serial: Vec<Point>,
+    pub points_standard_parallel: Vec<Point>,
+    pub points_in_place_parallel: Vec<Point>,
 }
 
 impl Tuner for MLTuner {
     fn pick_algorithm(&self, p: &TuningParams) -> Algorithm {
         let depth = p.total_levels - 1 - p.level;
 
-        let points = if p.in_place {
-            self.points_in_place.iter()
-        } else {
-            self.points.iter()
+        let points = match (p.in_place, p.serial) {
+            (true, true) => self.points_in_place_serial.iter(),
+            (true, false) => self.points_in_place_parallel.iter(),
+            (false, true) => self.points_standard_serial.iter(),
+            (false, false) => self.points_standard_parallel.iter(),
         };
 
         for point in points {
