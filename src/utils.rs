@@ -16,6 +16,16 @@ pub fn get_prefix_sums(counts: &[usize]) -> [usize; 256] {
 }
 
 #[inline]
+pub fn get_end_offsets(counts: &[usize], prefix_sums: &[usize]) -> [usize; 256] {
+    let mut end_offsets = [0usize; 256];
+
+    end_offsets[0..255].copy_from_slice(&prefix_sums[1..256]);
+    end_offsets[255] = counts[255] + prefix_sums[255];
+
+    end_offsets
+}
+
+#[inline]
 pub fn par_get_counts<T>(bucket: &[T], level: usize) -> [usize; 256]
 where
     T: RadixKey + Sized + Send + Sync,
@@ -310,10 +320,7 @@ where
     T: RadixKey + Copy + Sized + Send + Sync,
 {
     let mut prefix_sums = get_prefix_sums(&counts);
-    let mut end_offsets = [0usize; 256];
-
-    end_offsets[0..255].copy_from_slice(&prefix_sums[1..256]);
-    end_offsets[255] = counts[255] + prefix_sums[255];
+    let end_offsets = get_end_offsets(&counts, &prefix_sums);
 
     for (radix, l, r) in plateaus {
         let len = *r - *l;

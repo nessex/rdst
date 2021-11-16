@@ -29,14 +29,13 @@ where
             let (mut prefix_sums, end_offsets) = apply_plateaus(bucket, &counts, &plateaus);
             ska_sort(bucket, &mut prefix_sums, &end_offsets, l);
         } else {
-            let (src, dst) = if invert {
-                (&mut *tmp_bucket.as_mut_slice(), &mut *bucket)
+            if invert {
+                out_of_place_sort(&mut tmp_bucket, bucket, &counts, level);
             } else {
-                (&mut *bucket, &mut *tmp_bucket.as_mut_slice())
+                out_of_place_sort(bucket, &mut tmp_bucket, &counts, level);
             };
-            invert = !invert;
 
-            out_of_place_sort(src, dst, &counts, level);
+            invert = !invert;
         }
     }
 
