@@ -7,6 +7,7 @@ use crate::sorts::ska_sort::ska_sort_adapter;
 use crate::tuner::{Algorithm, Algorithm::{RecombinatingSort, RegionsSort, ScanningSort, SkaSort}, MLTuner, Point, Tuner, TuningParams};
 use crate::RadixKey;
 use rayon::current_num_threads;
+use crate::sorts::mt_lsb_sort::mt_lsb_sort_adapter;
 
 pub struct SortManager {
     tuner: Box<dyn Tuner + Send + Sync>,
@@ -389,20 +390,22 @@ impl SortManager {
             serial: true,
         };
 
-        match self.tuner.pick_algorithm(&tp) {
-            Algorithm::ScanningSort => {
-                scanning_sort_adapter(&*self.tuner, tp.in_place, bucket, tp.level)
-            }
-            Algorithm::RecombinatingSort => {
-                recombinating_sort_adapter(&*self.tuner, tp.in_place, bucket, tp.level)
-            }
-            Algorithm::LsbSort => lsb_sort_adapter(bucket, 0, tp.level),
-            Algorithm::SkaSort => ska_sort_adapter(&*self.tuner, tp.in_place, bucket, tp.level),
-            Algorithm::ComparativeSort => comparative_sort(bucket, tp.level),
-            Algorithm::RegionsSort => {
-                regions_sort_adapter(&*self.tuner, tp.in_place, bucket, tp.level)
-            }
-        };
+        mt_lsb_sort_adapter(bucket, 0, tp.level);
+        //
+        // match self.tuner.pick_algorithm(&tp) {
+        //     Algorithm::ScanningSort => {
+        //         scanning_sort_adapter(&*self.tuner, tp.in_place, bucket, tp.level)
+        //     }
+        //     Algorithm::RecombinatingSort => {
+        //         recombinating_sort_adapter(&*self.tuner, tp.in_place, bucket, tp.level)
+        //     }
+        //     Algorithm::LsbSort => lsb_sort_adapter(bucket, 0, tp.level),
+        //     Algorithm::SkaSort => ska_sort_adapter(&*self.tuner, tp.in_place, bucket, tp.level),
+        //     Algorithm::ComparativeSort => comparative_sort(bucket, tp.level),
+        //     Algorithm::RegionsSort => {
+        //         regions_sort_adapter(&*self.tuner, tp.in_place, bucket, tp.level)
+        //     }
+        // };
     }
 
     pub fn sort_in_place<T>(&self, bucket: &mut [T])

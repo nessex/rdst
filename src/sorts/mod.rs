@@ -5,3 +5,4 @@ pub mod recombinating_sort;
 pub mod regions_sort;
 pub mod scanning_sort;
 pub mod ska_sort;
+pub mod mt_lsb_sort;
