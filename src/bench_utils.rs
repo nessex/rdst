@@ -90,6 +90,36 @@ pub fn bench_common<T>(
     group.finish();
 }
 
+pub fn bench_medley<T>(
+    c: &mut Criterion,
+    group: &str,
+    tests: Vec<(&str, Box<dyn Fn(Vec<T>)>)>,
+    shift: T,
+) where
+    T: NumericTest<T> + Clone,
+{
+    let input_sets = gen_bench_input_set(shift);
+    let len: u64 = input_sets.iter().map(|s| s.len() as u64).sum();
+
+    let mut group = c.benchmark_group(group);
+    group.sample_size(10);
+    group.measurement_time(Duration::from_secs(3));
+    group.warm_up_time(Duration::from_secs(1));
+    group.throughput(Throughput::Elements(len));
+
+    for t in tests.iter() {
+        group.bench_with_input(BenchmarkId::new((*t).0.clone(), len), &0u32, |bench, _set| {
+            bench.iter_batched(|| input_sets.clone(), |input| {
+                for set in input {
+                    (*t).1(set);
+                }
+            }, BatchSize::SmallInput);
+        });
+    }
+
+    group.finish();
+}
+
 pub fn bench_comparative<T>(
     c: &mut Criterion,
     shift: T,
