@@ -1,4 +1,4 @@
-use crate::sorts::out_of_place_sort::out_of_place_sort;
+use crate::sorts::out_of_place_sort::{out_of_place_sort, out_of_place_sort_with_counts};
 use crate::utils::*;
 use crate::RadixKey;
 use crate::sorts::ska_sort::ska_sort;
@@ -14,25 +14,37 @@ where
     let mut tmp_bucket = get_tmp_bucket(bucket.len());
     let levels: Vec<usize> = (start_level..=end_level).into_iter().collect();
     let mut invert = false;
+    let mut next_counts = None;
 
-    for l in levels {
-        let (counts, level) = if let Some(s) = get_counts_and_level_ascending(bucket, l, l, false) {
-            s
-        } else {
-            continue;
-        };
+    'outer: for level in levels {
+        if next_counts.is_none() {
+            next_counts = Some(get_counts(bucket, level));
+        }
 
-        if l == start_level && (end_level - start_level) % 2 == 0 {
+        if let Some(counts) = next_counts {
+            // Check for skippable levels
+            for c in counts {
+                if c == bucket.len() {
+                    next_counts = None;
+                    continue 'outer;
+                }
+            }
+
             // Use ska sort if the levels in question here will likely require an additional copy
             // at the end.
-            let plateaus = detect_plateaus(bucket, l);
-            let (mut prefix_sums, end_offsets) = apply_plateaus(bucket, &counts, &plateaus);
-            ska_sort(bucket, &mut prefix_sums, &end_offsets, l);
-        } else {
-            if invert {
-                out_of_place_sort(&mut tmp_bucket, bucket, &counts, level);
-            } else {
-                out_of_place_sort(bucket, &mut tmp_bucket, &counts, level);
+            if level == start_level && (end_level - start_level) % 2 == 0 {
+                let plateaus = detect_plateaus(bucket, level);
+                let (mut prefix_sums, end_offsets) = apply_plateaus(bucket, &counts, &plateaus);
+                ska_sort(bucket, &mut prefix_sums, &end_offsets, level);
+                next_counts = None;
+                continue;
+            }
+
+            match (invert, level == end_level) {
+                (true, true) => out_of_place_sort(&mut tmp_bucket, bucket, &counts, level),
+                (true, false) => next_counts = Some(out_of_place_sort_with_counts(&mut tmp_bucket, bucket, &counts, level)),
+                (false, true) => out_of_place_sort(bucket, &mut tmp_bucket, &counts, level),
+                (false, false) => next_counts = Some(out_of_place_sort_with_counts(bucket, &mut tmp_bucket, &counts, level)),
             };
 
             invert = !invert;
