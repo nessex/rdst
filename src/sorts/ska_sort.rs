@@ -5,7 +5,7 @@ use crate::RadixKey;
 
 // Based upon (with modifications):
 // https://probablydance.com/2016/12/27/i-wrote-a-faster-sorting-algorithm/
-pub fn ska_sort<T>(bucket: &mut [T], prefix_sums: &mut [usize], end_offsets: &[usize], level: usize)
+pub fn ska_sort<T>(bucket: &mut [T], prefix_sums: &mut [usize], end_offsets: &mut [usize], level: usize)
 where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
@@ -23,6 +23,8 @@ where
             largest = rem;
             largest_index = i;
         }
+
+        end_offsets[i] -= 1;
     }
 
     if largest == bucket.len() {
@@ -36,15 +38,33 @@ where
         for b in 0..256 {
             if finished_map[b] {
                 continue;
-            } else if prefix_sums[b] >= end_offsets[b] {
+            } else if prefix_sums[b] > end_offsets[b] {
                 finished_map[b] = true;
                 finished += 1;
+                continue;
             }
 
-            for i in prefix_sums[b]..end_offsets[b] {
-                let new_b = bucket[i].get_level(level) as usize;
-                bucket.swap(prefix_sums[new_b], i);
-                prefix_sums[new_b] += 1;
+            let mut left = prefix_sums[b];
+            let mut right = end_offsets[b];
+
+            loop {
+                if left == right {
+                    let b = bucket[left].get_level(level) as usize;
+                    bucket.swap(prefix_sums[b], left);
+                    prefix_sums[b] += 1;
+                    break;
+                } else if left > right {
+                    break;
+                }
+
+                let bl = bucket[left].get_level(level) as usize;
+                let br = bucket[right].get_level(level) as usize;
+                bucket.swap(prefix_sums[bl], left);
+                bucket.swap(end_offsets[br], right);
+                prefix_sums[bl] += 1;
+                end_offsets[br] = end_offsets[br].saturating_sub(1);
+                left += 1;
+                right = right.saturating_sub(1);
             }
         }
     }
@@ -67,9 +87,9 @@ pub fn ska_sort_adapter<T>(
     };
 
     let plateaus = detect_plateaus(bucket, level);
-    let (mut prefix_sums, end_offsets) = apply_plateaus(bucket, &counts, &plateaus);
+    let (mut prefix_sums, mut end_offsets) = apply_plateaus(bucket, &counts, &plateaus);
 
-    ska_sort(bucket, &mut prefix_sums, &end_offsets, level);
+    ska_sort(bucket, &mut prefix_sums, &mut end_offsets, level);
 
     if level == 0 {
         return;

@@ -26,8 +26,8 @@ where
             // Use ska sort if the levels in question here will likely require an additional copy
             // at the end.
             let plateaus = detect_plateaus(bucket, l);
-            let (mut prefix_sums, end_offsets) = apply_plateaus(bucket, &counts, &plateaus);
-            ska_sort(bucket, &mut prefix_sums, &end_offsets, l);
+            let (mut prefix_sums, mut end_offsets) = apply_plateaus(bucket, &counts, &plateaus);
+            ska_sort(bucket, &mut prefix_sums, &mut end_offsets, l);
         } else {
             if invert {
                 out_of_place_sort(&mut tmp_bucket, bucket, &counts, level);
