@@ -4,9 +4,9 @@ version = 3
 
 [[package]]
 name = "arbitrary-chunks"
-version = "0.2.1"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6af2a45d34466b51c85a7f33625e972cd151ebb07f9e03a5b145d144473594ce"
+checksum = "03afed28bcc157078602cbc4746caddf3b5b8c842fa6609a69468cec49582584"
 
 [[package]]
 name = "atty"
