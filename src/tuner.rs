@@ -13,7 +13,7 @@ pub struct TuningParams {
 pub enum Algorithm {
     ScanningSort,
     RecombinatingSort,
-    // ComparativeSort,
+    ComparativeSort,
     LsbSort,
     RegionsSort,
     SkaSort,
