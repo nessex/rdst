@@ -3,7 +3,6 @@ use rayon::current_num_threads;
 use rayon::prelude::*;
 use crate::utils::*;
 use crate::RadixKey;
-use crate::sorts::ska_sort::ska_sort;
 
 #[inline]
 pub const fn cdiv(a: usize, b: usize) -> usize {
