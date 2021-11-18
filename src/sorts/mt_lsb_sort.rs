@@ -123,32 +123,24 @@ where
     let mut tmp_bucket = get_tmp_bucket(bucket.len());
     let levels: Vec<usize> = (start_level..=end_level).into_iter().collect();
     let mut invert = false;
-    let mut first = true;
-
+    let tile_size = (bucket.len() / current_num_threads()) + 1;
 
     for level in levels {
-        if first == true && (end_level - start_level) % 2 == 0 {
-            // Use ska sort if the levels in question here will likely require an additional copy
-            // at the end.
-            let counts = par_get_counts(bucket, level);
-            let plateaus = detect_plateaus(bucket, level);
-            let (mut prefix_sums, end_offsets) = apply_plateaus(bucket, &counts, &plateaus);
-            ska_sort(bucket, &mut prefix_sums, &end_offsets, level);
+        if invert {
+            mt_lsb_sort(&mut tmp_bucket, bucket, level);
         } else {
-            if invert {
-                mt_lsb_sort(&mut tmp_bucket, bucket, level);
-            } else {
-                mt_lsb_sort(bucket, &mut tmp_bucket, level);
-            };
+            mt_lsb_sort(bucket, &mut tmp_bucket, level);
+        };
 
-            invert = !invert;
-        }
-
-        first = false;
+        invert = !invert;
     }
 
     if invert {
-        bucket.copy_from_slice(&tmp_bucket);
+        bucket.par_chunks_mut(tile_size)
+            .zip(tmp_bucket.par_chunks(tile_size))
+            .for_each(|(chunk, tmp_chunk)| {
+                chunk.copy_from_slice(tmp_chunk);
+            });
     }
 }
 

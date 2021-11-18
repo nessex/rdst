@@ -469,13 +469,19 @@ impl SortManager {
             threads: current_num_threads(),
             level: T::LEVELS - 1,
             total_levels: T::LEVELS,
-            input_len: bucket.len(),
-            parent_len: bucket.len(),
+            input_len: bucket_len,
+            parent_len: bucket_len,
             in_place: false,
             serial: true,
         };
 
-        mt_lsb_sort_adapter(bucket, 0, tp.level);
+        if bucket_len >= 400_000 {
+            mt_lsb_sort_adapter(bucket, 0, tp.level);
+        } else if bucket_len >= 128 {
+            lsb_sort_adapter(bucket, 0, tp.level);
+        } else {
+            comparative_sort(bucket, tp.level);
+        }
         //
         // match self.tuner.pick_algorithm(&tp) {
         //     Algorithm::ScanningSort => {
