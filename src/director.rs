@@ -10,6 +10,7 @@ use crate::RadixKey;
 use arbitrary_chunks::ArbitraryChunks;
 use rayon::current_num_threads;
 use rayon::prelude::*;
+use crate::sorts::mt_lsb_sort::{mt_lsb_sort_adapter, mt_oop_sort_adapter};
 
 pub fn director<T>(
     tuner: &(dyn Tuner + Send + Sync),
@@ -20,14 +21,13 @@ pub fn director<T>(
 ) where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
-    let depth = T::LEVELS - 1 - level;
     let len = bucket.len();
-    let len_limit = max(260_000, ((bucket.len() / current_num_threads()) as f64 * 1.4) as usize);
+    let len_limit = max(300_000, ((bucket.len() / current_num_threads()) as f64 * 1.4) as usize);
     let mut long_chunks = Vec::new();
     let mut average_chunks = Vec::with_capacity(256);
 
     for chunk in bucket.arbitrary_chunks_mut(counts) {
-        if chunk.len() > len_limit && depth <= 2 {
+        if chunk.len() > len_limit {
             long_chunks.push(chunk);
         } else {
             average_chunks.push(chunk);
@@ -54,6 +54,8 @@ pub fn director<T>(
             Algorithm::SkaSort => ska_sort_adapter(tuner, tp.in_place, chunk, tp.level),
             Algorithm::ComparativeSort => comparative_sort(chunk, tp.level),
             Algorithm::RegionsSort => regions_sort_adapter(tuner, tp.in_place, chunk, tp.level),
+            Algorithm::MtOopSort => mt_oop_sort_adapter(tuner, tp.in_place, chunk, tp.level),
+            Algorithm::MtLsbSort => mt_lsb_sort_adapter(chunk, 0, tp.level),
         };
     });
 
@@ -77,6 +79,8 @@ pub fn director<T>(
             Algorithm::SkaSort => ska_sort_adapter(tuner, tp.in_place, chunk, tp.level),
             Algorithm::ComparativeSort => comparative_sort(chunk, tp.level),
             Algorithm::RegionsSort => regions_sort_adapter(tuner, tp.in_place, chunk, tp.level),
+            Algorithm::MtOopSort => mt_oop_sort_adapter(tuner, tp.in_place, chunk, tp.level),
+            Algorithm::MtLsbSort => mt_lsb_sort_adapter(chunk, 0, tp.level),
         };
     });
 }

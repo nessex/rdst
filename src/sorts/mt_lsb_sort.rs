@@ -1,27 +1,25 @@
 use arbitrary_chunks::ArbitraryChunks;
 use rayon::current_num_threads;
 use rayon::prelude::*;
+use crate::director::director;
 use crate::utils::*;
 use crate::RadixKey;
+use crate::tuner::Tuner;
 
 #[inline]
 pub const fn cdiv(a: usize, b: usize) -> usize {
     (a + b - 1) / b
 }
 
-pub fn mt_lsb_sort<T>(src_bucket: &mut [T], dst_bucket: &mut [T], level: usize)
+pub fn mt_lsb_sort<T>(src_bucket: &mut [T], dst_bucket: &mut [T], level: usize) -> [usize; 256]
 where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
-    if src_bucket.len() <= 1 {
-        return;
-    }
-
     let threads = current_num_threads() * 8;
     let bucket_len = src_bucket.len();
     let chunk_size = (bucket_len / threads) + 1;
 
-    let locals: Vec<[usize; 256]> = src_bucket
+    let mut locals: Vec<[usize; 256]> = src_bucket
         .par_chunks(chunk_size)
         .map(|chunk| get_counts(chunk, level))
         .collect();
@@ -109,6 +107,16 @@ where
                 right = right.saturating_sub(4);
             }
         });
+
+    let mut globals = locals.pop().unwrap();
+
+    for l in locals {
+        for i in 0..256 {
+            globals[i] += l[i];
+        }
+    }
+
+    globals
 }
 
 pub fn mt_lsb_sort_adapter<T>(bucket: &mut [T], start_level: usize, end_level: usize)
@@ -125,10 +133,10 @@ where
     let tile_size = (bucket.len() / current_num_threads()) + 1;
 
     for level in levels {
-        if invert {
-            mt_lsb_sort(&mut tmp_bucket, bucket, level);
+        let _ = if invert {
+            mt_lsb_sort(&mut tmp_bucket, bucket, level)
         } else {
-            mt_lsb_sort(bucket, &mut tmp_bucket, level);
+            mt_lsb_sort(bucket, &mut tmp_bucket, level)
         };
 
         invert = !invert;
@@ -141,6 +149,30 @@ where
                 chunk.copy_from_slice(tmp_chunk);
             });
     }
+}
+
+pub fn mt_oop_sort_adapter<T>(tuner: &(dyn Tuner + Send + Sync), in_place: bool, bucket: &mut [T], level: usize)
+where
+    T: RadixKey + Sized + Send + Copy + Sync,
+{
+    if bucket.len() <= 1 {
+        return;
+    }
+
+    let mut tmp_bucket = get_tmp_bucket(bucket.len());
+    let tile_size = (bucket.len() / current_num_threads()) + 1;
+
+    let counts = mt_lsb_sort(bucket, &mut tmp_bucket, level);
+
+    bucket.par_chunks_mut(tile_size)
+        .zip(tmp_bucket.par_chunks(tile_size))
+        .for_each(|(chunk, tmp_chunk)| {
+            chunk.copy_from_slice(tmp_chunk);
+        });
+
+    drop(tmp_bucket);
+
+    director(tuner, in_place, bucket, counts.to_vec(), level + 1);
 }
 
 #[cfg(test)]

@@ -4,10 +4,11 @@ use crate::sorts::recombinating_sort::recombinating_sort_adapter;
 use crate::sorts::regions_sort::regions_sort_adapter;
 use crate::sorts::scanning_sort::scanning_sort_adapter;
 use crate::sorts::ska_sort::ska_sort_adapter;
-use crate::tuner::{Algorithm, Algorithm::{ComparativeSort, LsbSort, RecombinatingSort, RegionsSort, ScanningSort, SkaSort}, MLTuner, Point, Tuner, TuningParams};
+use crate::tuner::{Algorithm, Algorithm::{MtOopSort, ComparativeSort, LsbSort, RecombinatingSort, RegionsSort, ScanningSort, SkaSort}, MLTuner, Point, Tuner, TuningParams};
 use crate::RadixKey;
 use rayon::current_num_threads;
-use crate::sorts::mt_lsb_sort::mt_lsb_sort_adapter;
+use crate::sorts::mt_lsb_sort::{mt_lsb_sort_adapter, mt_oop_sort_adapter};
+use crate::tuner::Algorithm::MtLsbSort;
 
 pub struct SortManager {
     tuner: Box<dyn Tuner + Send + Sync>,
@@ -313,17 +314,7 @@ impl SortManager {
             },
             Point {
                 depth: 2,
-                algorithm: ScanningSort,
-                start: 50_000_000,
-            },
-            Point {
-                depth: 2,
-                algorithm: RecombinatingSort,
-                start: 800_000,
-            },
-            Point {
-                depth: 2,
-                algorithm: SkaSort,
+                algorithm: MtLsbSort,
                 start: 300_000,
             },
             Point {
@@ -338,17 +329,7 @@ impl SortManager {
             },
             Point {
                 depth: 1,
-                algorithm: ScanningSort,
-                start: 50_000_000,
-            },
-            Point {
-                depth: 1,
-                algorithm: RecombinatingSort,
-                start: 1_000_000,
-            },
-            Point {
-                depth: 1,
-                algorithm: SkaSort,
+                algorithm: MtLsbSort,
                 start: 300_000,
             },
             Point {
@@ -368,8 +349,8 @@ impl SortManager {
             },
             Point {
                 depth: 0,
-                algorithm: RecombinatingSort,
-                start: 260_000,
+                algorithm: MtOopSort,
+                start: 400_000,
             },
             Point {
                 depth: 0,
@@ -389,42 +370,122 @@ impl SortManager {
             Point {
                 depth: 7,
                 algorithm: SkaSort,
-                start: 300_000,
+                start: 50_000,
+            },
+            Point {
+                depth: 7,
+                algorithm: LsbSort,
+                start: 128,
+            },
+            Point {
+                depth: 7,
+                algorithm: ComparativeSort,
+                start: 0,
             },
             Point {
                 depth: 6,
                 algorithm: SkaSort,
-                start: 300_000,
+                start: 50_000,
+            },
+            Point {
+                depth: 6,
+                algorithm: LsbSort,
+                start: 128,
+            },
+            Point {
+                depth: 6,
+                algorithm: ComparativeSort,
+                start: 0,
             },
             Point {
                 depth: 5,
                 algorithm: SkaSort,
-                start: 300_000,
+                start: 50_000,
+            },
+            Point {
+                depth: 5,
+                algorithm: LsbSort,
+                start: 128,
+            },
+            Point {
+                depth: 5,
+                algorithm: ComparativeSort,
+                start: 0,
             },
             Point {
                 depth: 4,
                 algorithm: SkaSort,
-                start: 300_000,
+                start: 50_000,
+            },
+            Point {
+                depth: 4,
+                algorithm: LsbSort,
+                start: 128,
+            },
+            Point {
+                depth: 4,
+                algorithm: ComparativeSort,
+                start: 0,
             },
             Point {
                 depth: 3,
                 algorithm: SkaSort,
-                start: 300_000,
+                start: 50_000,
+            },
+            Point {
+                depth: 3,
+                algorithm: LsbSort,
+                start: 128,
+            },
+            Point {
+                depth: 3,
+                algorithm: ComparativeSort,
+                start: 0,
             },
             Point {
                 depth: 2,
                 algorithm: SkaSort,
-                start: 300_000,
+                start: 50_000,
+            },
+            Point {
+                depth: 2,
+                algorithm: LsbSort,
+                start: 128,
+            },
+            Point {
+                depth: 2,
+                algorithm: ComparativeSort,
+                start: 0,
             },
             Point {
                 depth: 1,
                 algorithm: SkaSort,
-                start: 300_000,
+                start: 50_000,
+            },
+            Point {
+                depth: 1,
+                algorithm: LsbSort,
+                start: 128,
+            },
+            Point {
+                depth: 1,
+                algorithm: ComparativeSort,
+                start: 0,
             },
             Point {
                 depth: 0,
                 algorithm: SkaSort,
                 start: 300_000,
+            },
+            Point {
+                depth: 0,
+                algorithm: LsbSort,
+                start: 128,
+            },
+            Point {
+                depth: 0,
+                algorithm: ComparativeSort,
+                start: 0,
             },
         ]
     }
@@ -475,28 +536,22 @@ impl SortManager {
             serial: true,
         };
 
-        if bucket_len >= 400_000 {
-            mt_lsb_sort_adapter(bucket, 0, tp.level);
-        } else if bucket_len >= 128 {
-            lsb_sort_adapter(bucket, 0, tp.level);
-        } else {
-            comparative_sort(bucket, tp.level);
-        }
-        //
-        // match self.tuner.pick_algorithm(&tp) {
-        //     Algorithm::ScanningSort => {
-        //         scanning_sort_adapter(&*self.tuner, tp.in_place, bucket, tp.level)
-        //     }
-        //     Algorithm::RecombinatingSort => {
-        //         recombinating_sort_adapter(&*self.tuner, tp.in_place, bucket, tp.level)
-        //     }
-        //     Algorithm::LsbSort => lsb_sort_adapter(bucket, 0, tp.level),
-        //     Algorithm::SkaSort => ska_sort_adapter(&*self.tuner, tp.in_place, bucket, tp.level),
-        //     Algorithm::ComparativeSort => comparative_sort(bucket, tp.level),
-        //     Algorithm::RegionsSort => {
-        //         regions_sort_adapter(&*self.tuner, tp.in_place, bucket, tp.level)
-        //     }
-        // };
+        match self.tuner.pick_algorithm(&tp) {
+            Algorithm::ScanningSort => {
+                scanning_sort_adapter(&*self.tuner, tp.in_place, bucket, tp.level)
+            }
+            Algorithm::RecombinatingSort => {
+                recombinating_sort_adapter(&*self.tuner, tp.in_place, bucket, tp.level)
+            }
+            Algorithm::LsbSort => lsb_sort_adapter(bucket, 0, tp.level),
+            Algorithm::SkaSort => ska_sort_adapter(&*self.tuner, tp.in_place, bucket, tp.level),
+            Algorithm::ComparativeSort => comparative_sort(bucket, tp.level),
+            Algorithm::RegionsSort => {
+                regions_sort_adapter(&*self.tuner, tp.in_place, bucket, tp.level)
+            },
+            Algorithm::MtOopSort => mt_oop_sort_adapter(&*self.tuner, tp.in_place, bucket, tp.level),
+            Algorithm::MtLsbSort => mt_lsb_sort_adapter(bucket, 0, tp.level),
+        };
     }
 
     pub fn sort_in_place<T>(&self, bucket: &mut [T])
@@ -531,7 +586,9 @@ impl SortManager {
             Algorithm::ComparativeSort => comparative_sort(bucket, tp.level),
             Algorithm::RegionsSort => {
                 regions_sort_adapter(&*self.tuner, tp.in_place, bucket, tp.level)
-            }
+            },
+            Algorithm::MtOopSort => mt_oop_sort_adapter(&*self.tuner, tp.in_place, bucket, tp.level),
+            Algorithm::MtLsbSort => mt_lsb_sort_adapter(bucket, 0, tp.level),
         };
     }
 }
