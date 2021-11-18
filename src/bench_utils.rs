@@ -1,6 +1,30 @@
-use crate::test_utils::{gen_bench_input_set, NumericTest};
+use crate::test_utils::{gen_bench_input_set, gen_inputs, NumericTest};
 use criterion::{AxisScale, BatchSize, BenchmarkId, Criterion, PlotConfiguration, Throughput};
 use std::time::Duration;
+
+pub fn gen_bench_exponential_input_set<T>(shift: T) -> Vec<Vec<T>>
+    where
+        T: NumericTest<T>,
+{
+    let n = 200_000_000;
+    let inputs = gen_inputs(n, shift);
+    let mut len = inputs.len();
+    let mut out = Vec::new();
+
+    loop {
+        let start = (inputs.len() - len) / 2;
+        let end = start + len;
+
+        out.push(inputs[start..end].to_vec());
+
+        len = len / 2;
+        if len == 0 {
+            break;
+        }
+    }
+
+    out
+}
 
 pub fn bench_common<T>(
     c: &mut Criterion,

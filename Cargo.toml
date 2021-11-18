@@ -47,3 +47,8 @@ harness = false
 name = "profiling"
 test = false
 required-features = ["bench"]
+
+[[example]]
+name = "timings"
+test = false
+required-features = ["bench"]
