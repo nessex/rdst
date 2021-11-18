@@ -1,7 +1,6 @@
 use crate::sorts::out_of_place_sort::{out_of_place_sort, out_of_place_sort_with_counts};
 use crate::utils::*;
 use crate::RadixKey;
-use crate::sorts::ska_sort::ska_sort;
 
 pub fn lsb_sort_adapter<T>(bucket: &mut [T], start_level: usize, end_level: usize)
 where
@@ -28,16 +27,6 @@ where
                     next_counts = None;
                     continue 'outer;
                 }
-            }
-
-            // Use ska sort if the levels in question here will likely require an additional copy
-            // at the end.
-            if level == start_level && (end_level - start_level) % 2 == 0 {
-                let plateaus = detect_plateaus(bucket, level);
-                let (mut prefix_sums, end_offsets) = apply_plateaus(bucket, &counts, &plateaus);
-                ska_sort(bucket, &mut prefix_sums, &end_offsets, level);
-                next_counts = None;
-                continue;
             }
 
             match (invert, level == end_level) {
