@@ -56,11 +56,18 @@ where
         i.clone().radix_sort_unstable();
 
         let mut to_sort = i.clone();
-
         let time = Instant::now();
         to_sort.radix_sort_unstable();
         let elapsed = time.elapsed().as_nanos();
         let items_per_sec = ((i.len() as f64 / elapsed as f64) * 1_000_000_000f64) as u64;
+
+        let mut to_sort = i.clone();
+        let time = Instant::now();
+        to_sort.radix_sort_unstable();
+        let elapsed = time.elapsed().as_nanos();
+        let items_per_sec_2 = ((i.len() as f64 / elapsed as f64) * 1_000_000_000f64) as u64;
+
+        let items_per_sec = (items_per_sec + items_per_sec_2) / 2;
 
         results.push(items_per_sec.to_string());
     }
