@@ -1,7 +1,7 @@
 [package]
 name = "rdst"
 description = "A flexible parallel unstable radix sort that supports sorting by any arbitrarily defined sequence of bytes."
-version = "0.17.2"
+version = "0.17.3"
 authors = ["Nathan Essex <nathan@essex.id.au>"]
 edition = "2018"
 license = "Apache-2.0 OR MIT"
@@ -19,7 +19,7 @@ default-implementations = []
 
 [dependencies]
 rayon = "1.5.1"
-arbitrary-chunks = "0.2.1"
+arbitrary-chunks = "0.3.0"
 try-mutex = "0.4.0"
 partition = "0.1.2"
 criterion = { version = "0.3.5", optional = true }
@@ -60,5 +60,10 @@ harness = false
 
 [[example]]
 name = "profiling"
+test = false
+required-features = ["bench"]
+
+[[example]]
+name = "timings"
 test = false
 required-features = ["bench"]
