@@ -4,7 +4,7 @@ use crate::sorts::recombinating_sort::recombinating_sort_adapter;
 use crate::sorts::regions_sort::regions_sort_adapter;
 use crate::sorts::scanning_sort::scanning_sort_adapter;
 use crate::sorts::ska_sort::ska_sort_adapter;
-use crate::tuner::{Algorithm, Algorithm::{RecombinatingSort, RegionsSort, ScanningSort, SkaSort}, MLTuner, Point, Tuner, TuningParams};
+use crate::tuner::{Algorithm, Algorithm::{ComparativeSort, LsbSort, RecombinatingSort, RegionsSort, ScanningSort, SkaSort}, MLTuner, Point, Tuner, TuningParams};
 use crate::RadixKey;
 use rayon::current_num_threads;
 use crate::sorts::mt_lsb_sort::mt_lsb_sort_adapter;
@@ -202,6 +202,16 @@ impl SortManager {
                 start: 50_000,
             },
             Point {
+                depth: 7,
+                algorithm: LsbSort,
+                start: 128,
+            },
+            Point {
+                depth: 7,
+                algorithm: ComparativeSort,
+                start: 0,
+            },
+            Point {
                 depth: 6,
                 algorithm: ScanningSort,
                 start: 50_000_000,
@@ -215,6 +225,16 @@ impl SortManager {
                 depth: 6,
                 algorithm: SkaSort,
                 start: 50_000,
+            },
+            Point {
+                depth: 6,
+                algorithm: LsbSort,
+                start: 128,
+            },
+            Point {
+                depth: 6,
+                algorithm: ComparativeSort,
+                start: 0,
             },
             Point {
                 depth: 5,
@@ -232,6 +252,16 @@ impl SortManager {
                 start: 50_000,
             },
             Point {
+                depth: 5,
+                algorithm: LsbSort,
+                start: 128,
+            },
+            Point {
+                depth: 5,
+                algorithm: ComparativeSort,
+                start: 0,
+            },
+            Point {
                 depth: 4,
                 algorithm: ScanningSort,
                 start: 50_000_000,
@@ -245,6 +275,16 @@ impl SortManager {
                 depth: 4,
                 algorithm: SkaSort,
                 start: 50_000,
+            },
+            Point {
+                depth: 4,
+                algorithm: LsbSort,
+                start: 128,
+            },
+            Point {
+                depth: 4,
+                algorithm: ComparativeSort,
+                start: 0,
             },
             Point {
                 depth: 3,
@@ -260,6 +300,16 @@ impl SortManager {
                 depth: 3,
                 algorithm: SkaSort,
                 start: 50_000,
+            },
+            Point {
+                depth: 3,
+                algorithm: LsbSort,
+                start: 128,
+            },
+            Point {
+                depth: 3,
+                algorithm: ComparativeSort,
+                start: 0,
             },
             Point {
                 depth: 2,
@@ -277,6 +327,16 @@ impl SortManager {
                 start: 300_000,
             },
             Point {
+                depth: 2,
+                algorithm: LsbSort,
+                start: 128,
+            },
+            Point {
+                depth: 2,
+                algorithm: ComparativeSort,
+                start: 0,
+            },
+            Point {
                 depth: 1,
                 algorithm: ScanningSort,
                 start: 50_000_000,
@@ -284,7 +344,22 @@ impl SortManager {
             Point {
                 depth: 1,
                 algorithm: RecombinatingSort,
-                start: 260_000,
+                start: 1_000_000,
+            },
+            Point {
+                depth: 1,
+                algorithm: SkaSort,
+                start: 300_000,
+            },
+            Point {
+                depth: 1,
+                algorithm: LsbSort,
+                start: 128,
+            },
+            Point {
+                depth: 1,
+                algorithm: ComparativeSort,
+                start: 0,
             },
             Point {
                 depth: 0,
@@ -296,6 +371,16 @@ impl SortManager {
                 algorithm: RecombinatingSort,
                 start: 260_000,
             },
+            Point {
+                depth: 0,
+                algorithm: LsbSort,
+                start: 128,
+            },
+            Point {
+                depth: 0,
+                algorithm: ComparativeSort,
+                start: 0,
+            }
         ]
     }
 

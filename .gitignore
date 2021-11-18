@@ -1,4 +1,5 @@
 /target
 Cargo.lock
-.idea
 monte-carlo.tsv
+experiments.csv
+.idea
