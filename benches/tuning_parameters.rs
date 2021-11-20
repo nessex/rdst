@@ -1,13 +1,6 @@
 use criterion::*;
 use rdst::bench_utils::{bench_common, bench_comparative};
-use rdst::sorts::comparative_sort::comparative_sort;
-use rdst::sorts::lsb_sort::lsb_sort_adapter;
-use rdst::sorts::recombinating_sort::recombinating_sort_adapter;
-use rdst::sorts::regions_sort::regions_sort_adapter;
-use rdst::sorts::scanning_sort::scanning_sort_adapter;
-use rdst::sorts::ska_sort::ska_sort_adapter;
 use rdst::test_utils::NumericTest;
-use rdst::tuner::DefaultTuner;
 use rdst::utils::*;
 
 fn tune_counts(c: &mut Criterion) {
