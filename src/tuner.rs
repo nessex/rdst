@@ -30,7 +30,7 @@ pub trait Tuner {
         let depth = p.total_levels - p.level - 1;
 
         if p.input_len >= 300_000 {
-            let distribution_threshold = ((p.input_len / p.threads) as f64 * 1.4) as usize;
+            let distribution_threshold = (p.input_len / 256) * 2;
 
             // Distribution occurs when the input to be sorted has a single count larger
             // than the others.
