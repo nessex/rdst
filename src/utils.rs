@@ -38,6 +38,10 @@ pub fn par_get_counts<T>(bucket: &[T], level: usize) -> [usize; 256]
 where
     T: RadixKey + Sized + Send + Sync,
 {
+    if bucket.len() < 400_000 {
+        return get_counts(bucket, level);
+    }
+
     let threads = rayon::current_num_threads();
     let chunk_divisor = 8;
     let chunk_size = (bucket.len() / threads / chunk_divisor) + 1;

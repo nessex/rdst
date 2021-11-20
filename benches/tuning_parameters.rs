@@ -36,45 +36,45 @@ where
     T: NumericTest<T>,
 {
     let tests: Vec<(&str, Box<dyn Fn(Vec<_>)>)> = vec![
-        (
-            "regions_sort",
-            Box::new(|mut input| {
-                let tuner = DefaultTuner {};
-                regions_sort_adapter(&tuner, true, &mut input, 3);
-                black_box(input);
-            }),
-        ),
-        (
-            "scanning_sort",
-            Box::new(|mut input| {
-                let tuner = DefaultTuner {};
-                scanning_sort_adapter(&tuner, false, &mut input, 3);
-                black_box(input);
-            }),
-        ),
-        (
-            "lsb_sort",
-            Box::new(|mut input| {
-                lsb_sort_adapter(&mut input, 0, 3);
-                black_box(input);
-            }),
-        ),
-        (
-            "ska_sort",
-            Box::new(|mut input| {
-                let tuner = DefaultTuner {};
-                ska_sort_adapter(&tuner, true, &mut input, 3);
-                black_box(input);
-            }),
-        ),
-        (
-            "recombinating_sort",
-            Box::new(|mut input| {
-                let tuner = DefaultTuner {};
-                recombinating_sort_adapter(&tuner, false, &mut input, 3);
-                black_box(input);
-            }),
-        ),
+        // (
+        //     "regions_sort",
+        //     Box::new(|mut input| {
+        //         let tuner = DefaultTuner {};
+        //         regions_sort_adapter(&tuner, true, &mut input, 3);
+        //         black_box(input);
+        //     }),
+        // ),
+        // (
+        //     "scanning_sort",
+        //     Box::new(|mut input| {
+        //         let tuner = DefaultTuner {};
+        //         scanning_sort_adapter(&tuner, false, &mut input, 3);
+        //         black_box(input);
+        //     }),
+        // ),
+        // (
+        //     "lsb_sort",
+        //     Box::new(|mut input| {
+        //         lsb_sort_adapter(&mut input, 0, 3);
+        //         black_box(input);
+        //     }),
+        // ),
+        // (
+        //     "ska_sort",
+        //     Box::new(|mut input| {
+        //         let tuner = DefaultTuner {};
+        //         ska_sort_adapter(&tuner, true, &mut input, 3);
+        //         black_box(input);
+        //     }),
+        // ),
+        // (
+        //     "recombinating_sort",
+        //     Box::new(|mut input| {
+        //         let tuner = DefaultTuner {};
+        //         recombinating_sort_adapter(&tuner, false, &mut input, 3);
+        //         black_box(input);
+        //     }),
+        // ),
     ];
 
     bench_common(c, shift, &("tune_".to_owned() + name_suffix), tests);
@@ -101,20 +101,20 @@ where
     T: NumericTest<T>,
 {
     let tests: Vec<(&str, Box<dyn Fn(Vec<_>)>)> = vec![
-        (
-            "lsb_sort",
-            Box::new(|mut input| {
-                lsb_sort_adapter(&mut input, 0, 3);
-                black_box(input);
-            }),
-        ),
-        (
-            "comparative_sort",
-            Box::new(|mut input| {
-                comparative_sort(&mut input, 3);
-                black_box(input);
-            }),
-        ),
+        // (
+        //     "lsb_sort",
+        //     Box::new(|mut input| {
+        //         lsb_sort_adapter(&mut input, 0, 3);
+        //         black_box(input);
+        //     }),
+        // ),
+        // (
+        //     "comparative_sort",
+        //     Box::new(|mut input| {
+        //         comparative_sort(&mut input, 3);
+        //         black_box(input);
+        //     }),
+        // ),
     ];
 
     bench_comparative(
