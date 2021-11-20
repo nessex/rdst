@@ -17,9 +17,13 @@
 
 #![feature(string_remove_matches)]
 
+use jemallocator::Jemalloc;
+use rdst::bench_utils::gen_bench_exponential_input_set;
 use rdst::{RadixKey, RadixSort};
 use std::time::Instant;
-use rdst::bench_utils::gen_bench_exponential_input_set;
+
+#[global_allocator]
+static ALLOC: Jemalloc = Jemalloc;
 
 fn print_row(data: Vec<String>) {
     let mut first = true;
@@ -45,15 +49,17 @@ fn print_row(data: Vec<String>) {
 
 fn bench<T>(inputs: Vec<Vec<T>>, name: &str, results: &mut Vec<String>, headers: &mut Vec<String>)
 where
-    T: RadixKey + Clone + Copy + Send + Sync
+    T: RadixKey + Clone + Copy + Send + Sync,
 {
     for i in inputs {
         if i.len() == 0 {
             continue;
         }
-        headers.push(format!("{}_{}", name,  i.len()).to_string());
+        headers.push(format!("{}_{}", name, i.len()).to_string());
         // Warmup
-        i.clone().radix_sort_unstable();
+        let mut warmup = i.clone();
+        warmup.radix_sort_unstable();
+        drop(warmup);
 
         let mut scores = Vec::new();
         let n = 5usize;
@@ -64,6 +70,7 @@ where
             let elapsed = time.elapsed().as_nanos();
             let per_sec = ((i.len() as f64 / elapsed as f64) * 1_000_000_000f64) as u64;
             scores.push(per_sec);
+            drop(to_sort);
         }
 
         scores.sort_unstable();
@@ -80,10 +87,7 @@ fn main() {
         .unwrap();
     let mut out: Vec<String> = std::env::args().skip(1).take(2).collect();
     assert_eq!(out.len(), 2);
-    let mut headers = vec![
-        "id".to_string(),
-        "description".to_string(),
-    ];
+    let mut headers = vec!["id".to_string(), "description".to_string()];
 
     let inputs = gen_bench_exponential_input_set(0u32);
     bench(inputs, "u32", &mut out, &mut headers);

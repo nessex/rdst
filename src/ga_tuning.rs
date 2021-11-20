@@ -1,4 +1,3 @@
-use std::cmp::min;
 use block_pseudorand::block_rand;
 use lazy_static::lazy_static;
 use oxigen::{
@@ -11,6 +10,7 @@ use rdst::tuner::Algorithm::{RecombinatingSort, RegionsSort, ScanningSort, SkaSo
 use rdst::tuner::{Algorithm, Tuner, TuningParams};
 use rdst::RadixSort;
 use rlp_iter::RlpIterator;
+use std::cmp::min;
 use std::collections::hash_map::DefaultHasher;
 use std::fmt::{Debug, Display, Formatter};
 use std::fs::File;

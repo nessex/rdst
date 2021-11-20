@@ -1,9 +1,17 @@
+use crate::sorts::comparative_sort::comparative_sort;
+use crate::sorts::lsb_sort::lsb_sort_adapter;
+use crate::sorts::mt_lsb_sort::{mt_lsb_sort_adapter, mt_oop_sort_adapter};
+use crate::sorts::recombinating_sort::recombinating_sort_adapter;
+use crate::sorts::regions_sort::regions_sort_adapter;
+use crate::sorts::scanning_sort::scanning_sort_adapter;
+use crate::sorts::ska_sort::ska_sort_adapter;
+use crate::tuner::{Algorithm, Tuner, TuningParams};
 use crate::RadixKey;
 use rayon::prelude::*;
 use std::sync::mpsc::channel;
 
 #[inline]
-pub fn get_prefix_sums(counts: &[usize]) -> [usize; 256] {
+pub fn get_prefix_sums(counts: &[usize; 256]) -> [usize; 256] {
     let mut sums = [0usize; 256];
 
     let mut running_total = 0;
@@ -16,7 +24,7 @@ pub fn get_prefix_sums(counts: &[usize]) -> [usize; 256] {
 }
 
 #[inline]
-pub fn get_end_offsets(counts: &[usize], prefix_sums: &[usize]) -> [usize; 256] {
+pub fn get_end_offsets(counts: &[usize; 256], prefix_sums: &[usize; 256]) -> [usize; 256] {
     let mut end_offsets = [0usize; 256];
 
     end_offsets[0..255].copy_from_slice(&prefix_sums[1..256]);
@@ -93,6 +101,236 @@ where
 }
 
 #[inline]
+pub fn get_all_counts<T>(bucket: &[T], start_level: usize, end_level: usize) -> Vec<[usize; 256]>
+where
+    T: RadixKey,
+{
+    let total_levels = end_level - start_level + 1;
+    let mut all_counts = Vec::with_capacity(total_levels);
+    if total_levels == 1 {
+        let counts = get_counts(bucket, start_level);
+        all_counts.push(counts);
+    } else if total_levels == 2 {
+        let mut counts_0_0 = [0usize; 256];
+        let mut counts_0_1 = [0usize; 256];
+        let mut counts_1_0 = [0usize; 256];
+        let mut counts_1_1 = [0usize; 256];
+
+        let chunks = bucket.chunks_exact(2);
+        let rem = chunks.remainder();
+
+        chunks.for_each(|chunk| {
+            let b_0_0 = chunk[0].get_level(start_level) as usize;
+            let b_0_1 = chunk[0].get_level(start_level + 1) as usize;
+            let b_1_0 = chunk[1].get_level(start_level) as usize;
+            let b_1_1 = chunk[1].get_level(start_level + 1) as usize;
+
+            counts_0_0[b_0_0] += 1;
+            counts_0_1[b_0_1] += 1;
+            counts_1_0[b_1_0] += 1;
+            counts_1_1[b_1_1] += 1;
+        });
+
+        rem.iter().for_each(|v| {
+            let b_0 = v.get_level(start_level) as usize;
+            let b_1 = v.get_level(start_level + 1) as usize;
+
+            counts_0_0[b_0] += 1;
+            counts_0_1[b_1] += 1;
+        });
+
+        for i in 0..256 {
+            counts_0_0[i] += counts_1_0[i];
+            counts_0_1[i] += counts_1_1[i];
+        }
+
+        all_counts.push(counts_0_0);
+        all_counts.push(counts_0_1);
+    } else if total_levels == 3 {
+        let mut counts_0 = [0usize; 256];
+        let mut counts_1 = [0usize; 256];
+        let mut counts_2 = [0usize; 256];
+
+        for v in bucket {
+            let b_0 = v.get_level(start_level) as usize;
+            let b_1 = v.get_level(start_level + 1) as usize;
+            let b_2 = v.get_level(start_level + 2) as usize;
+
+            counts_0[b_0] += 1;
+            counts_1[b_1] += 1;
+            counts_2[b_2] += 1;
+        }
+
+        all_counts.push(counts_0);
+        all_counts.push(counts_1);
+        all_counts.push(counts_2);
+    } else if total_levels == 4 {
+        let mut counts_0 = [0usize; 256];
+        let mut counts_1 = [0usize; 256];
+        let mut counts_2 = [0usize; 256];
+        let mut counts_3 = [0usize; 256];
+
+        for v in bucket {
+            let b_0 = v.get_level(start_level) as usize;
+            let b_1 = v.get_level(start_level + 1) as usize;
+            let b_2 = v.get_level(start_level + 2) as usize;
+            let b_3 = v.get_level(start_level + 3) as usize;
+
+            counts_0[b_0] += 1;
+            counts_1[b_1] += 1;
+            counts_2[b_2] += 1;
+            counts_3[b_3] += 1;
+        }
+
+        all_counts.push(counts_0);
+        all_counts.push(counts_1);
+        all_counts.push(counts_2);
+        all_counts.push(counts_3);
+    } else if total_levels == 5 {
+        let mut counts_0 = [0usize; 256];
+        let mut counts_1 = [0usize; 256];
+        let mut counts_2 = [0usize; 256];
+        let mut counts_3 = [0usize; 256];
+        let mut counts_4 = [0usize; 256];
+
+        for v in bucket {
+            let b_0 = v.get_level(start_level) as usize;
+            let b_1 = v.get_level(start_level + 1) as usize;
+            let b_2 = v.get_level(start_level + 2) as usize;
+            let b_3 = v.get_level(start_level + 3) as usize;
+            let b_4 = v.get_level(start_level + 4) as usize;
+
+            counts_0[b_0] += 1;
+            counts_1[b_1] += 1;
+            counts_2[b_2] += 1;
+            counts_3[b_3] += 1;
+            counts_4[b_4] += 1;
+        }
+
+        all_counts.push(counts_0);
+        all_counts.push(counts_1);
+        all_counts.push(counts_2);
+        all_counts.push(counts_3);
+        all_counts.push(counts_4);
+    } else if total_levels == 6 {
+        let mut counts_0 = [0usize; 256];
+        let mut counts_1 = [0usize; 256];
+        let mut counts_2 = [0usize; 256];
+        let mut counts_3 = [0usize; 256];
+        let mut counts_4 = [0usize; 256];
+        let mut counts_5 = [0usize; 256];
+
+        for v in bucket {
+            let b_0 = v.get_level(start_level) as usize;
+            let b_1 = v.get_level(start_level + 1) as usize;
+            let b_2 = v.get_level(start_level + 2) as usize;
+            let b_3 = v.get_level(start_level + 3) as usize;
+            let b_4 = v.get_level(start_level + 4) as usize;
+            let b_5 = v.get_level(start_level + 5) as usize;
+
+            counts_0[b_0] += 1;
+            counts_1[b_1] += 1;
+            counts_2[b_2] += 1;
+            counts_3[b_3] += 1;
+            counts_4[b_4] += 1;
+            counts_5[b_5] += 1;
+        }
+
+        all_counts.push(counts_0);
+        all_counts.push(counts_1);
+        all_counts.push(counts_2);
+        all_counts.push(counts_3);
+        all_counts.push(counts_4);
+        all_counts.push(counts_5);
+    } else if total_levels == 7 {
+        let mut counts_0 = [0usize; 256];
+        let mut counts_1 = [0usize; 256];
+        let mut counts_2 = [0usize; 256];
+        let mut counts_3 = [0usize; 256];
+        let mut counts_4 = [0usize; 256];
+        let mut counts_5 = [0usize; 256];
+        let mut counts_6 = [0usize; 256];
+
+        for v in bucket {
+            let b_0 = v.get_level(start_level) as usize;
+            let b_1 = v.get_level(start_level + 1) as usize;
+            let b_2 = v.get_level(start_level + 2) as usize;
+            let b_3 = v.get_level(start_level + 3) as usize;
+            let b_4 = v.get_level(start_level + 4) as usize;
+            let b_5 = v.get_level(start_level + 5) as usize;
+            let b_6 = v.get_level(start_level + 6) as usize;
+
+            counts_0[b_0] += 1;
+            counts_1[b_1] += 1;
+            counts_2[b_2] += 1;
+            counts_3[b_3] += 1;
+            counts_4[b_4] += 1;
+            counts_5[b_5] += 1;
+            counts_6[b_6] += 1;
+        }
+
+        all_counts.push(counts_0);
+        all_counts.push(counts_1);
+        all_counts.push(counts_2);
+        all_counts.push(counts_3);
+        all_counts.push(counts_4);
+        all_counts.push(counts_5);
+        all_counts.push(counts_6);
+    } else if total_levels == 8 {
+        let mut counts_0 = [0usize; 256];
+        let mut counts_1 = [0usize; 256];
+        let mut counts_2 = [0usize; 256];
+        let mut counts_3 = [0usize; 256];
+        let mut counts_4 = [0usize; 256];
+        let mut counts_5 = [0usize; 256];
+        let mut counts_6 = [0usize; 256];
+        let mut counts_7 = [0usize; 256];
+
+        for v in bucket {
+            let b_0 = v.get_level(start_level) as usize;
+            let b_1 = v.get_level(start_level + 1) as usize;
+            let b_2 = v.get_level(start_level + 2) as usize;
+            let b_3 = v.get_level(start_level + 3) as usize;
+            let b_4 = v.get_level(start_level + 4) as usize;
+            let b_5 = v.get_level(start_level + 5) as usize;
+            let b_6 = v.get_level(start_level + 6) as usize;
+            let b_7 = v.get_level(start_level + 7) as usize;
+
+            counts_0[b_0] += 1;
+            counts_1[b_1] += 1;
+            counts_2[b_2] += 1;
+            counts_3[b_3] += 1;
+            counts_4[b_4] += 1;
+            counts_5[b_5] += 1;
+            counts_6[b_6] += 1;
+            counts_7[b_7] += 1;
+        }
+
+        all_counts.push(counts_0);
+        all_counts.push(counts_1);
+        all_counts.push(counts_2);
+        all_counts.push(counts_3);
+        all_counts.push(counts_4);
+        all_counts.push(counts_5);
+        all_counts.push(counts_6);
+        all_counts.push(counts_7);
+    } else {
+        for _ in start_level..=end_level {
+            all_counts.push([0usize; 256]);
+        }
+
+        for v in bucket {
+            for l in start_level..=end_level {
+                let b = v.get_level(l) as usize;
+                all_counts[l - start_level][b] += 1;
+            }
+        }
+    }
+
+    all_counts
+}
+
+#[inline]
 pub fn get_tmp_bucket<T>(len: usize) -> Vec<T> {
     let mut tmp_bucket = Vec::with_capacity(len);
     unsafe {
@@ -140,10 +378,7 @@ where
     None
 }
 
-pub fn detect_plateaus<T>(
-    bucket: &[T],
-    level: usize,
-) -> Vec<(u8, usize, usize)>
+pub fn detect_plateaus<T>(bucket: &[T], level: usize) -> Vec<(u8, usize, usize)>
 where
     T: RadixKey + Sized + Send + Sync,
 {
@@ -279,7 +514,7 @@ where
 
 pub fn apply_plateaus<T>(
     bucket: &mut [T],
-    counts: &[usize],
+    counts: &[usize; 256],
     plateaus: &[(u8, usize, usize)],
 ) -> ([usize; 256], [usize; 256])
 where
@@ -331,4 +566,111 @@ where
     }
 
     (prefix_sums, end_offsets)
+}
+
+#[inline]
+pub fn run_sort<T>(
+    tuner: &(dyn Tuner + Send + Sync),
+    in_place: bool,
+    level: usize,
+    bucket: &mut [T],
+    counts: &[usize; 256],
+    tile_counts: Option<Vec<[usize; 256]>>,
+    tile_size: usize,
+    algorithm: Algorithm,
+) where
+    T: RadixKey + Copy + Sized + Send + Sync,
+{
+    if let Some(tile_counts) = tile_counts {
+        match algorithm {
+            Algorithm::ScanningSort => {
+                scanning_sort_adapter(tuner, in_place, bucket, counts, level)
+            }
+            Algorithm::RecombinatingSort => recombinating_sort_adapter(
+                tuner,
+                in_place,
+                bucket,
+                counts,
+                &tile_counts,
+                tile_size,
+                level,
+            ),
+            Algorithm::LsbSort => lsb_sort_adapter(bucket, counts, 0, level),
+            Algorithm::SkaSort => ska_sort_adapter(tuner, in_place, bucket, counts, level),
+            Algorithm::ComparativeSort => comparative_sort(bucket, level),
+            Algorithm::RegionsSort => regions_sort_adapter(
+                tuner,
+                in_place,
+                bucket,
+                counts,
+                &tile_counts,
+                tile_size,
+                level,
+            ),
+            Algorithm::MtOopSort => mt_oop_sort_adapter(
+                tuner,
+                in_place,
+                bucket,
+                level,
+                counts,
+                &tile_counts,
+                tile_size,
+            ),
+            Algorithm::MtLsbSort => mt_lsb_sort_adapter(bucket, 0, level, tile_size),
+        }
+    } else {
+        match algorithm {
+            Algorithm::ScanningSort => {
+                scanning_sort_adapter(tuner, in_place, bucket, counts, level)
+            }
+            Algorithm::LsbSort => lsb_sort_adapter(bucket, counts, 0, level),
+            Algorithm::SkaSort => ska_sort_adapter(tuner, in_place, bucket, counts, level),
+            Algorithm::ComparativeSort => comparative_sort(bucket, level),
+            e => panic!("Bad algorithm: {:?} for len: {}", e, bucket.len()),
+        }
+    }
+}
+
+#[inline]
+pub const fn cdiv(a: usize, b: usize) -> usize {
+    (a + b - 1) / b
+}
+
+#[inline]
+pub fn get_tile_counts<T>(bucket: &[T], tile_size: usize, level: usize) -> Vec<[usize; 256]>
+where
+    T: RadixKey + Copy + Sized + Send + Sync,
+{
+    bucket
+        .par_chunks(tile_size)
+        .map(|chunk| get_counts(chunk, level))
+        .collect()
+}
+
+#[inline]
+pub fn aggregate_tile_counts(tile_counts: &[[usize; 256]]) -> [usize; 256] {
+    let mut out = tile_counts[0].clone();
+    for tile in tile_counts.iter().skip(1) {
+        for i in 0..256 {
+            out[i] += tile[i];
+        }
+    }
+
+    out
+}
+
+#[inline]
+pub fn is_homogenous_bucket(counts: &[usize; 256]) -> bool {
+    let mut seen = false;
+    for c in counts {
+        if *c > 0 {
+            if seen {
+                return false;
+            } else {
+                seen = true;
+            }
+        }
+    }
+
+    return true;
 }

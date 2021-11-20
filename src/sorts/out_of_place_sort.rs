@@ -2,8 +2,12 @@ use crate::utils::*;
 use crate::RadixKey;
 
 #[inline]
-pub fn out_of_place_sort<T>(src_bucket: &[T], dst_bucket: &mut [T], counts: &[usize], level: usize)
-where
+pub fn out_of_place_sort<T>(
+    src_bucket: &[T],
+    dst_bucket: &mut [T],
+    counts: &[usize; 256],
+    level: usize,
+) where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
     let mut prefix_sums = get_prefix_sums(counts);
@@ -50,7 +54,7 @@ where
 pub fn out_of_place_sort_with_counts<T>(
     src_bucket: &[T],
     dst_bucket: &mut [T],
-    counts: &[usize],
+    counts: &[usize; 256],
     level: usize,
 ) -> [usize; 256]
 where

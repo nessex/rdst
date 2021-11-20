@@ -66,7 +66,6 @@ where
     bench_medley(c, &("full_sort_medley_".to_owned() + suffix), tests, shift);
 }
 
-
 fn full_sort_u32(c: &mut Criterion) {
     full_sort_common(c, 0u32, "u32");
 }

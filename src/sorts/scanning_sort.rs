@@ -24,8 +24,8 @@ struct ScannerBucket<'a, T> {
 
 #[inline]
 fn get_scanner_buckets<'a, T>(
-    counts: &[usize],
-    prefix_sums: &[usize],
+    counts: &[usize; 256],
+    prefix_sums: &[usize; 256],
     bucket: &'a mut [T],
 ) -> Vec<ScannerBucket<'a, T>> {
     let mut running_count = 0;
@@ -187,7 +187,7 @@ fn scanner_thread<T>(
     }
 }
 
-pub fn scanning_sort<T>(bucket: &mut [T], msb_counts: &[usize], level: usize)
+pub fn scanning_sort<T>(bucket: &mut [T], msb_counts: &[usize; 256], level: usize)
 where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
@@ -218,24 +218,18 @@ pub fn scanning_sort_adapter<T>(
     tuner: &(dyn Tuner + Send + Sync),
     in_place: bool,
     bucket: &mut [T],
-    start_level: usize,
+    counts: &[usize; 256],
+    level: usize,
 ) where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
-    let (msb_counts, level) =
-        if let Some(s) = get_counts_and_level_descending(bucket, start_level, 0, true) {
-            s
-        } else {
-            return;
-        };
-
-    scanning_sort(bucket, &msb_counts, level);
+    scanning_sort(bucket, &counts, level);
 
     if level == 0 {
         return;
     }
 
-    director(tuner, in_place, bucket, msb_counts.to_vec(), level - 1);
+    director(tuner, in_place, bucket, counts.to_vec(), level - 1);
 }
 
 #[cfg(test)]
@@ -243,6 +237,7 @@ mod tests {
     use crate::sorts::scanning_sort::scanning_sort_adapter;
     use crate::test_utils::{sort_comparison_suite, NumericTest};
     use crate::tuner::DefaultTuner;
+    use crate::utils::par_get_counts;
 
     fn test_scanning_sort<T>(shift: T)
     where
@@ -250,7 +245,8 @@ mod tests {
     {
         let tuner = DefaultTuner {};
         sort_comparison_suite(shift, |inputs| {
-            scanning_sort_adapter(&tuner, true, inputs, T::LEVELS - 1)
+            let counts = par_get_counts(inputs, T::LEVELS - 1);
+            scanning_sort_adapter(&tuner, true, inputs, &counts, T::LEVELS - 1)
         });
     }
 

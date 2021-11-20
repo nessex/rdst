@@ -6,11 +6,12 @@ pub struct TuningParams {
     pub input_len: usize,
     pub parent_len: usize,
     pub in_place: bool,
-    pub serial: bool,
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum Algorithm {
+    MtOopSort,
+    MtLsbSort,
     ScanningSort,
     RecombinatingSort,
     ComparativeSort,
@@ -20,69 +21,74 @@ pub enum Algorithm {
 }
 
 pub trait Tuner {
-    fn pick_algorithm(&self, p: &TuningParams) -> Algorithm {
-        if p.in_place && p.serial {
+    #[inline]
+    fn pick_algorithm(&self, p: &TuningParams, counts: &[usize]) -> Algorithm {
+        if p.input_len <= 128 {
+            return Algorithm::ComparativeSort;
+        }
+
+        let depth = p.total_levels - p.level - 1;
+
+        if depth > 0 && p.input_len >= 300_000 {
+            let distribution_threshold = ((p.input_len / p.threads) as f64 * 1.4) as usize;
+
+            // Distribution occurs when the input to be sorted has a single count larger
+            // than the others.
+            for c in counts {
+                if *c >= distribution_threshold {
+                    //println!("DISTRIBUTING: {} {}", p.input_len, ((p.input_len / p.threads) as f64 * 1.4) as usize);
+                    // return Algorithm::RegionsSort;
+                    return if p.input_len >= 260_000 {
+                        Algorithm::RecombinatingSort
+                    } else {
+                        Algorithm::SkaSort
+                    };
+                }
+            }
+
+            let to_split = p.input_len > ((p.parent_len / p.threads) as f64 * 1.4) as usize;
+
+            // Splitting occurs when input is larger than it should be relative to other tasks
+            // spawned from the same parent.
+            if to_split {
+                //println!("SPLITTING: {} {}", p.input_len, ((p.parent_len / p.threads) as f64 * 1.4) as usize);
+                // return Algorithm::RecombinatingSort;
+                return match p.input_len {
+                    400_000..=usize::MAX => Algorithm::ScanningSort,
+                    _ => Algorithm::SkaSort,
+                };
+            }
+        }
+
+        if depth > 0 && p.in_place {
             match p.input_len {
                 0..=1_000_000 => Algorithm::SkaSort,
                 1_000_001..=usize::MAX => Algorithm::RegionsSort,
-                _ => Algorithm::SkaSort,
-            }
-        } else if p.in_place && !p.serial {
-            match p.input_len {
-                0..=50_000 => Algorithm::LsbSort,
-                50_001..=usize::MAX => Algorithm::SkaSort,
                 _ => Algorithm::LsbSort,
             }
-        } else if !p.in_place && p.serial {
+        } else if depth > 0 && !p.in_place {
             match p.input_len {
-                0..=260_000 => Algorithm::SkaSort,
-                260_001..=40_000_000 => Algorithm::RecombinatingSort,
-                40_000_001..=usize::MAX => Algorithm::ScanningSort,
+                400_001..=50_000_000 => Algorithm::RecombinatingSort,
+                50_000_001..=usize::MAX => Algorithm::ScanningSort,
+                _ => Algorithm::LsbSort,
+            }
+        } else if depth == 0 && p.in_place {
+            match p.input_len {
+                0..=1_000_000 => Algorithm::SkaSort,
+                1_000_001..=usize::MAX => Algorithm::RegionsSort,
+                _ => Algorithm::LsbSort,
+            }
+        } else if depth == 0 && !p.in_place {
+            match p.input_len {
+                400_000..=49_999_999 => Algorithm::RecombinatingSort,
+                50_000_000..=usize::MAX => Algorithm::ScanningSort,
                 _ => Algorithm::LsbSort,
             }
         } else {
-            match p.input_len {
-                0..=50_000 => Algorithm::LsbSort,
-                50_001..=800_000 => Algorithm::SkaSort,
-                800_001..=usize::MAX => Algorithm::RecombinatingSort,
-                _ => Algorithm::LsbSort,
-            }
+            Algorithm::LsbSort
         }
     }
 }
 
 pub struct DefaultTuner {}
 impl Tuner for DefaultTuner {}
-
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub struct Point {
-    pub depth: usize,
-    pub algorithm: Algorithm,
-    pub start: usize,
-}
-
-#[derive(Clone, Debug)]
-pub struct MLTuner {
-    pub points: Vec<Point>,
-    pub points_in_place: Vec<Point>,
-}
-
-impl Tuner for MLTuner {
-    fn pick_algorithm(&self, p: &TuningParams) -> Algorithm {
-        let depth = p.total_levels - 1 - p.level;
-
-        let points = if p.in_place {
-            self.points_in_place.iter()
-        } else {
-            self.points.iter()
-        };
-
-        for point in points {
-            if depth == point.depth && p.input_len >= point.start {
-                return point.algorithm;
-            }
-        }
-
-        return Algorithm::LsbSort;
-    }
-}

@@ -13,7 +13,7 @@ use std::time::{Duration, Instant};
 fn main() {
     // Randomly generate an array of
     // 200_000_000 u64's with half shifted >> 32 and half shifted << 32
-    let mut inputs = gen_inputs(200_000_000, 0u64);
+    let mut inputs = gen_inputs(200_000_000, 16u32);
 
     // Input generation is multi-threaded and hard to differentiate from the actual
     // sorting algorithm, depending on the profiler. This makes it more obvious.

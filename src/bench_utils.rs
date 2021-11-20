@@ -132,13 +132,21 @@ pub fn bench_medley<T>(
     group.throughput(Throughput::Elements(len));
 
     for t in tests.iter() {
-        group.bench_with_input(BenchmarkId::new((*t).0.clone(), len), &0u32, |bench, _set| {
-            bench.iter_batched(|| input_sets.clone(), |input| {
-                for set in input {
-                    (*t).1(set);
-                }
-            }, BatchSize::SmallInput);
-        });
+        group.bench_with_input(
+            BenchmarkId::new((*t).0.clone(), len),
+            &0u32,
+            |bench, _set| {
+                bench.iter_batched(
+                    || input_sets.clone(),
+                    |input| {
+                        for set in input {
+                            (*t).1(set);
+                        }
+                    },
+                    BatchSize::SmallInput,
+                );
+            },
+        );
     }
 
     group.finish();

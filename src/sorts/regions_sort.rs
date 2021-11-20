@@ -49,7 +49,7 @@ struct Edge<'bucket, T> {
 fn generate_outbounds<'bucket, T>(
     bucket: &'bucket mut [T],
     local_counts: &[[usize; 256]],
-    global_counts: &[usize],
+    global_counts: &[usize; 256],
 ) -> Vec<Edge<'bucket, T>> {
     let mut outbounds: Vec<Edge<T>> = Vec::new();
     let mut rem_bucket = bucket;
@@ -186,38 +186,26 @@ fn list_operations<T>(
     (outbounds, operations)
 }
 
-pub fn regions_sort<T>(bucket: &mut [T], level: usize) -> Vec<usize>
-where
+pub fn regions_sort<T>(
+    bucket: &mut [T],
+    counts: &[usize; 256],
+    tile_counts: &[[usize; 256]],
+    tile_size: usize,
+    level: usize,
+) where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
-    if bucket.len() == 0 {
-        return get_counts(bucket, level).to_vec();
-    }
-
     let threads = current_num_threads();
-    let bucket_len = bucket.len();
-    let chunk_size = (bucket_len / threads) + 1;
-    let local_counts: Vec<[usize; 256]> = bucket
-        .par_chunks_mut(chunk_size)
-        .map(|chunk| {
-            let counts = get_counts(chunk, level);
+    bucket
+        .par_chunks_mut(tile_size)
+        .zip(tile_counts.par_iter())
+        .for_each(|(chunk, counts)| {
             let plateaus = detect_plateaus(chunk, level);
-            let (mut prefix_sums, end_offsets) = apply_plateaus(chunk, &counts, &plateaus);
+            let (mut prefix_sums, end_offsets) = apply_plateaus(chunk, &*counts, &plateaus);
             ska_sort(chunk, &mut prefix_sums, &end_offsets, level);
+        });
 
-            counts
-        })
-        .collect();
-
-    let mut global_counts = vec![0usize; 256];
-
-    local_counts.iter().for_each(|counts| {
-        for (i, c) in counts.iter().enumerate() {
-            global_counts[i] += *c;
-        }
-    });
-
-    let mut outbounds = generate_outbounds(bucket, &local_counts, &global_counts);
+    let mut outbounds = generate_outbounds(bucket, tile_counts, &counts);
     let mut operations = Vec::new();
 
     // This loop calculates and executes all operations that can be done in parallel, each pass.
@@ -254,14 +242,15 @@ where
             }
         }
     }
-
-    global_counts
 }
 
 pub fn regions_sort_adapter<T>(
     tuner: &(dyn Tuner + Send + Sync),
     in_place: bool,
     bucket: &mut [T],
+    counts: &[usize; 256],
+    tile_counts: &[[usize; 256]],
+    tile_size: usize,
     level: usize,
 ) where
     T: RadixKey + Sized + Send + Copy + Sync,
@@ -270,13 +259,13 @@ pub fn regions_sort_adapter<T>(
         return;
     }
 
-    let global_counts = regions_sort(bucket, level);
+    regions_sort(bucket, counts, tile_counts, tile_size, level);
 
     if level == 0 {
         return;
     }
 
-    director(tuner, in_place, bucket, global_counts, level - 1);
+    director(tuner, in_place, bucket, counts.to_vec(), level - 1);
 }
 
 #[cfg(test)]
@@ -284,6 +273,8 @@ mod tests {
     use crate::sorts::regions_sort::regions_sort_adapter;
     use crate::test_utils::{sort_comparison_suite, NumericTest};
     use crate::tuner::DefaultTuner;
+    use crate::utils::{aggregate_tile_counts, cdiv, get_tile_counts};
+    use rayon::current_num_threads;
 
     fn test_regions_sort<T>(shift: T)
     where
@@ -291,7 +282,22 @@ mod tests {
     {
         let tuner = DefaultTuner {};
         sort_comparison_suite(shift, |inputs| {
-            regions_sort_adapter(&tuner, true, inputs, T::LEVELS - 1)
+            if inputs.len() == 0 {
+                return;
+            }
+
+            let tile_size = cdiv(inputs.len(), current_num_threads());
+            let tile_counts = get_tile_counts(inputs, tile_size, T::LEVELS - 1);
+            let counts = aggregate_tile_counts(&tile_counts);
+            regions_sort_adapter(
+                &tuner,
+                true,
+                inputs,
+                &counts,
+                &tile_counts,
+                tile_size,
+                T::LEVELS - 1,
+            );
         });
     }
 

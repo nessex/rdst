@@ -46,13 +46,13 @@ mod tuner;
 mod utils;
 
 use crate::sorts::comparative_sort::comparative_sort;
+use crate::sorts::out_of_place_sort::out_of_place_sort;
 use crate::sorts::recombinating_sort::recombinating_sort;
 use crate::sorts::regions_sort::regions_sort;
 use crate::sorts::scanning_sort::scanning_sort;
 use crate::sorts::ska_sort::ska_sort;
 use crate::utils::*;
 use radix_key::RadixKey;
-use crate::sorts::out_of_place_sort::out_of_place_sort;
 use rdst::tuner::Algorithm;
 
 fn get_data<T>(len: usize) -> Vec<T>

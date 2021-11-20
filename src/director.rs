@@ -1,16 +1,100 @@
-use std::cmp::max;
 use crate::sorts::comparative_sort::comparative_sort;
-use crate::sorts::lsb_sort::lsb_sort_adapter;
-use crate::sorts::recombinating_sort::recombinating_sort_adapter;
-use crate::sorts::regions_sort::regions_sort_adapter;
-use crate::sorts::scanning_sort::scanning_sort_adapter;
-use crate::sorts::ska_sort::ska_sort_adapter;
 use crate::tuner::{Algorithm, Tuner, TuningParams};
+use crate::utils::*;
 use crate::RadixKey;
 use arbitrary_chunks::ArbitraryChunks;
 use rayon::current_num_threads;
 use rayon::prelude::*;
+use std::cmp::max;
 
+struct Job<'a, T> {
+    chunk: &'a mut [T],
+    tile_size: usize,
+    tile_counts: Option<Vec<[usize; 256]>>,
+    counts: Option<[usize; 256]>,
+    algorithm: Algorithm,
+}
+
+#[inline]
+pub fn single_director<T>(
+    tuner: &(dyn Tuner + Send + Sync),
+    in_place: bool,
+    bucket: &mut [T],
+    parent_len: usize,
+    level: usize,
+) where
+    T: RadixKey + Sized + Send + Copy + Sync,
+{
+    if bucket.len() <= 1 {
+        return;
+    } else if bucket.len() <= 128 {
+        comparative_sort(bucket, level);
+        return;
+    }
+
+    let bucket_len = bucket.len();
+    let threads = current_num_threads();
+    let tile_size = max(30_000, cdiv(bucket.len(), threads));
+
+    let tp = TuningParams {
+        threads,
+        level,
+        total_levels: T::LEVELS,
+        input_len: bucket_len,
+        parent_len,
+        in_place,
+    };
+
+    if bucket.len() <= tile_size {
+        let counts = get_counts(bucket, level);
+        let homogenous = is_homogenous_bucket(&counts);
+
+        if homogenous {
+            if level != 0 {
+                director(tuner, in_place, bucket, counts.to_vec(), level - 1);
+            }
+
+            return;
+        }
+
+        let algorithm = tuner.pick_algorithm(&tp, &counts);
+
+        //println!("SOLO L: {} ALG: {:?}", level, algorithm);
+
+        run_sort(
+            tuner, in_place, level, bucket, &counts, None, tile_size, algorithm,
+        );
+    } else {
+        let tile_counts = get_tile_counts(bucket, tile_size, level);
+        let counts = aggregate_tile_counts(&tile_counts);
+        let homogenous = is_homogenous_bucket(&counts);
+
+        if homogenous {
+            if level != 0 {
+                director(tuner, in_place, bucket, counts.to_vec(), level - 1);
+            }
+
+            return;
+        }
+
+        let algorithm = tuner.pick_algorithm(&tp, &counts);
+
+        //println!("SOLO 2 L: {} ALG: {:?}", level, algorithm);
+
+        run_sort(
+            tuner,
+            in_place,
+            level,
+            bucket,
+            &counts,
+            Some(tile_counts),
+            tile_size,
+            algorithm,
+        );
+    }
+}
+
+#[inline]
 pub fn director<T>(
     tuner: &(dyn Tuner + Send + Sync),
     in_place: bool,
@@ -20,63 +104,111 @@ pub fn director<T>(
 ) where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
-    let depth = T::LEVELS - 1 - level;
-    let len = bucket.len();
-    let len_limit = max(260_000, ((bucket.len() / current_num_threads()) as f64 * 1.4) as usize);
-    let mut long_chunks = Vec::new();
-    let mut average_chunks = Vec::with_capacity(256);
+    let parent_len = bucket.len();
+    let threads = current_num_threads();
+    let mut serials: Vec<Job<T>> = Vec::new();
+    let mut parallels: Vec<Job<T>> = Vec::new();
 
-    for chunk in bucket.arbitrary_chunks_mut(counts) {
-        if chunk.len() > len_limit && depth <= 2 {
-            long_chunks.push(chunk);
-        } else {
-            average_chunks.push(chunk);
-        }
-    }
-
-    long_chunks.into_iter().for_each(|chunk| {
-        let tp = TuningParams {
-            threads: current_num_threads(),
-            level,
-            total_levels: T::LEVELS,
-            input_len: chunk.len(),
-            parent_len: len,
-            in_place,
-            serial: true,
-        };
-
-        match tuner.pick_algorithm(&tp) {
-            Algorithm::ScanningSort => scanning_sort_adapter(tuner, tp.in_place, chunk, tp.level),
-            Algorithm::RecombinatingSort => {
-                recombinating_sort_adapter(tuner, tp.in_place, chunk, tp.level)
+    bucket
+        .arbitrary_chunks_mut(counts)
+        .into_iter()
+        .for_each(|chunk| {
+            if chunk.len() <= 1 {
+                return;
+            } else if chunk.len() <= 128 {
+                parallels.push(Job {
+                    chunk,
+                    tile_size: 0,
+                    tile_counts: None,
+                    counts: None,
+                    algorithm: Algorithm::ComparativeSort,
+                });
+                return;
             }
-            Algorithm::LsbSort => lsb_sort_adapter(chunk, 0, tp.level),
-            Algorithm::SkaSort => ska_sort_adapter(tuner, tp.in_place, chunk, tp.level),
-            Algorithm::ComparativeSort => comparative_sort(chunk, tp.level),
-            Algorithm::RegionsSort => regions_sort_adapter(tuner, tp.in_place, chunk, tp.level),
-        };
+
+            let tile_size = max(30_000, cdiv(chunk.len(), threads));
+            let tp = TuningParams {
+                threads,
+                level,
+                total_levels: T::LEVELS,
+                input_len: chunk.len(),
+                parent_len,
+                in_place,
+            };
+
+            let tile_counts = if chunk.len() >= 260_000 {
+                Some(get_tile_counts(chunk, tile_size, level))
+            } else {
+                None
+            };
+
+            let counts = if let Some(tile_counts) = &tile_counts {
+                aggregate_tile_counts(tile_counts)
+            } else {
+                get_counts(chunk, level)
+            };
+
+            if chunk.len() >= 30_000 {
+                let homogenous = is_homogenous_bucket(&counts);
+
+                if homogenous {
+                    if level != 0 {
+                        director(tuner, in_place, chunk, counts.to_vec(), level - 1);
+                    }
+
+                    return;
+                }
+            }
+
+            let algorithm = tuner.pick_algorithm(&tp, &counts);
+
+            let job = Job {
+                chunk,
+                tile_size,
+                tile_counts,
+                counts: Some(counts),
+                algorithm,
+            };
+
+            match algorithm {
+                Algorithm::SkaSort | Algorithm::ComparativeSort | Algorithm::LsbSort => {
+                    parallels.push(job);
+                }
+                _ => serials.push(job),
+            }
+        });
+
+    serials.into_iter().for_each(|job| {
+        if let Some(counts) = job.counts {
+            run_sort(
+                tuner,
+                in_place,
+                level,
+                job.chunk,
+                &counts,
+                job.tile_counts,
+                job.tile_size,
+                job.algorithm,
+            );
+        } else {
+            comparative_sort(job.chunk, level);
+        }
     });
 
-    average_chunks.into_par_iter().for_each(|chunk| {
-        let tp = TuningParams {
-            threads: current_num_threads(),
-            level,
-            total_levels: T::LEVELS,
-            input_len: chunk.len(),
-            parent_len: len,
-            in_place,
-            serial: false,
-        };
-
-        match tuner.pick_algorithm(&tp) {
-            Algorithm::ScanningSort => scanning_sort_adapter(tuner, tp.in_place, chunk, tp.level),
-            Algorithm::RecombinatingSort => {
-                recombinating_sort_adapter(tuner, tp.in_place, chunk, tp.level)
-            }
-            Algorithm::LsbSort => lsb_sort_adapter(chunk, 0, tp.level),
-            Algorithm::SkaSort => ska_sort_adapter(tuner, tp.in_place, chunk, tp.level),
-            Algorithm::ComparativeSort => comparative_sort(chunk, tp.level),
-            Algorithm::RegionsSort => regions_sort_adapter(tuner, tp.in_place, chunk, tp.level),
-        };
+    parallels.into_par_iter().for_each(|job| {
+        if let Some(counts) = job.counts {
+            run_sort(
+                tuner,
+                in_place,
+                level,
+                job.chunk,
+                &counts,
+                job.tile_counts,
+                job.tile_size,
+                job.algorithm,
+            );
+        } else {
+            comparative_sort(job.chunk, level);
+        }
     });
 }

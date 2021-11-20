@@ -5,8 +5,12 @@ use crate::RadixKey;
 
 // Based upon (with modifications):
 // https://probablydance.com/2016/12/27/i-wrote-a-faster-sorting-algorithm/
-pub fn ska_sort<T>(bucket: &mut [T], prefix_sums: &mut [usize], end_offsets: &[usize], level: usize)
-where
+pub fn ska_sort<T>(
+    bucket: &mut [T],
+    prefix_sums: &mut [usize; 256],
+    end_offsets: &[usize; 256],
+    level: usize,
+) where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
     let mut finished = 1;
@@ -55,19 +59,13 @@ pub fn ska_sort_adapter<T>(
     tuner: &(dyn Tuner + Send + Sync),
     in_place: bool,
     bucket: &mut [T],
+    counts: &[usize; 256],
     level: usize,
 ) where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
-    let (counts, level) = if let Some(s) = get_counts_and_level_descending(bucket, level, 0, false)
-    {
-        s
-    } else {
-        return;
-    };
-
     let plateaus = detect_plateaus(bucket, level);
-    let (mut prefix_sums, end_offsets) = apply_plateaus(bucket, &counts, &plateaus);
+    let (mut prefix_sums, end_offsets) = apply_plateaus(bucket, counts, &plateaus);
 
     ska_sort(bucket, &mut prefix_sums, &end_offsets, level);
 
@@ -83,6 +81,7 @@ mod tests {
     use crate::sorts::ska_sort::ska_sort_adapter;
     use crate::test_utils::{sort_comparison_suite, NumericTest};
     use crate::tuner::DefaultTuner;
+    use crate::utils::get_counts;
 
     fn test_ska_sort_adapter<T>(shift: T)
     where
@@ -90,7 +89,8 @@ mod tests {
     {
         let tuner = DefaultTuner {};
         sort_comparison_suite(shift, |inputs| {
-            ska_sort_adapter(&tuner, true, inputs, T::LEVELS - 1)
+            let counts = get_counts(inputs, T::LEVELS - 1);
+            ska_sort_adapter(&tuner, true, inputs, &counts, T::LEVELS - 1)
         });
     }
 
