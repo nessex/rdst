@@ -5,7 +5,7 @@ use crate::sorts::recombinating_sort::recombinating_sort_adapter;
 use crate::sorts::regions_sort::regions_sort_adapter;
 use crate::sorts::scanning_sort::scanning_sort_adapter;
 use crate::sorts::ska_sort::ska_sort_adapter;
-use crate::tuner::{Algorithm, Tuner, TuningParams};
+use crate::tuner::{Algorithm, Tuner};
 use crate::RadixKey;
 use rayon::prelude::*;
 use std::sync::mpsc::channel;

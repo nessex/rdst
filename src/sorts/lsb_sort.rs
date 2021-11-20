@@ -1,5 +1,4 @@
 use crate::sorts::out_of_place_sort::{out_of_place_sort, out_of_place_sort_with_counts};
-use crate::sorts::ska_sort::ska_sort;
 use crate::utils::*;
 use crate::RadixKey;
 
@@ -18,7 +17,6 @@ pub fn lsb_sort_adapter<T>(
     let mut tmp_bucket = get_tmp_bucket(bucket.len());
     let levels: Vec<usize> = (start_level..=end_level).into_iter().collect();
     let mut invert = false;
-    let mut first = true;
     let mut next_counts = None;
 
     'outer: for level in levels {
@@ -64,7 +62,6 @@ pub fn lsb_sort_adapter<T>(
             (false, false) => out_of_place_sort(bucket, &mut tmp_bucket, &counts, level),
         };
 
-        first = false;
         invert = !invert;
     }
 

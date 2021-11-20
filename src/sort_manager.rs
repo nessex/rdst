@@ -38,7 +38,7 @@ impl SortManager {
         }
 
         let bucket_len = bucket.len();
-        let parent_len = bucket_len * current_num_threads();
+        let parent_len = bucket_len;
 
         single_director(&*self.tuner, false, bucket, parent_len, T::LEVELS - 1);
     }
@@ -52,7 +52,7 @@ impl SortManager {
         }
 
         let bucket_len = bucket.len();
-        let parent_len = bucket_len * current_num_threads();
+        let parent_len = bucket_len;
 
         single_director(&*self.tuner, true, bucket, parent_len, T::LEVELS - 1);
     }

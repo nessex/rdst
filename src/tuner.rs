@@ -29,30 +29,45 @@ pub trait Tuner {
 
         let depth = p.total_levels - p.level - 1;
 
-        if depth > 0 && p.input_len >= 300_000 {
+        if p.input_len >= 300_000 {
             let distribution_threshold = ((p.input_len / p.threads) as f64 * 1.4) as usize;
 
             // Distribution occurs when the input to be sorted has a single count larger
             // than the others.
             for c in counts {
                 if *c >= distribution_threshold {
-                    return if p.input_len >= 260_000 {
-                        Algorithm::RecombinatingSort
+                    return if depth == 0 {
+                        if p.input_len >= 1_000_000 {
+                            Algorithm::RegionsSort
+                        } else if p.input_len >= 260_000 {
+                            Algorithm::RecombinatingSort
+                        } else {
+                            Algorithm::LsbSort
+                        }
                     } else {
-                        Algorithm::SkaSort
-                    };
+                        if p.input_len >= 5_000_000 {
+                            Algorithm::RegionsSort
+                        } else if p.input_len >= 800_000 {
+                            Algorithm::RecombinatingSort
+                        } else {
+                            Algorithm::LsbSort
+                        }
+                    }
                 }
             }
 
-            let to_split = p.input_len > ((p.parent_len / 256) as f64 * 1.4) as usize;
+            if depth > 0 {
+                let to_split = p.input_len > ((p.parent_len / 256) as f64 * 1.4) as usize;
 
-            // Splitting occurs when input is larger than it should be relative to other tasks
-            // spawned from the same parent.
-            if to_split {
-                return match p.input_len {
-                    400_000..=usize::MAX => Algorithm::ScanningSort,
-                    _ => Algorithm::SkaSort,
-                };
+                // Splitting occurs when input is larger than it should be relative to other tasks
+                // spawned from the same parent.
+                if to_split {
+                    return match p.input_len {
+                        400_000..=50_000_000 => Algorithm::RecombinatingSort,
+                        50_000_0001..=usize::MAX => Algorithm::ScanningSort,
+                        _ => Algorithm::SkaSort,
+                    };
+                }
             }
         }
 
@@ -77,7 +92,7 @@ pub trait Tuner {
             }
         } else if depth == 0 && !p.in_place {
             match p.input_len {
-                400_000..=49_999_999 => Algorithm::RecombinatingSort,
+                260_000..=49_999_999 => Algorithm::RecombinatingSort,
                 50_000_000..=usize::MAX => Algorithm::ScanningSort,
                 _ => Algorithm::LsbSort,
             }
