@@ -38,16 +38,6 @@ pub fn lsb_sort_adapter<T>(
             }
         }
 
-        if first == true && (end_level + 1 - level) % 2 != 0 {
-            // Use ska sort if the levels in question here will likely require an additional copy
-            // at the end
-            let plateaus = detect_plateaus(bucket, level);
-            let (mut prefix_sums, end_offsets) = apply_plateaus(bucket, &counts, &plateaus);
-            ska_sort(bucket, &mut prefix_sums, &end_offsets, level);
-            first = false;
-            continue;
-        }
-
         let should_count = level < (end_level - 1);
         if !should_count {
             next_counts = None;
