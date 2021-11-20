@@ -32,8 +32,8 @@ pub trait Tuner {
         if p.input_len >= 300_000 {
             let distribution_threshold = (p.input_len / 256) * 2;
 
-            // Distribution occurs when the input to be sorted has a single count larger
-            // than the others.
+            // Distribution occurs when the input to be sorted has counts significantly
+            // larger than the others
             for c in counts {
                 if *c >= distribution_threshold {
                     return if depth == 0 {
