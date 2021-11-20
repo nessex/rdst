@@ -59,8 +59,6 @@ pub fn single_director<T>(
 
         let algorithm = tuner.pick_algorithm(&tp, &counts);
 
-        //println!("SOLO L: {} ALG: {:?}", level, algorithm);
-
         run_sort(
             tuner, in_place, level, bucket, &counts, None, tile_size, algorithm,
         );
@@ -78,8 +76,6 @@ pub fn single_director<T>(
         }
 
         let algorithm = tuner.pick_algorithm(&tp, &counts);
-
-        //println!("SOLO 2 L: {} ALG: {:?}", level, algorithm);
 
         run_sort(
             tuner,
@@ -107,23 +103,22 @@ pub fn director<T>(
     let parent_len = bucket.len();
     let threads = current_num_threads();
     let mut serials: Vec<Job<T>> = Vec::new();
-    let mut parallels: Vec<Job<T>> = Vec::new();
+    let mut parallels: Vec<Job<T>> = Vec::with_capacity(256);
 
-    bucket
+    let jobs: Vec<Option<Job<T>>> = bucket
         .arbitrary_chunks_mut(counts)
-        .into_iter()
-        .for_each(|chunk| {
+        .par_bridge()
+        .map(|chunk| {
             if chunk.len() <= 1 {
-                return;
+                return None;
             } else if chunk.len() <= 128 {
-                parallels.push(Job {
+                return Some(Job {
                     chunk,
                     tile_size: 0,
                     tile_counts: None,
                     counts: None,
                     algorithm: Algorithm::ComparativeSort,
                 });
-                return;
             }
 
             let tile_size = max(30_000, cdiv(chunk.len(), threads));
@@ -156,27 +151,30 @@ pub fn director<T>(
                         director(tuner, in_place, chunk, counts.to_vec(), level - 1);
                     }
 
-                    return;
+                    return None;
                 }
             }
 
             let algorithm = tuner.pick_algorithm(&tp, &counts);
 
-            let job = Job {
+            Some(Job {
                 chunk,
                 tile_size,
                 tile_counts,
                 counts: Some(counts),
                 algorithm,
-            };
+            })
+        })
+        .collect();
 
-            match algorithm {
-                Algorithm::SkaSort | Algorithm::ComparativeSort | Algorithm::LsbSort => {
-                    parallels.push(job);
-                }
+    for j in jobs {
+        if let Some(job) = j {
+            match job.algorithm {
+                Algorithm::SkaSort | Algorithm::ComparativeSort | Algorithm::LsbSort => parallels.push(job),
                 _ => serials.push(job),
-            }
-        });
+            };
+        }
+    }
 
     serials.into_iter().for_each(|job| {
         if let Some(counts) = job.counts {

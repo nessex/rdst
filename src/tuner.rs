@@ -36,7 +36,6 @@ pub trait Tuner {
             // than the others.
             for c in counts {
                 if *c >= distribution_threshold {
-                    //println!("DISTRIBUTING: {} {}", p.input_len, ((p.input_len / p.threads) as f64 * 1.4) as usize);
                     return if p.input_len >= 260_000 {
                         Algorithm::RecombinatingSort
                     } else {
@@ -50,7 +49,6 @@ pub trait Tuner {
             // Splitting occurs when input is larger than it should be relative to other tasks
             // spawned from the same parent.
             if to_split {
-                //println!("SPLITTING: {} {}", p.input_len, ((p.parent_len / p.threads) as f64 * 1.4) as usize);
                 return match p.input_len {
                     400_000..=usize::MAX => Algorithm::ScanningSort,
                     _ => Algorithm::SkaSort,
