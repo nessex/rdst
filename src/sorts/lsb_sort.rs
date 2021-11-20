@@ -33,6 +33,8 @@ pub fn lsb_sort_adapter<T>(
         for c in counts.iter() {
             if *c == bucket.len() {
                 continue 'outer;
+            } else if *c > 0 {
+                break;
             }
         }
 
@@ -47,6 +49,10 @@ pub fn lsb_sort_adapter<T>(
         }
 
         let should_count = level < (end_level - 1);
+        if !should_count {
+            next_counts = None;
+        }
+
         match (invert, should_count) {
             (true, true) => {
                 next_counts = Some(out_of_place_sort_with_counts(
