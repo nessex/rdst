@@ -46,7 +46,7 @@ pub trait Tuner {
                 }
             }
 
-            let to_split = p.input_len > ((p.parent_len / p.threads) as f64 * 1.4) as usize;
+            let to_split = p.input_len > ((p.parent_len / 256) as f64 * 1.4) as usize;
 
             // Splitting occurs when input is larger than it should be relative to other tasks
             // spawned from the same parent.
@@ -68,7 +68,8 @@ pub trait Tuner {
             }
         } else if depth > 0 && !p.in_place {
             match p.input_len {
-                400_001..=50_000_000 => Algorithm::RecombinatingSort,
+                200_001..=800_000 => Algorithm::SkaSort,
+                800_001..=50_000_000 => Algorithm::RecombinatingSort,
                 50_000_001..=usize::MAX => Algorithm::ScanningSort,
                 _ => Algorithm::LsbSort,
             }
