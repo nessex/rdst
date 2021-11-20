@@ -55,20 +55,6 @@ pub trait Tuner {
                     }
                 }
             }
-
-            if depth > 0 {
-                let to_split = p.input_len > ((p.parent_len / 256) as f64 * 1.4) as usize;
-
-                // Splitting occurs when input is larger than it should be relative to other tasks
-                // spawned from the same parent.
-                if to_split {
-                    return match p.input_len {
-                        400_000..=50_000_000 => Algorithm::RecombinatingSort,
-                        50_000_0001..=usize::MAX => Algorithm::ScanningSort,
-                        _ => Algorithm::SkaSort,
-                    };
-                }
-            }
         }
 
         if depth > 0 && p.in_place {
