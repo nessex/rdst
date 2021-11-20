@@ -1,7 +1,6 @@
 use crate::director::single_director;
 use crate::tuner::{DefaultTuner, Tuner};
 use crate::RadixKey;
-use rayon::current_num_threads;
 
 pub struct SortManager {
     tuner: Box<dyn Tuner + Send + Sync>,

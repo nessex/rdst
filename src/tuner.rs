@@ -39,16 +39,16 @@ pub trait Tuner {
                     return if depth == 0 {
                         if p.input_len >= 1_000_000 {
                             Algorithm::RegionsSort
-                        } else if p.input_len >= 260_000 {
-                            Algorithm::RecombinatingSort
+                        } else if p.input_len >= 30_000 {
+                            Algorithm::MtLsbSort
                         } else {
                             Algorithm::LsbSort
                         }
                     } else {
                         if p.input_len >= 5_000_000 {
                             Algorithm::RegionsSort
-                        } else if p.input_len >= 800_000 {
-                            Algorithm::RecombinatingSort
+                        } else if p.input_len >= 30_000 {
+                            Algorithm::MtLsbSort
                         } else {
                             Algorithm::LsbSort
                         }
@@ -92,8 +92,8 @@ pub trait Tuner {
             }
         } else if depth == 0 && !p.in_place {
             match p.input_len {
-                260_000..=49_999_999 => Algorithm::RecombinatingSort,
-                50_000_000..=usize::MAX => Algorithm::ScanningSort,
+                260_001..=50_000_000 => Algorithm::RecombinatingSort,
+                50_000_001..=usize::MAX => Algorithm::ScanningSort,
                 _ => Algorithm::LsbSort,
             }
         } else {
