@@ -170,7 +170,9 @@ pub fn director<T>(
     for j in jobs {
         if let Some(job) = j {
             match job.algorithm {
-                Algorithm::SkaSort | Algorithm::ComparativeSort | Algorithm::LsbSort => parallels.push(job),
+                Algorithm::SkaSort | Algorithm::ComparativeSort | Algorithm::LsbSort => {
+                    parallels.push(job)
+                }
                 _ => serials.push(job),
             };
         }

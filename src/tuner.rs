@@ -20,70 +20,86 @@ pub enum Algorithm {
     SkaSort,
 }
 
+fn pick_algorithm_standard(p: &TuningParams, counts: &[usize]) -> Algorithm {
+    if p.input_len <= 128 {
+        return Algorithm::ComparativeSort;
+    }
+
+    let depth = p.total_levels - p.level - 1;
+
+    if p.input_len >= 300_000 {
+        let distribution_threshold = (p.input_len / 256) * 2;
+
+        // Distribution occurs when the input to be sorted has counts significantly
+        // larger than the others
+        for c in counts {
+            if *c >= distribution_threshold {
+                return if depth == 0 {
+                    if p.input_len >= 1_000_000 {
+                        Algorithm::RegionsSort
+                    } else if p.input_len >= 30_000 {
+                        Algorithm::MtLsbSort
+                    } else {
+                        Algorithm::LsbSort
+                    }
+                } else {
+                    if p.input_len >= 5_000_000 {
+                        Algorithm::RegionsSort
+                    } else if p.input_len >= 30_000 {
+                        Algorithm::MtLsbSort
+                    } else {
+                        Algorithm::LsbSort
+                    }
+                };
+            }
+        }
+    }
+
+    if depth > 0 {
+        match p.input_len {
+            200_001..=800_000 => Algorithm::SkaSort,
+            800_001..=50_000_000 => Algorithm::RecombinatingSort,
+            50_000_001..=usize::MAX => Algorithm::ScanningSort,
+            _ => Algorithm::LsbSort,
+        }
+    } else {
+        match p.input_len {
+            260_001..=50_000_000 => Algorithm::RecombinatingSort,
+            50_000_001..=usize::MAX => Algorithm::ScanningSort,
+            _ => Algorithm::LsbSort,
+        }
+    }
+}
+
+fn pick_algorithm_in_place(p: &TuningParams, _counts: &[usize]) -> Algorithm {
+    if p.input_len <= 128 {
+        return Algorithm::ComparativeSort;
+    }
+
+    let depth = p.total_levels - p.level - 1;
+
+    if depth == 0 && p.in_place {
+        match p.input_len {
+            0..=1_000_000 => Algorithm::SkaSort,
+            1_000_001..=usize::MAX => Algorithm::RegionsSort,
+            _ => Algorithm::LsbSort,
+        }
+    } else {
+        match p.input_len {
+            1_000_001..=usize::MAX => Algorithm::RegionsSort,
+            50_000..=1_000_000 => Algorithm::SkaSort,
+            _ => Algorithm::LsbSort,
+        }
+    }
+}
+
 pub trait Tuner {
     #[inline]
     fn pick_algorithm(&self, p: &TuningParams, counts: &[usize]) -> Algorithm {
-        if p.input_len <= 128 {
-            return Algorithm::ComparativeSort;
-        }
-
-        let depth = p.total_levels - p.level - 1;
-
-        if p.input_len >= 300_000 {
-            let distribution_threshold = (p.input_len / 256) * 2;
-
-            // Distribution occurs when the input to be sorted has counts significantly
-            // larger than the others
-            for c in counts {
-                if *c >= distribution_threshold {
-                    return if depth == 0 {
-                        if p.input_len >= 1_000_000 {
-                            Algorithm::RegionsSort
-                        } else if p.input_len >= 30_000 {
-                            Algorithm::MtLsbSort
-                        } else {
-                            Algorithm::LsbSort
-                        }
-                    } else {
-                        if p.input_len >= 5_000_000 {
-                            Algorithm::RegionsSort
-                        } else if p.input_len >= 30_000 {
-                            Algorithm::MtLsbSort
-                        } else {
-                            Algorithm::LsbSort
-                        }
-                    }
-                }
-            }
-        }
-
-        if depth > 0 && p.in_place {
-            match p.input_len {
-                0..=1_000_000 => Algorithm::SkaSort,
-                1_000_001..=usize::MAX => Algorithm::RegionsSort,
-                _ => Algorithm::LsbSort,
-            }
-        } else if depth > 0 && !p.in_place {
-            match p.input_len {
-                200_001..=800_000 => Algorithm::SkaSort,
-                800_001..=50_000_000 => Algorithm::RecombinatingSort,
-                50_000_001..=usize::MAX => Algorithm::ScanningSort,
-                _ => Algorithm::LsbSort,
-            }
-        } else if depth == 0 && p.in_place {
-            match p.input_len {
-                0..=1_000_000 => Algorithm::SkaSort,
-                1_000_001..=usize::MAX => Algorithm::RegionsSort,
-                _ => Algorithm::LsbSort,
-            }
-        } else if depth == 0 && !p.in_place {
-            match p.input_len {
-                260_001..=50_000_000 => Algorithm::RecombinatingSort,
-                50_000_001..=usize::MAX => Algorithm::ScanningSort,
-                _ => Algorithm::LsbSort,
-            }
+        if p.in_place {
+            pick_algorithm_in_place(p, counts)
         } else {
-            Algorithm::LsbSort
+            pick_algorithm_standard(p, counts)
         }
     }
 }

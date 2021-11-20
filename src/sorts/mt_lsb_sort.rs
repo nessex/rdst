@@ -183,7 +183,7 @@ pub fn mt_oop_sort_adapter<T>(
 mod tests {
     use crate::sorts::mt_lsb_sort::mt_lsb_sort_adapter;
     use crate::test_utils::{sort_comparison_suite, NumericTest};
-    use crate::utils::{cdiv, get_tile_counts};
+    use crate::utils::cdiv;
     use crate::RadixSort;
     use rayon::current_num_threads;
 
