@@ -59,6 +59,9 @@ pub fn single_director<T>(
 
         let algorithm = tuner.pick_algorithm(&tp, &counts);
 
+        #[cfg(feature = "work_profiles")]
+        println!("({}) SOLO: {:?}", level, algorithm);
+
         run_sort(
             tuner, in_place, level, bucket, &counts, None, tile_size, algorithm,
         );
@@ -76,6 +79,9 @@ pub fn single_director<T>(
         }
 
         let algorithm = tuner.pick_algorithm(&tp, &counts);
+
+        #[cfg(feature = "work_profiles")]
+        println!("({}) SOLO2: {:?}", level, algorithm);
 
         run_sort(
             tuner,
