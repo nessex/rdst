@@ -16,6 +16,7 @@ default = ["default-implementations"]
 bench = ["criterion", "block-pseudorand"]
 tuning = ["nanorand", "rlp-iter", "block-pseudorand", "oxigen", "rand", "lazy_static"]
 default-implementations = []
+work_profiles = []
 
 [dependencies]
 rayon = "1.5.1"

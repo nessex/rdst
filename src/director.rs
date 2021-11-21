@@ -11,13 +11,31 @@ use arbitrary_chunks::ArbitraryChunks;
 use rayon::current_num_threads;
 use rayon::prelude::*;
 
+#[inline]
+fn run_sort<T>(tuner: &(dyn Tuner + Send + Sync), tp: &TuningParams, chunk: &mut [T], algo: &Algorithm)
+where
+    T: RadixKey + Sized + Send + Copy + Sync,
+{
+    match algo {
+        Algorithm::ScanningSort => scanning_sort_adapter(tuner, tp.in_place, chunk, tp.level),
+        Algorithm::RecombinatingSort => {
+            recombinating_sort_adapter(tuner, tp.in_place, chunk, tp.level)
+        }
+        Algorithm::LsbSort => lsb_sort_adapter(chunk, 0, tp.level),
+        Algorithm::SkaSort => ska_sort_adapter(tuner, tp.in_place, chunk, tp.level),
+        Algorithm::ComparativeSort => comparative_sort(chunk, tp.level),
+        Algorithm::RegionsSort => regions_sort_adapter(tuner, tp.in_place, chunk, tp.level),
+    };
+}
+
 pub fn director<T>(
     tuner: &(dyn Tuner + Send + Sync),
     in_place: bool,
     bucket: &mut [T],
     counts: Vec<usize>,
     level: usize,
-) where
+)
+where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
     let depth = T::LEVELS - 1 - level;
@@ -45,16 +63,12 @@ pub fn director<T>(
             serial: true,
         };
 
-        match tuner.pick_algorithm(&tp) {
-            Algorithm::ScanningSort => scanning_sort_adapter(tuner, tp.in_place, chunk, tp.level),
-            Algorithm::RecombinatingSort => {
-                recombinating_sort_adapter(tuner, tp.in_place, chunk, tp.level)
-            }
-            Algorithm::LsbSort => lsb_sort_adapter(chunk, 0, tp.level),
-            Algorithm::SkaSort => ska_sort_adapter(tuner, tp.in_place, chunk, tp.level),
-            Algorithm::ComparativeSort => comparative_sort(chunk, tp.level),
-            Algorithm::RegionsSort => regions_sort_adapter(tuner, tp.in_place, chunk, tp.level),
-        };
+        let algo = tuner.pick_algorithm(&tp);
+
+        #[cfg(feature = "work_profiles")]
+        println!("PROF ({}) SER: {:?}", level, algo);
+
+        run_sort(tuner, &tp, chunk, &algo);
     });
 
     average_chunks.into_par_iter().for_each(|chunk| {
@@ -68,15 +82,11 @@ pub fn director<T>(
             serial: false,
         };
 
-        match tuner.pick_algorithm(&tp) {
-            Algorithm::ScanningSort => scanning_sort_adapter(tuner, tp.in_place, chunk, tp.level),
-            Algorithm::RecombinatingSort => {
-                recombinating_sort_adapter(tuner, tp.in_place, chunk, tp.level)
-            }
-            Algorithm::LsbSort => lsb_sort_adapter(chunk, 0, tp.level),
-            Algorithm::SkaSort => ska_sort_adapter(tuner, tp.in_place, chunk, tp.level),
-            Algorithm::ComparativeSort => comparative_sort(chunk, tp.level),
-            Algorithm::RegionsSort => regions_sort_adapter(tuner, tp.in_place, chunk, tp.level),
-        };
+        let algo = tuner.pick_algorithm(&tp);
+
+        #[cfg(feature = "work_profiles")]
+        println!("PROF ({}) PAR: {:?}", level, algo);
+
+        run_sort(tuner, &tp, chunk, &algo);
     });
 }

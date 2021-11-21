@@ -30,6 +30,9 @@ pub fn par_get_counts<T>(bucket: &[T], level: usize) -> [usize; 256]
 where
     T: RadixKey + Sized + Send + Sync,
 {
+    #[cfg(feature = "work_profiles")]
+    println!("PROF ({}) PAR_COUNT", level);
+
     let threads = rayon::current_num_threads();
     let chunk_divisor = 8;
     let chunk_size = (bucket.len() / threads / chunk_divisor) + 1;
@@ -59,6 +62,9 @@ pub fn get_counts<T>(bucket: &[T], level: usize) -> [usize; 256]
 where
     T: RadixKey,
 {
+    #[cfg(feature = "work_profiles")]
+    println!("PROF ({}) COUNT", level);
+
     let mut counts_1 = [0usize; 256];
     let mut counts_2 = [0usize; 256];
     let mut counts_3 = [0usize; 256];
