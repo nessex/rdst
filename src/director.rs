@@ -179,6 +179,9 @@ pub fn director<T>(
     }
 
     serials.into_iter().for_each(|job| {
+        #[cfg(feature = "work_profiles")]
+        println!("({}) SER: {:?}", level, job.algorithm);
+
         if let Some(counts) = job.counts {
             run_sort(
                 tuner,
@@ -196,6 +199,9 @@ pub fn director<T>(
     });
 
     parallels.into_par_iter().for_each(|job| {
+        #[cfg(feature = "work_profiles")]
+        println!("({}) PAR: {:?}", level, job.algorithm);
+
         if let Some(counts) = job.counts {
             run_sort(
                 tuner,

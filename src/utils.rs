@@ -38,6 +38,9 @@ pub fn par_get_counts<T>(bucket: &[T], level: usize) -> [usize; 256]
 where
     T: RadixKey + Sized + Send + Sync,
 {
+    #[cfg(feature = "work_profiles")]
+    println!("({}) PAR_COUNT", level);
+
     if bucket.len() < 400_000 {
         return get_counts(bucket, level);
     }
@@ -71,6 +74,9 @@ pub fn get_counts<T>(bucket: &[T], level: usize) -> [usize; 256]
 where
     T: RadixKey,
 {
+    #[cfg(feature = "work_profiles")]
+    println!("({}) COUNT", level);
+
     let mut counts_1 = [0usize; 256];
     let mut counts_2 = [0usize; 256];
     let mut counts_3 = [0usize; 256];
@@ -382,6 +388,9 @@ pub fn get_tile_counts<T>(bucket: &[T], tile_size: usize, level: usize) -> Vec<[
 where
     T: RadixKey + Copy + Sized + Send + Sync,
 {
+    #[cfg(feature = "work_profiles")]
+    println!("({}) TILE_COUNT", level);
+
     bucket
         .par_chunks(tile_size)
         .map(|chunk| par_get_counts(chunk, level))
