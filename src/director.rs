@@ -1,5 +1,5 @@
 use crate::sorts::comparative_sort::comparative_sort;
-use crate::tuner::{Algorithm, Tuner, TuningParams};
+use crate::tuner::{Tuner, TuningParams};
 use crate::utils::*;
 use crate::RadixKey;
 use arbitrary_chunks::ArbitraryChunks;
@@ -7,13 +7,6 @@ use rayon::current_num_threads;
 use rayon::prelude::*;
 use std::cmp::max;
 
-struct Job<'a, T> {
-    chunk: &'a mut [T],
-    tile_size: usize,
-    tile_counts: Option<Vec<[usize; 256]>>,
-    counts: Option<[usize; 256]>,
-    algorithm: Algorithm,
-}
 
 #[inline]
 pub fn single_director<T>(
@@ -108,23 +101,16 @@ pub fn director<T>(
 {
     let parent_len = bucket.len();
     let threads = current_num_threads();
-    let mut serials: Vec<Job<T>> = Vec::new();
-    let mut parallels: Vec<Job<T>> = Vec::with_capacity(256);
 
-    let jobs: Vec<Option<Job<T>>> = bucket
+    bucket
         .arbitrary_chunks_mut(counts)
         .par_bridge()
-        .map(|chunk| {
+        .for_each(|chunk| {
             if chunk.len() <= 1 {
-                return None;
+                return;
             } else if chunk.len() <= 128 {
-                return Some(Job {
-                    chunk,
-                    tile_size: 0,
-                    tile_counts: None,
-                    counts: None,
-                    algorithm: Algorithm::ComparativeSort,
-                });
+                comparative_sort(chunk, level);
+                return;
             }
 
             let tile_size = max(30_000, cdiv(chunk.len(), threads));
@@ -157,70 +143,12 @@ pub fn director<T>(
                         director(tuner, in_place, chunk, counts.to_vec(), level - 1);
                     }
 
-                    return None;
+                    return;
                 }
             }
 
             let algorithm = tuner.pick_algorithm(&tp, &counts);
 
-            Some(Job {
-                chunk,
-                tile_size,
-                tile_counts,
-                counts: Some(counts),
-                algorithm,
-            })
-        })
-        .collect();
-
-    for j in jobs {
-        if let Some(job) = j {
-            match job.algorithm {
-                Algorithm::SkaSort | Algorithm::ComparativeSort | Algorithm::LsbSort => {
-                    parallels.push(job)
-                }
-                _ => serials.push(job),
-            };
-        }
-    }
-
-    serials.into_iter().for_each(|job| {
-        #[cfg(feature = "work_profiles")]
-        println!("({}) SER: {:?}", level, job.algorithm);
-
-        if let Some(counts) = job.counts {
-            run_sort(
-                tuner,
-                in_place,
-                level,
-                job.chunk,
-                &counts,
-                job.tile_counts,
-                job.tile_size,
-                job.algorithm,
-            );
-        } else {
-            comparative_sort(job.chunk, level);
-        }
-    });
-
-    parallels.into_par_iter().for_each(|job| {
-        #[cfg(feature = "work_profiles")]
-        println!("({}) PAR: {:?}", level, job.algorithm);
-
-        if let Some(counts) = job.counts {
-            run_sort(
-                tuner,
-                in_place,
-                level,
-                job.chunk,
-                &counts,
-                job.tile_counts,
-                job.tile_size,
-                job.algorithm,
-            );
-        } else {
-            comparative_sort(job.chunk, level);
-        }
-    });
+            run_sort(tuner, in_place, level, chunk, &counts, tile_counts, tile_size, algorithm);
+        });
 }
