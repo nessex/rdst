@@ -343,7 +343,12 @@ impl SortManager {
             serial: true,
         };
 
-        match self.tuner.pick_algorithm(&tp) {
+        let algo = self.tuner.pick_algorithm(&tp);
+
+        #[cfg(feature = "work_profiles")]
+        println!("PROF ({}) SOLO: {:?}", tp.level, algo);
+
+        match algo {
             Algorithm::ScanningSort => {
                 scanning_sort_adapter(&*self.tuner, tp.in_place, bucket, tp.level)
             }
@@ -379,7 +384,12 @@ impl SortManager {
             serial: true,
         };
 
-        match self.tuner.pick_algorithm(&tp) {
+        let algo = self.tuner.pick_algorithm(&tp);
+
+        #[cfg(feature = "work_profiles")]
+        println!("PROF ({}) SOLO: {:?}", tp.level, algo);
+
+        match algo {
             Algorithm::ScanningSort => {
                 scanning_sort_adapter(&*self.tuner, tp.in_place, bucket, tp.level)
             }
