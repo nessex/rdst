@@ -62,7 +62,7 @@ pub fn mt_lsb_sort<T>(
                 let b = bucket[right].get_level(level) as usize;
 
                 buckets[b][ends[b]] = bucket[right];
-                ends[b] = ends[b].saturating_sub(1);
+                ends[b] = ends[b].wrapping_sub(1);
                 right = right.saturating_sub(1);
             }
 
@@ -87,19 +87,19 @@ pub fn mt_lsb_sort<T>(
                 buckets[bl_0][offsets[bl_0]] = bucket[left];
                 offsets[bl_0] += 1;
                 buckets[br_0][ends[br_0]] = bucket[right];
-                ends[br_0] = ends[br_0].saturating_sub(1);
+                ends[br_0] = ends[br_0].wrapping_sub(1);
                 buckets[bl_1][offsets[bl_1]] = bucket[left + 1];
                 offsets[bl_1] += 1;
                 buckets[br_1][ends[br_1]] = bucket[right - 1];
-                ends[br_1] = ends[br_1].saturating_sub(1);
+                ends[br_1] = ends[br_1].wrapping_sub(1);
                 buckets[bl_2][offsets[bl_2]] = bucket[left + 2];
                 offsets[bl_2] += 1;
                 buckets[br_2][ends[br_2]] = bucket[right - 2];
-                ends[br_2] = ends[br_2].saturating_sub(1);
+                ends[br_2] = ends[br_2].wrapping_sub(1);
                 buckets[bl_3][offsets[bl_3]] = bucket[left + 3];
                 offsets[bl_3] += 1;
                 buckets[br_3][ends[br_3]] = bucket[right - 3];
-                ends[br_3] = ends[br_3].saturating_sub(1);
+                ends[br_3] = ends[br_3].wrapping_sub(1);
 
                 left += 4;
                 right = right.saturating_sub(4);
