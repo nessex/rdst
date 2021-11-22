@@ -35,18 +35,22 @@ fn pick_algorithm_standard(p: &TuningParams, counts: &[usize]) -> Algorithm {
         for c in counts {
             if *c >= distribution_threshold {
                 return if depth == 0 {
-                    if p.input_len >= 1_000_000 {
+                    if p.input_len >= 4_000_000 {
                         Algorithm::RegionsSort
-                    } else if p.input_len >= 30_000 {
+                    } else if p.input_len >= 350_000 {
                         Algorithm::MtLsbSort
+                    } else if p.input_len >= 200_000 {
+                        Algorithm::SkaSort
                     } else {
                         Algorithm::LsbSort
                     }
                 } else {
                     if p.input_len >= 5_000_000 {
                         Algorithm::RegionsSort
-                    } else if p.input_len >= 30_000 {
-                        Algorithm::MtLsbSort
+                    } else if p.input_len >= 800_000 {
+                        Algorithm::RecombinatingSort
+                    } else if p.input_len >= 200_000 {
+                        Algorithm::SkaSort
                     } else {
                         Algorithm::LsbSort
                     }
