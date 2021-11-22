@@ -1,3 +1,5 @@
+use crate::tuner::Algorithm::MtLsbSort;
+
 #[derive(Clone)]
 pub struct TuningParams {
     pub threads: usize,
@@ -35,24 +37,20 @@ fn pick_algorithm_standard(p: &TuningParams, counts: &[usize]) -> Algorithm {
         for c in counts {
             if *c >= distribution_threshold {
                 return if depth == 0 {
-                    if p.input_len >= 4_000_000 {
-                        Algorithm::RegionsSort
-                    } else if p.input_len >= 350_000 {
-                        Algorithm::MtLsbSort
-                    } else if p.input_len >= 200_000 {
-                        Algorithm::SkaSort
-                    } else {
-                        Algorithm::LsbSort
+                    match p.input_len {
+                        0..=200_000 => Algorithm::LsbSort,
+                        200_001..=350_000 => Algorithm::SkaSort,
+                        350_001..=4_000_000 => MtLsbSort,
+                        4_000_001..=usize::MAX => Algorithm::RegionsSort,
+                        _ => Algorithm::LsbSort,
                     }
                 } else {
-                    if p.input_len >= 5_000_000 {
-                        Algorithm::RegionsSort
-                    } else if p.input_len >= 800_000 {
-                        Algorithm::RecombinatingSort
-                    } else if p.input_len >= 200_000 {
-                        Algorithm::SkaSort
-                    } else {
-                        Algorithm::LsbSort
+                    match p.input_len {
+                        0..=200_000 => Algorithm::LsbSort,
+                        200_001..=800_000 => Algorithm::SkaSort,
+                        800_001..=5_000_000 => Algorithm::RecombinatingSort,
+                        5_000_001..=usize::MAX => Algorithm::RegionsSort,
+                        _ => Algorithm::LsbSort,
                     }
                 };
             }
@@ -61,6 +59,7 @@ fn pick_algorithm_standard(p: &TuningParams, counts: &[usize]) -> Algorithm {
 
     if depth > 0 {
         match p.input_len {
+            0..=200_000 => Algorithm::LsbSort,
             200_001..=800_000 => Algorithm::SkaSort,
             800_001..=50_000_000 => Algorithm::RecombinatingSort,
             50_000_001..=usize::MAX => Algorithm::ScanningSort,
@@ -68,6 +67,8 @@ fn pick_algorithm_standard(p: &TuningParams, counts: &[usize]) -> Algorithm {
         }
     } else {
         match p.input_len {
+            0..=150_000 => Algorithm::LsbSort,
+            150_001..=260_000 => Algorithm::SkaSort,
             260_001..=50_000_000 => Algorithm::RecombinatingSort,
             50_000_001..=usize::MAX => Algorithm::ScanningSort,
             _ => Algorithm::LsbSort,
