@@ -70,11 +70,9 @@ pub fn mt_lsb_sort<T>(
                 return;
             }
 
-            loop {
-                if left >= right {
-                    break;
-                }
+            let end = (bucket.len() - pre) / 2;
 
+            while left < end {
                 let bl_0 = bucket[left].get_level(level) as usize;
                 let bl_1 = bucket[left + 1].get_level(level) as usize;
                 let bl_2 = bucket[left + 2].get_level(level) as usize;
@@ -102,7 +100,7 @@ pub fn mt_lsb_sort<T>(
                 ends[br_3] = ends[br_3].wrapping_sub(1);
 
                 left += 4;
-                right = right.saturating_sub(4);
+                right = right.wrapping_sub(4);
             }
         });
 }
