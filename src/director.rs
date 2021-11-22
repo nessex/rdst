@@ -149,6 +149,9 @@ pub fn director<T>(
 
             let algorithm = tuner.pick_algorithm(&tp, &counts);
 
+            #[cfg(feature = "work_profiles")]
+            println!("({}) PAR: {:?}", level, algorithm);
+
             run_sort(tuner, in_place, level, chunk, &counts, tile_counts, tile_size, algorithm);
         });
 }
