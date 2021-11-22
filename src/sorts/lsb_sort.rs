@@ -1,8 +1,12 @@
-use crate::sorts::out_of_place_sort::{out_of_place_sort, out_of_place_sort_with_counts};
+use crate::sorts::out_of_place_sort::{
+    lr_out_of_place_sort, lr_out_of_place_sort_with_counts, out_of_place_sort,
+    out_of_place_sort_with_counts,
+};
 use crate::utils::*;
 use crate::RadixKey;
 
 pub fn lsb_sort_adapter<T>(
+    lr: bool,
     bucket: &mut [T],
     last_counts: &[usize; 256],
     start_level: usize,
@@ -41,8 +45,26 @@ pub fn lsb_sort_adapter<T>(
             next_counts = None;
         }
 
-        match (invert, should_count) {
-            (true, true) => {
+        match (lr, invert, should_count) {
+            (true, true, true) => {
+                next_counts = Some(lr_out_of_place_sort_with_counts(
+                    &mut tmp_bucket,
+                    bucket,
+                    &counts,
+                    level,
+                ))
+            }
+            (true, true, false) => lr_out_of_place_sort(&mut tmp_bucket, bucket, &counts, level),
+            (true, false, true) => {
+                next_counts = Some(lr_out_of_place_sort_with_counts(
+                    bucket,
+                    &mut tmp_bucket,
+                    &counts,
+                    level,
+                ))
+            }
+            (true, false, false) => lr_out_of_place_sort(bucket, &mut tmp_bucket, &counts, level),
+            (false, true, true) => {
                 next_counts = Some(out_of_place_sort_with_counts(
                     &mut tmp_bucket,
                     bucket,
@@ -50,8 +72,8 @@ pub fn lsb_sort_adapter<T>(
                     level,
                 ))
             }
-            (true, false) => out_of_place_sort(&mut tmp_bucket, bucket, &counts, level),
-            (false, true) => {
+            (false, true, false) => out_of_place_sort(&mut tmp_bucket, bucket, &counts, level),
+            (false, false, true) => {
                 next_counts = Some(out_of_place_sort_with_counts(
                     bucket,
                     &mut tmp_bucket,
@@ -59,7 +81,7 @@ pub fn lsb_sort_adapter<T>(
                     level,
                 ))
             }
-            (false, false) => out_of_place_sort(bucket, &mut tmp_bucket, &counts, level),
+            (false, false, false) => out_of_place_sort(bucket, &mut tmp_bucket, &counts, level),
         };
 
         invert = !invert;
@@ -82,7 +104,12 @@ mod tests {
     {
         sort_comparison_suite(shift, |inputs| {
             let counts = get_counts(inputs, T::LEVELS - 1);
-            lsb_sort_adapter(inputs, &counts, 0, T::LEVELS - 1)
+            lsb_sort_adapter(false, inputs, &counts, 0, T::LEVELS - 1)
+        });
+
+        sort_comparison_suite(shift, |inputs| {
+            let counts = get_counts(inputs, T::LEVELS - 1);
+            lsb_sort_adapter(true, inputs, &counts, 0, T::LEVELS - 1)
         });
     }
 

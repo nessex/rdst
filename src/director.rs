@@ -7,7 +7,6 @@ use rayon::current_num_threads;
 use rayon::prelude::*;
 use std::cmp::max;
 
-
 #[inline]
 pub fn single_director<T>(
     tuner: &(dyn Tuner + Send + Sync),
@@ -152,6 +151,15 @@ pub fn director<T>(
             #[cfg(feature = "work_profiles")]
             println!("({}) PAR: {:?}", level, algorithm);
 
-            run_sort(tuner, in_place, level, chunk, &counts, tile_counts, tile_size, algorithm);
+            run_sort(
+                tuner,
+                in_place,
+                level,
+                chunk,
+                &counts,
+                tile_counts,
+                tile_size,
+                algorithm,
+            );
         });
 }

@@ -110,7 +110,6 @@ where
     counts_1
 }
 
-
 #[inline]
 pub fn get_tmp_bucket<T>(len: usize) -> Vec<T> {
     let mut tmp_bucket = Vec::with_capacity(len);
@@ -342,7 +341,8 @@ pub fn run_sort<T>(
                 tile_size,
                 level,
             ),
-            Algorithm::LsbSort => lsb_sort_adapter(bucket, counts, 0, level),
+            Algorithm::LrLsbSort => lsb_sort_adapter(true, bucket, counts, 0, level),
+            Algorithm::LsbSort => lsb_sort_adapter(false, bucket, counts, 0, level),
             Algorithm::SkaSort => ska_sort_adapter(tuner, in_place, bucket, counts, level),
             Algorithm::ComparativeSort => comparative_sort(bucket, level),
             Algorithm::RegionsSort => regions_sort_adapter(
@@ -370,7 +370,8 @@ pub fn run_sort<T>(
             Algorithm::ScanningSort => {
                 scanning_sort_adapter(tuner, in_place, bucket, counts, level)
             }
-            Algorithm::LsbSort => lsb_sort_adapter(bucket, counts, 0, level),
+            Algorithm::LrLsbSort => lsb_sort_adapter(true, bucket, counts, 0, level),
+            Algorithm::LsbSort => lsb_sort_adapter(false, bucket, counts, 0, level),
             Algorithm::SkaSort => ska_sort_adapter(tuner, in_place, bucket, counts, level),
             Algorithm::ComparativeSort => comparative_sort(bucket, level),
             e => panic!("Bad algorithm: {:?} for len: {}", e, bucket.len()),

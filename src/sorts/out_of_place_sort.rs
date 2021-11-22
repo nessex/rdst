@@ -126,3 +126,169 @@ where
 
     next_counts_0
 }
+
+#[inline]
+pub fn lr_out_of_place_sort<T>(
+    src_bucket: &[T],
+    dst_bucket: &mut [T],
+    counts: &[usize; 256],
+    level: usize,
+) where
+    T: RadixKey + Sized + Send + Copy + Sync,
+{
+    let mut offsets = get_prefix_sums(counts);
+    let mut ends = [0usize; 256];
+
+    for (i, b) in offsets.iter().enumerate() {
+        ends[i] = b + counts[i] - 1;
+    }
+
+    let mut left = 0;
+    let mut right = src_bucket.len() - 1;
+    let pre = src_bucket.len() % 8;
+
+    for _ in 0..pre {
+        let b = src_bucket[right].get_level(level) as usize;
+
+        dst_bucket[ends[b]] = src_bucket[right];
+        ends[b] -= 1;
+        right -= 1;
+    }
+
+    if pre == src_bucket.len() {
+        return;
+    }
+
+    let end = (src_bucket.len() - pre) / 2;
+
+    while left < end {
+        let bl_0 = src_bucket[left].get_level(level) as usize;
+        let bl_1 = src_bucket[left + 1].get_level(level) as usize;
+        let bl_2 = src_bucket[left + 2].get_level(level) as usize;
+        let bl_3 = src_bucket[left + 3].get_level(level) as usize;
+        let br_0 = src_bucket[right].get_level(level) as usize;
+        let br_1 = src_bucket[right - 1].get_level(level) as usize;
+        let br_2 = src_bucket[right - 2].get_level(level) as usize;
+        let br_3 = src_bucket[right - 3].get_level(level) as usize;
+
+        dst_bucket[offsets[bl_0]] = src_bucket[left];
+        offsets[bl_0] += 1;
+        dst_bucket[ends[br_0]] = src_bucket[right];
+        ends[br_0] -= 1;
+        dst_bucket[offsets[bl_1]] = src_bucket[left + 1];
+        offsets[bl_1] += 1;
+        dst_bucket[ends[br_1]] = src_bucket[right - 1];
+        ends[br_1] -= 1;
+        dst_bucket[offsets[bl_2]] = src_bucket[left + 2];
+        offsets[bl_2] += 1;
+        dst_bucket[ends[br_2]] = src_bucket[right - 2];
+        ends[br_2] -= 1;
+        dst_bucket[offsets[bl_3]] = src_bucket[left + 3];
+        offsets[bl_3] += 1;
+        dst_bucket[ends[br_3]] = src_bucket[right - 3];
+        ends[br_3] -= 1;
+
+        left += 4;
+        right -= 4;
+    }
+}
+
+#[inline]
+pub fn lr_out_of_place_sort_with_counts<T>(
+    src_bucket: &[T],
+    dst_bucket: &mut [T],
+    counts: &[usize; 256],
+    level: usize,
+) -> [usize; 256]
+where
+    T: RadixKey + Sized + Send + Copy + Sync,
+{
+    let next_level = level + 1;
+    let mut next_counts_0 = [0usize; 256];
+    let mut next_counts_1 = [0usize; 256];
+
+    let mut offsets = get_prefix_sums(counts);
+    let mut ends = [0usize; 256];
+
+    for (i, b) in offsets.iter().enumerate() {
+        ends[i] = b + counts[i] - 1;
+    }
+
+    let mut left = 0;
+    let mut right = src_bucket.len() - 1;
+    let pre = src_bucket.len() % 8;
+
+    for _ in 0..pre {
+        let b = src_bucket[right].get_level(level) as usize;
+        let bn = src_bucket[right].get_level(next_level) as usize;
+
+        dst_bucket[ends[b]] = src_bucket[right];
+        ends[b] -= 1;
+        right -= 1;
+        next_counts_0[bn] += 1;
+    }
+
+    if pre == src_bucket.len() {
+        return next_counts_0;
+    }
+
+    let end = (src_bucket.len() - pre) / 2;
+
+    while left < end {
+        let bl_0 = src_bucket[left].get_level(level) as usize;
+        let bl_1 = src_bucket[left + 1].get_level(level) as usize;
+        let bl_2 = src_bucket[left + 2].get_level(level) as usize;
+        let bl_3 = src_bucket[left + 3].get_level(level) as usize;
+        let br_0 = src_bucket[right].get_level(level) as usize;
+        let br_1 = src_bucket[right - 1].get_level(level) as usize;
+        let br_2 = src_bucket[right - 2].get_level(level) as usize;
+        let br_3 = src_bucket[right - 3].get_level(level) as usize;
+
+        dst_bucket[offsets[bl_0]] = src_bucket[left];
+        dst_bucket[ends[br_0]] = src_bucket[right];
+        ends[br_0] -= 1;
+        offsets[bl_0] += 1;
+
+        dst_bucket[offsets[bl_1]] = src_bucket[left + 1];
+        dst_bucket[ends[br_1]] = src_bucket[right - 1];
+        ends[br_1] -= 1;
+        offsets[bl_1] += 1;
+
+        dst_bucket[offsets[bl_2]] = src_bucket[left + 2];
+        dst_bucket[ends[br_2]] = src_bucket[right - 2];
+        ends[br_2] -= 1;
+        offsets[bl_2] += 1;
+
+        dst_bucket[offsets[bl_3]] = src_bucket[left + 3];
+        dst_bucket[ends[br_3]] = src_bucket[right - 3];
+        ends[br_3] -= 1;
+        offsets[bl_3] += 1;
+
+        let bnl_0 = src_bucket[left].get_level(next_level) as usize;
+        let bnl_1 = src_bucket[left + 1].get_level(next_level) as usize;
+        let bnl_2 = src_bucket[left + 2].get_level(next_level) as usize;
+        let bnl_3 = src_bucket[left + 3].get_level(next_level) as usize;
+        let bnr_0 = src_bucket[right].get_level(next_level) as usize;
+        let bnr_1 = src_bucket[right - 1].get_level(next_level) as usize;
+        let bnr_2 = src_bucket[right - 2].get_level(next_level) as usize;
+        let bnr_3 = src_bucket[right - 3].get_level(next_level) as usize;
+
+        next_counts_0[bnl_0] += 1;
+        next_counts_1[bnr_0] += 1;
+        next_counts_0[bnl_1] += 1;
+        next_counts_1[bnr_1] += 1;
+        next_counts_0[bnl_2] += 1;
+        next_counts_1[bnr_2] += 1;
+        next_counts_0[bnl_3] += 1;
+        next_counts_1[bnr_3] += 1;
+
+        left += 4;
+        right -= 4;
+    }
+
+    for i in 0..256 {
+        next_counts_0[i] += next_counts_1[i];
+    }
+
+    next_counts_0
+}

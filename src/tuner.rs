@@ -17,6 +17,7 @@ pub enum Algorithm {
     ScanningSort,
     RecombinatingSort,
     ComparativeSort,
+    LrLsbSort,
     LsbSort,
     RegionsSort,
     SkaSort,
@@ -29,7 +30,7 @@ fn pick_algorithm_standard(p: &TuningParams, counts: &[usize]) -> Algorithm {
 
     let depth = p.total_levels - p.level - 1;
 
-    if p.input_len >= 300_000 {
+    if p.input_len >= 5_000 {
         let distribution_threshold = (p.input_len / 256) * 2;
 
         // Distribution occurs when the input to be sorted has counts significantly
@@ -38,19 +39,19 @@ fn pick_algorithm_standard(p: &TuningParams, counts: &[usize]) -> Algorithm {
             if *c >= distribution_threshold {
                 return if depth == 0 {
                     match p.input_len {
-                        0..=200_000 => Algorithm::LsbSort,
+                        0..=200_000 => Algorithm::LrLsbSort,
                         200_001..=350_000 => Algorithm::SkaSort,
                         350_001..=4_000_000 => MtLsbSort,
                         4_000_001..=usize::MAX => Algorithm::RegionsSort,
-                        _ => Algorithm::LsbSort,
+                        _ => Algorithm::LrLsbSort,
                     }
                 } else {
                     match p.input_len {
-                        0..=200_000 => Algorithm::LsbSort,
+                        0..=200_000 => Algorithm::LrLsbSort,
                         200_001..=800_000 => Algorithm::SkaSort,
                         800_001..=5_000_000 => Algorithm::RecombinatingSort,
                         5_000_001..=usize::MAX => Algorithm::RegionsSort,
-                        _ => Algorithm::LsbSort,
+                        _ => Algorithm::LrLsbSort,
                     }
                 };
             }

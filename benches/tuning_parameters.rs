@@ -1,9 +1,9 @@
-use std::cmp::max;
 use criterion::*;
 use rayon::current_num_threads;
 use rdst::bench_utils::{bench_common, bench_comparative};
 use rdst::test_utils::NumericTest;
 use rdst::utils::*;
+use std::cmp::max;
 
 fn tune_counts(c: &mut Criterion) {
     let tests: Vec<(&str, Box<dyn Fn(Vec<_>)>)> = vec![
