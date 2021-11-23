@@ -44,12 +44,12 @@ opt-level = 3
 
 [[bin]]
 name = "monte-carlo-tuning"
-path = "src/monte_carlo.rs"
+path = "src/cmd/monte_carlo.rs"
 required-features = [ "tuning" ]
 
 [[bin]]
 name = "ga-tuning"
-path = "src/ga_tuning.rs"
+path = "src/cmd/ga_tuning.rs"
 required-features = [ "tuning" ]
 
 [[bench]]

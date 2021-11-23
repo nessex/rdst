@@ -5,7 +5,7 @@
 /// ```
 /// RUSTFLAGS='-g -C opt-level=3 -C force-frame-pointers=y -C target-cpu=native -C target-feature=+neon' cargo +nightly instruments -t time --example profiling --features=bench
 /// ```
-use rdst::test_utils::gen_inputs;
+use rdst::utils::test_utils::gen_inputs;
 use rdst::RadixSort;
 use std::thread::sleep;
 use std::time::{Duration, Instant};

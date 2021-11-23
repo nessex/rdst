@@ -179,7 +179,7 @@ pub fn mt_oop_sort_adapter<T>(
 #[cfg(test)]
 mod tests {
     use crate::sorts::mt_lsb_sort::mt_lsb_sort_adapter;
-    use crate::test_utils::{sort_comparison_suite, NumericTest};
+    use crate::utils::test_utils::{sort_comparison_suite, NumericTest};
     use crate::utils::cdiv;
     use rayon::current_num_threads;
 

@@ -23,7 +23,7 @@ where
 #[cfg(test)]
 mod tests {
     use crate::sorts::comparative_sort::comparative_sort;
-    use crate::test_utils::{sort_comparison_suite, NumericTest};
+    use crate::utils::test_utils::{sort_comparison_suite, NumericTest};
 
     fn test_comparative_sort_adapter<T>(shift: T)
     where

@@ -234,7 +234,7 @@ pub fn scanning_sort_adapter<T>(
 #[cfg(test)]
 mod tests {
     use crate::sorts::scanning_sort::scanning_sort_adapter;
-    use crate::test_utils::{sort_comparison_suite, NumericTest};
+    use crate::utils::test_utils::{sort_comparison_suite, NumericTest};
     use crate::tuners::StandardTuner;
     use crate::utils::par_get_counts;
 

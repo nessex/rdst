@@ -1,6 +1,6 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use rdst::bench_utils::{bench_common, bench_medley};
-use rdst::test_utils::NumericTest;
+use rdst::utils::bench_utils::{bench_common, bench_medley};
+use rdst::utils::test_utils::NumericTest;
 use rdst::RadixSort;
 use voracious_radix_sort::{RadixKey as VorKey, RadixSort as Vor, Radixable};
 

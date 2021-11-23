@@ -18,7 +18,7 @@
 #![feature(string_remove_matches)]
 
 use jemallocator::Jemalloc;
-use rdst::bench_utils::gen_bench_exponential_input_set;
+use rdst::utils::bench_utils::gen_bench_exponential_input_set;
 use rdst::{RadixKey, RadixSort};
 use std::time::Instant;
 

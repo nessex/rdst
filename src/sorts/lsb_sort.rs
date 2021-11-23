@@ -95,7 +95,7 @@ pub fn lsb_sort_adapter<T>(
 #[cfg(test)]
 mod tests {
     use crate::sorts::lsb_sort::lsb_sort_adapter;
-    use crate::test_utils::{sort_comparison_suite, NumericTest};
+    use crate::utils::test_utils::{sort_comparison_suite, NumericTest};
     use crate::utils::get_counts;
 
     fn test_lsb_sort_adapter<T>(shift: T)

@@ -114,12 +114,6 @@ mod utils;
 #[cfg(any(test, feature = "bench"))]
 pub mod utils;
 
-#[cfg(feature = "bench")]
-pub mod bench_utils;
-
-#[cfg(any(test, feature = "bench"))]
-pub mod test_utils;
-
 mod radix_sort;
 mod sort_manager;
 #[cfg(not(any(test, feature = "tuning", feature = "bench")))]

@@ -1,4 +1,4 @@
-use crate::test_utils::{gen_inputs, NumericTest};
+use crate::utils::test_utils::{gen_inputs, NumericTest};
 use criterion::{AxisScale, BatchSize, BenchmarkId, Criterion, PlotConfiguration, Throughput};
 use std::time::Duration;
 

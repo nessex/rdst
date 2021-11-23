@@ -9,6 +9,7 @@ pub struct TuningParams {
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum Algorithm {
+    #[allow(unused)]
     MtOopSort,
     MtLsbSort,
     ScanningSort,

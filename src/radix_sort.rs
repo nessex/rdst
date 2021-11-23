@@ -113,7 +113,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::test_utils::{sort_comparison_suite, NumericTest};
+    use crate::utils::test_utils::{sort_comparison_suite, NumericTest};
     use crate::RadixSort;
 
     fn test_full_sort<T>(shift: T)
