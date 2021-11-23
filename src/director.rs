@@ -10,7 +10,6 @@ use std::cmp::max;
 #[inline]
 pub fn single_director<T>(
     tuner: &(dyn Tuner + Send + Sync),
-    in_place: bool,
     bucket: &mut [T],
     parent_len: usize,
     level: usize,
@@ -34,7 +33,6 @@ pub fn single_director<T>(
         total_levels: T::LEVELS,
         input_len: bucket_len,
         parent_len,
-        in_place,
     };
 
     if bucket.len() <= tile_size {
@@ -43,7 +41,7 @@ pub fn single_director<T>(
 
         if homogenous {
             if level != 0 {
-                director(tuner, in_place, bucket, counts.to_vec(), level - 1);
+                director(tuner, bucket, counts.to_vec(), level - 1);
             }
 
             return;
@@ -54,9 +52,7 @@ pub fn single_director<T>(
         #[cfg(feature = "work_profiles")]
         println!("({}) SOLO: {:?}", level, algorithm);
 
-        run_sort(
-            tuner, in_place, level, bucket, &counts, None, tile_size, algorithm,
-        );
+        run_sort(tuner, level, bucket, &counts, None, tile_size, algorithm);
     } else {
         let tile_counts = get_tile_counts(bucket, tile_size, level);
         let counts = aggregate_tile_counts(&tile_counts);
@@ -64,7 +60,7 @@ pub fn single_director<T>(
 
         if homogenous {
             if level != 0 {
-                director(tuner, in_place, bucket, counts.to_vec(), level - 1);
+                director(tuner, bucket, counts.to_vec(), level - 1);
             }
 
             return;
@@ -77,7 +73,6 @@ pub fn single_director<T>(
 
         run_sort(
             tuner,
-            in_place,
             level,
             bucket,
             &counts,
@@ -91,7 +86,6 @@ pub fn single_director<T>(
 #[inline]
 pub fn director<T>(
     tuner: &(dyn Tuner + Send + Sync),
-    in_place: bool,
     bucket: &mut [T],
     counts: Vec<usize>,
     level: usize,
@@ -119,7 +113,6 @@ pub fn director<T>(
                 total_levels: T::LEVELS,
                 input_len: chunk.len(),
                 parent_len,
-                in_place,
             };
 
             let tile_counts = if chunk.len() >= 260_000 {
@@ -139,7 +132,7 @@ pub fn director<T>(
 
                 if homogenous {
                     if level != 0 {
-                        director(tuner, in_place, chunk, counts.to_vec(), level - 1);
+                        director(tuner, chunk, counts.to_vec(), level - 1);
                     }
 
                     return;
@@ -153,7 +146,6 @@ pub fn director<T>(
 
             run_sort(
                 tuner,
-                in_place,
                 level,
                 chunk,
                 &counts,

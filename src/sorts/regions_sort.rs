@@ -246,7 +246,6 @@ pub fn regions_sort<T>(
 
 pub fn regions_sort_adapter<T>(
     tuner: &(dyn Tuner + Send + Sync),
-    in_place: bool,
     bucket: &mut [T],
     counts: &[usize; 256],
     tile_counts: &[[usize; 256]],
@@ -265,14 +264,14 @@ pub fn regions_sort_adapter<T>(
         return;
     }
 
-    director(tuner, in_place, bucket, counts.to_vec(), level - 1);
+    director(tuner, bucket, counts.to_vec(), level - 1);
 }
 
 #[cfg(test)]
 mod tests {
     use crate::sorts::regions_sort::regions_sort_adapter;
     use crate::test_utils::{sort_comparison_suite, NumericTest};
-    use crate::tuner::DefaultTuner;
+    use crate::tuners::StandardTuner;
     use crate::utils::{aggregate_tile_counts, cdiv, get_tile_counts};
     use rayon::current_num_threads;
 
@@ -280,7 +279,7 @@ mod tests {
     where
         T: NumericTest<T>,
     {
-        let tuner = DefaultTuner {};
+        let tuner = StandardTuner {};
         sort_comparison_suite(shift, |inputs| {
             if inputs.len() == 0 {
                 return;
@@ -291,7 +290,6 @@ mod tests {
             let counts = aggregate_tile_counts(&tile_counts);
             regions_sort_adapter(
                 &tuner,
-                true,
                 inputs,
                 &counts,
                 &tile_counts,

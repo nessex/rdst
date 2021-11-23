@@ -1,5 +1,5 @@
 use crate::director::single_director;
-use crate::tuner::{DefaultTuner, Tuner};
+use crate::tuner::Tuner;
 use crate::RadixKey;
 
 pub struct SortManager {
@@ -7,22 +7,12 @@ pub struct SortManager {
 }
 
 impl SortManager {
-    pub fn new<T>() -> Self
+    pub fn new<T>(tuner: Box<dyn Tuner + Send + Sync>) -> Self
     where
         T: RadixKey + Sized + Send + Sync + Copy,
     {
-        assert_ne!(T::LEVELS, 0, "RadixKey must have at least 1 level");
-
-        Self {
-            tuner: Box::new(DefaultTuner {}),
-        }
-    }
-
-    #[cfg(feature = "tuning")]
-    pub fn new_with_tuning<T>(tuner: Box<dyn Tuner + Send + Sync>) -> Self
-    where
-        T: RadixKey + Sized + Send + Sync + Copy,
-    {
+        // TODO(nathan): Try to make this a compile-time assert
+        // This is an invariant of RadixKey that must be upheld.
         assert_ne!(T::LEVELS, 0, "RadixKey must have at least 1 level");
 
         Self { tuner }
@@ -32,27 +22,13 @@ impl SortManager {
     where
         T: RadixKey + Sized + Send + Sync + Copy,
     {
-        if bucket.len() <= 1 {
+        let len = bucket.len();
+
+        // By definition, this must already be sorted.
+        if len <= 1 {
             return;
         }
 
-        let bucket_len = bucket.len();
-        let parent_len = bucket_len;
-
-        single_director(&*self.tuner, false, bucket, parent_len, T::LEVELS - 1);
-    }
-
-    pub fn sort_in_place<T>(&self, bucket: &mut [T])
-    where
-        T: RadixKey + Sized + Send + Sync + Copy,
-    {
-        if bucket.len() <= 1 {
-            return;
-        }
-
-        let bucket_len = bucket.len();
-        let parent_len = bucket_len;
-
-        single_director(&*self.tuner, true, bucket, parent_len, T::LEVELS - 1);
+        single_director(&*self.tuner, bucket, len, T::LEVELS - 1);
     }
 }

@@ -17,9 +17,9 @@ where
             }),
         ),
         (
-            "rdst_in_place",
+            "rdst_low_mem",
             Box::new(|mut input| {
-                input.radix_sort_in_place_unstable();
+                input.radix_sort_low_mem_unstable();
                 black_box(input);
             }),
         ),
@@ -48,9 +48,9 @@ where
             }),
         ),
         (
-            "rdst_in_place",
+            "rdst_low_mem",
             Box::new(|mut input| {
-                input.radix_sort_in_place_unstable();
+                input.radix_sort_low_mem_unstable();
                 black_box(input);
             }),
         ),

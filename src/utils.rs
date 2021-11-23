@@ -317,7 +317,6 @@ where
 #[inline]
 pub fn run_sort<T>(
     tuner: &(dyn Tuner + Send + Sync),
-    in_place: bool,
     level: usize,
     bucket: &mut [T],
     counts: &[usize; 256],
@@ -329,50 +328,28 @@ pub fn run_sort<T>(
 {
     if let Some(tile_counts) = tile_counts {
         match algorithm {
-            Algorithm::ScanningSort => {
-                scanning_sort_adapter(tuner, in_place, bucket, counts, level)
+            Algorithm::ScanningSort => scanning_sort_adapter(tuner, bucket, counts, level),
+            Algorithm::RecombinatingSort => {
+                recombinating_sort_adapter(tuner, bucket, counts, &tile_counts, tile_size, level)
             }
-            Algorithm::RecombinatingSort => recombinating_sort_adapter(
-                tuner,
-                in_place,
-                bucket,
-                counts,
-                &tile_counts,
-                tile_size,
-                level,
-            ),
             Algorithm::LrLsbSort => lsb_sort_adapter(true, bucket, counts, 0, level),
             Algorithm::LsbSort => lsb_sort_adapter(false, bucket, counts, 0, level),
-            Algorithm::SkaSort => ska_sort_adapter(tuner, in_place, bucket, counts, level),
+            Algorithm::SkaSort => ska_sort_adapter(tuner, bucket, counts, level),
             Algorithm::ComparativeSort => comparative_sort(bucket, level),
-            Algorithm::RegionsSort => regions_sort_adapter(
-                tuner,
-                in_place,
-                bucket,
-                counts,
-                &tile_counts,
-                tile_size,
-                level,
-            ),
-            Algorithm::MtOopSort => mt_oop_sort_adapter(
-                tuner,
-                in_place,
-                bucket,
-                level,
-                counts,
-                &tile_counts,
-                tile_size,
-            ),
+            Algorithm::RegionsSort => {
+                regions_sort_adapter(tuner, bucket, counts, &tile_counts, tile_size, level)
+            }
+            Algorithm::MtOopSort => {
+                mt_oop_sort_adapter(tuner, bucket, level, counts, &tile_counts, tile_size)
+            }
             Algorithm::MtLsbSort => mt_lsb_sort_adapter(bucket, 0, level, tile_size),
         }
     } else {
         match algorithm {
-            Algorithm::ScanningSort => {
-                scanning_sort_adapter(tuner, in_place, bucket, counts, level)
-            }
+            Algorithm::ScanningSort => scanning_sort_adapter(tuner, bucket, counts, level),
             Algorithm::LrLsbSort => lsb_sort_adapter(true, bucket, counts, 0, level),
             Algorithm::LsbSort => lsb_sort_adapter(false, bucket, counts, 0, level),
-            Algorithm::SkaSort => ska_sort_adapter(tuner, in_place, bucket, counts, level),
+            Algorithm::SkaSort => ska_sort_adapter(tuner, bucket, counts, level),
             Algorithm::ComparativeSort => comparative_sort(bucket, level),
             e => panic!("Bad algorithm: {:?} for len: {}", e, bucket.len()),
         }

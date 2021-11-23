@@ -216,7 +216,6 @@ where
 // a dynamic hybrid sort.
 pub fn scanning_sort_adapter<T>(
     tuner: &(dyn Tuner + Send + Sync),
-    in_place: bool,
     bucket: &mut [T],
     counts: &[usize; 256],
     level: usize,
@@ -229,24 +228,24 @@ pub fn scanning_sort_adapter<T>(
         return;
     }
 
-    director(tuner, in_place, bucket, counts.to_vec(), level - 1);
+    director(tuner, bucket, counts.to_vec(), level - 1);
 }
 
 #[cfg(test)]
 mod tests {
     use crate::sorts::scanning_sort::scanning_sort_adapter;
     use crate::test_utils::{sort_comparison_suite, NumericTest};
-    use crate::tuner::DefaultTuner;
+    use crate::tuners::StandardTuner;
     use crate::utils::par_get_counts;
 
     fn test_scanning_sort<T>(shift: T)
     where
         T: NumericTest<T>,
     {
-        let tuner = DefaultTuner {};
+        let tuner = StandardTuner {};
         sort_comparison_suite(shift, |inputs| {
             let counts = par_get_counts(inputs, T::LEVELS - 1);
-            scanning_sort_adapter(&tuner, true, inputs, &counts, T::LEVELS - 1)
+            scanning_sort_adapter(&tuner, inputs, &counts, T::LEVELS - 1)
         });
     }
 

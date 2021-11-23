@@ -149,7 +149,6 @@ pub fn mt_lsb_sort_adapter<T>(
 
 pub fn mt_oop_sort_adapter<T>(
     tuner: &(dyn Tuner + Send + Sync),
-    in_place: bool,
     bucket: &mut [T],
     level: usize,
     counts: &[usize; 256],
@@ -174,7 +173,7 @@ pub fn mt_oop_sort_adapter<T>(
 
     drop(tmp_bucket);
 
-    director(tuner, in_place, bucket, counts.to_vec(), level - 1);
+    director(tuner, bucket, counts.to_vec(), level - 1);
 }
 
 #[cfg(test)]
@@ -182,7 +181,6 @@ mod tests {
     use crate::sorts::mt_lsb_sort::mt_lsb_sort_adapter;
     use crate::test_utils::{sort_comparison_suite, NumericTest};
     use crate::utils::cdiv;
-    use crate::RadixSort;
     use rayon::current_num_threads;
 
     fn test_mt_lsb_sort_adapter<T>(shift: T)
@@ -227,14 +225,5 @@ mod tests {
     #[test]
     pub fn test_usize() {
         test_mt_lsb_sort_adapter(32usize);
-    }
-
-    #[test]
-    pub fn test_sample() {
-        let mut data = [9, 8, 7, 6, 5, 4, 3, 2, 1, 0u32];
-
-        data.radix_sort_unstable();
-
-        assert_eq!(data, [0, 1, 2, 3u32, 4, 5, 6, 7, 8, 9]);
     }
 }

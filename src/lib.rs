@@ -126,6 +126,7 @@ mod sort_manager;
 mod tuner;
 #[cfg(any(test, feature = "tuning", feature = "bench"))]
 pub mod tuner;
+mod tuners;
 
 // Public exports
 pub use radix_key::RadixKey;
