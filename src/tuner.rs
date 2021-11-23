@@ -84,16 +84,18 @@ fn pick_algorithm_in_place(p: &TuningParams, _counts: &[usize]) -> Algorithm {
 
     let depth = p.total_levels - p.level - 1;
 
-    if depth == 0 && p.in_place {
+    if depth == 0 {
         match p.input_len {
-            0..=1_000_000 => Algorithm::SkaSort,
+            0..=50_000 => Algorithm::LsbSort,
+            50_001..=1_000_000 => Algorithm::SkaSort,
             1_000_001..=usize::MAX => Algorithm::RegionsSort,
             _ => Algorithm::LsbSort,
         }
     } else {
         match p.input_len {
+            0..=50_000 => Algorithm::LsbSort,
+            50_001..=1_000_000 => Algorithm::SkaSort,
             1_000_001..=usize::MAX => Algorithm::RegionsSort,
-            50_000..=1_000_000 => Algorithm::SkaSort,
             _ => Algorithm::LsbSort,
         }
     }
