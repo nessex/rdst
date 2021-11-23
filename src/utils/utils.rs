@@ -1,11 +1,3 @@
-use crate::sorts::comparative_sort::comparative_sort;
-use crate::sorts::lsb_sort::lsb_sort_adapter;
-use crate::sorts::mt_lsb_sort::{mt_lsb_sort_adapter, mt_oop_sort_adapter};
-use crate::sorts::recombinating_sort::recombinating_sort_adapter;
-use crate::sorts::regions_sort::regions_sort_adapter;
-use crate::sorts::scanning_sort::scanning_sort_adapter;
-use crate::sorts::ska_sort::ska_sort_adapter;
-use crate::tuner::{Algorithm, Tuner};
 use crate::RadixKey;
 use rayon::prelude::*;
 use std::sync::mpsc::channel;
@@ -312,48 +304,6 @@ where
     }
 
     (prefix_sums, end_offsets)
-}
-
-#[inline]
-pub fn run_sort<T>(
-    tuner: &(dyn Tuner + Send + Sync),
-    level: usize,
-    bucket: &mut [T],
-    counts: &[usize; 256],
-    tile_counts: Option<Vec<[usize; 256]>>,
-    tile_size: usize,
-    algorithm: Algorithm,
-) where
-    T: RadixKey + Copy + Sized + Send + Sync,
-{
-    if let Some(tile_counts) = tile_counts {
-        match algorithm {
-            Algorithm::ScanningSort => scanning_sort_adapter(tuner, bucket, counts, level),
-            Algorithm::RecombinatingSort => {
-                recombinating_sort_adapter(tuner, bucket, counts, &tile_counts, tile_size, level)
-            }
-            Algorithm::LrLsbSort => lsb_sort_adapter(true, bucket, counts, 0, level),
-            Algorithm::LsbSort => lsb_sort_adapter(false, bucket, counts, 0, level),
-            Algorithm::SkaSort => ska_sort_adapter(tuner, bucket, counts, level),
-            Algorithm::ComparativeSort => comparative_sort(bucket, level),
-            Algorithm::RegionsSort => {
-                regions_sort_adapter(tuner, bucket, counts, &tile_counts, tile_size, level)
-            }
-            Algorithm::MtOopSort => {
-                mt_oop_sort_adapter(tuner, bucket, level, counts, &tile_counts, tile_size)
-            }
-            Algorithm::MtLsbSort => mt_lsb_sort_adapter(bucket, 0, level, tile_size),
-        }
-    } else {
-        match algorithm {
-            Algorithm::ScanningSort => scanning_sort_adapter(tuner, bucket, counts, level),
-            Algorithm::LrLsbSort => lsb_sort_adapter(true, bucket, counts, 0, level),
-            Algorithm::LsbSort => lsb_sort_adapter(false, bucket, counts, 0, level),
-            Algorithm::SkaSort => ska_sort_adapter(tuner, bucket, counts, level),
-            Algorithm::ComparativeSort => comparative_sort(bucket, level),
-            e => panic!("Bad algorithm: {:?} for len: {}", e, bucket.len()),
-        }
-    }
 }
 
 #[inline]

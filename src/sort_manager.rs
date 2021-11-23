@@ -1,4 +1,4 @@
-use crate::director::single_director;
+use crate::director::top_level_director;
 use crate::tuner::Tuner;
 use crate::RadixKey;
 
@@ -29,6 +29,6 @@ impl SortManager {
             return;
         }
 
-        single_director(&*self.tuner, bucket, len, T::LEVELS - 1);
+        top_level_director(&*self.tuner, bucket, len, T::LEVELS - 1);
     }
 }

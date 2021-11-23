@@ -270,8 +270,8 @@ pub fn regions_sort_adapter<T>(
 #[cfg(test)]
 mod tests {
     use crate::sorts::regions_sort::regions_sort_adapter;
-    use crate::utils::test_utils::{sort_comparison_suite, NumericTest};
     use crate::tuners::StandardTuner;
+    use crate::utils::test_utils::{sort_comparison_suite, NumericTest};
     use crate::utils::{aggregate_tile_counts, cdiv, get_tile_counts};
     use rayon::current_num_threads;
 

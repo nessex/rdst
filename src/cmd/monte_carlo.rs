@@ -36,15 +36,6 @@ use rlp_iter::RlpIterator;
 use std::any::type_name;
 use std::time::{Duration, Instant};
 
-mod director;
-mod radix_key;
-mod radix_key_impl;
-mod radix_sort;
-mod sort_manager;
-mod sorts;
-mod tuner;
-mod utils;
-
 use crate::sorts::comparative_sort::comparative_sort;
 use crate::sorts::out_of_place_sort::out_of_place_sort;
 use crate::sorts::recombinating_sort::recombinating_sort;
