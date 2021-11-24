@@ -8,6 +8,8 @@ rdst is a flexible native Rust implementation of multi-threaded unstable radix s
 ## Usage
 
 ```rust
+let mut my_vec = vec![4, 7, 1, 6, 5, 3, 2, 8, 9];
+
 my_vec.radix_sort_unstable();
 ```
 
@@ -15,7 +17,7 @@ In the simplest case, you can use this sort by simply calling `my_vec.radix_sort
 
 ## Default Implementations
 
-`RadixKey` is implemented for `Vec` of the following types out-of-the-box:
+`RadixKey` is implemented for `Vec` and `[T]` of the following types out-of-the-box:
 
  * `u8`, `u16`, `u32`, `u64`, `u128`, `usize`
  * `i8`, `i16`, `i32`, `i64`, `i128`, `isize`
@@ -30,16 +32,20 @@ To be able to sort custom types, implement `RadixKey` as below.
  * `get_level` should return the corresponding bytes from the least significant byte to the most significant byte
 
 Notes:
- * This allows you to implement radix keys that span multiple values, or to implement radix keys that only look at part of a value.
- * You should try to make this as fast as possible, so consider using branchless implementations wherever possible
+* This allows you to implement radix keys that span multiple values, or to implement radix keys that only look at part of a value.
+* You should try to make this as fast as possible, so consider using branchless implementations wherever possible
 
 ```rust
-impl RadixKey for u16 {
-    const LEVELS: usize = 2;
+use rdst::RadixKey;
+
+struct MyType(u32);
+
+impl RadixKey for MyType {
+    const LEVELS: usize = 4;
 
     #[inline]
     fn get_level(&self, level: usize) -> u8 {
-        self.to_le_bytes()[level]
+        (self.0 >> (level * 8)) as u8
     }
 }
 ```
@@ -49,12 +55,15 @@ impl RadixKey for u16 {
 If you know your type has bytes that will always be zero, you can skip those bytes to speed up the sorting process. For instance, if you have a `u32` where values never exceed `10000`, you only need to consider two of the bytes. You could implement this as such:
 
 ```rust
-impl RadixKey for u32 {
+use rdst::RadixKey;
+struct U32Wrapper(u32);
+
+impl RadixKey for U32Wrapper {
     const LEVELS: usize = 2;
 
     #[inline]
     fn get_level(&self, level: usize) -> u8 {
-        (self >> (level * 8)) as u8
+        (self.0 >> (level * 8)) as u8
     }
 }
 ```
@@ -64,28 +73,65 @@ impl RadixKey for u32 {
 If your type has multiple values you need to search by, simply create a `RadixKey` that spans both values.
 
 ```rust
+use rdst::RadixKey;
+struct MyStruct {
+    key_1: u8,
+    key_2: u8,
+    key_3: u8,
+}
 impl RadixKey for MyStruct {
-    const LEVELS: usize = 4;
+    const LEVELS: usize = 3;
 
     #[inline]
     fn get_level(&self, level: usize) -> u8 {
         match level {
           0 => self.key_1[0],
-          1 => self.key_1[1],
-          2 => self.key_2[0],
-          3 => self.key_2[1],
+          1 => self.key_2[1],
+          _ => self.key_3[0],
         }
     }
 }
 ```
 
-## In-place Variant
+## Low-memory Variant
 
 ```rust
-my_vec.radix_sort_inplace_unstable();
+use rdst::RadixSort;
+let mut my_vec = vec![10, 15, 0, 22, 9];
+my_vec
+    .radix_sort_builder()
+    .with_low_mem_tuner()
+    .sort();
 ```
 
-This library also includes a _mostly_ in-place variant of radix sort. This is useful in cases where memory or memory bandwidth are more limited. Generally, this algorithm is slightly slower than the standard algorithm, however in specific circumstances this can actually be slightly faster as well. Typically, this is seen for extremely un-even distributions of data, or on certain architectures.
+This library also includes a _mostly_ in-place variant of radix sort. This is useful in cases where memory or memory bandwidth are more limited. Generally, this algorithm is slightly slower than the standard algorithm, however in specific circumstances this algorithm may even provide a speed boost. It is worth benchmarking against your use-case if you need the ultimate level of performance.
+
+## Custom Tuners
+
+Tuners are things which you can implement to control which sorting algorithms are used. There are many radix sorting algorithms implemented as part of this crate, and they all have their pros and cons. If you have a very specific use-case it may be worth your time to tune the sort yourself.
+
+```rust
+use rdst::RadixSort;
+use rdst::tuner::{Algorithm, Tuner, TuningParams};
+
+struct MyTuner;
+
+impl Tuner for MyTuner {
+    fn pick_algorithm(&self, p: &TuningParams, _counts: &[usize]) -> Algorithm {
+        if p.input_len >= 500_000 {
+            Algorithm::Ska
+        } else {
+            Algorithm::Lsb
+        }
+    }
+}
+
+let mut my_vec = vec![10, 25, 9, 22, 6];
+my_vec
+    .radix_sort_builder()
+    .with_tuner(&MyTuner {})
+    .sort();
+```
 
 ## License
 
