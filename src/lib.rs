@@ -186,3 +186,5 @@ pub mod tuner;
 // Public exports
 pub use radix_key::RadixKey;
 pub use radix_sort::RadixSort;
+#[doc(inline)]
+pub use radix_sort_builder::RadixSortBuilder;

@@ -23,6 +23,10 @@
 //! ## Optimizations
 //!
 //! This shares pretty much all optimizations implemented for LsbSort.
+//!
+//! ## `mt_oop_sort` Variant
+//!
+//! This variant uses the same algorithm as `mt_lsb_sort` but uses it in msb-first order.
 
 use crate::sorter::Sorter;
 use crate::utils::*;

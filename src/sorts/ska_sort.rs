@@ -1,6 +1,6 @@
 //! `ska_sort` is a single-threaded, in-place algorithm described by Malte Skarupke.
 //!
-//! https://probablydance.com/2016/12/27/i-wrote-a-faster-sorting-algorithm/
+//! <https://probablydance.com/2016/12/27/i-wrote-a-faster-sorting-algorithm/>
 //!
 //! This implementation isn't entirely faithful to the original, however it follows the general
 //! principle of skipping over the largest output bucket and simply swapping the remaining buckets
