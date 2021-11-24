@@ -1,9 +1,9 @@
 /// NOTE: The primary use-case for this example is for running a large sort with cargo-instruments.
-/// It must be run with `--features=bench`.
+/// It must be run with `--features=tuning`.
 ///
 /// e.g.
 /// ```
-/// RUSTFLAGS='-g -C opt-level=3 -C force-frame-pointers=y -C target-cpu=native -C target-feature=+neon' cargo +nightly instruments -t time --example profiling --features=bench
+/// RUSTFLAGS='-g -C opt-level=3 -C force-frame-pointers=y -C target-cpu=native -C target-feature=+neon' cargo +nightly instruments -t time --example profiling --features=tuning
 /// ```
 use rdst::utils::test_utils::gen_inputs;
 use rdst::RadixSort;

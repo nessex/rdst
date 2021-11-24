@@ -1,14 +1,15 @@
 //! # timings
 //!
-//! This example is more of a benchmark. It is used to run the sorting algorithm across
-//! a medley of inputs and output the results as CSV. All numbers are in nanoseconds.
+//! This is used to run the sorting algorithm across a medley of inputs and output the results
+//! as CSV. All numbers are in nanoseconds. It is intended to provide a quick way of getting a
+//! performance cross-section of any given change to the algorithms in this crate.
 //!
 //! ## Usage
 //!
 //! You may need to tweak the command below for your own machine.
 //!
 //! ```
-//! RUSTFLAGS='-g -C opt-level=3 -C target-cpu=native -C target-feature=+neon' cargo +nightly run --example timings --features=bench -- 1234 "Hello world"
+//! RUSTFLAGS='-C opt-level=3 -C target-cpu=native -C target-feature=+neon' cargo +nightly run --example timings --features=tuning -- 1234 "Hello world"
 //! ```
 //!
 //!  - `1234` is where you place the ID for your run. If you are just running a brief test this can be `N/A`, otherwise it should be something like a commit SHA that you can use to find the code for this run again.
