@@ -86,7 +86,7 @@ impl<'a> Sorter<'a> {
             parent_len,
         };
 
-        let tile_counts = if self.multi_threaded && chunk.len() >= 260_000 {
+        let mut tile_counts = if self.multi_threaded && chunk.len() >= 260_000 {
             Some(get_tile_counts(chunk, tile_size, level))
         } else {
             None
@@ -111,6 +111,16 @@ impl<'a> Sorter<'a> {
         }
 
         let algorithm = self.tuner.pick_algorithm(&tp, &counts);
+
+        // Ensure tile_counts is always set when it is required
+        if tile_counts.is_none() {
+            tile_counts = match algorithm {
+                Algorithm::MtOop | Algorithm::Recombinating | Algorithm::Regions => {
+                    Some(vec![counts.clone()])
+                }
+                _ => None,
+            };
+        }
 
         #[cfg(feature = "work_profiles")]
         println!("({}) PAR: {:?}", level, algorithm);
