@@ -1,3 +1,19 @@
+//! `comparative_sort` is a radix-aware comparison sort. It operates on radixes rather than
+//! whole numbers to support all the same use-cases as the original radix sort including
+//! sorting across multiple keys or partial keys etc.
+//!
+//! ## Characteristics
+//!
+//!  * in-place
+//!  * unstable
+//!  * single-threaded
+//!
+//! ## Performance
+//!
+//! This is even slower than a typical comparison sort and so is only used as a fallback for very
+//! small inputs. However for those very small inputs it provides a significant speed-up due to
+//! having essentially no overhead.
+
 use crate::sorter::Sorter;
 use crate::RadixKey;
 use std::cmp::Ordering;

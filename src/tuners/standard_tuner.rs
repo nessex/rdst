@@ -1,3 +1,10 @@
+//! `StandardTuner` represents the default tuning of algorithm choices offered by rdst.
+//!
+//! StandardTuner algorithm choice is:
+//!  * multi-threaded
+//!  * aware of basic count distributions
+//!  * dynamic msb / lsb
+
 use crate::tuner::{Algorithm, Tuner, TuningParams};
 
 pub struct StandardTuner;
@@ -13,8 +20,6 @@ impl Tuner for StandardTuner {
         if p.input_len >= 5_000 {
             let distribution_threshold = (p.input_len / 256) * 2;
 
-            // Distribution occurs when the input to be sorted has counts significantly
-            // larger than the others
             for c in counts {
                 if *c >= distribution_threshold {
                     return if depth == 0 {

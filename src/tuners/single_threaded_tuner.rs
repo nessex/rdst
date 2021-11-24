@@ -1,3 +1,13 @@
+//! `SingleThreadedTuner` is a tuner which only uses single-threaded algorithms.
+//!
+//! Typically this will be expected to be used in conjunction with
+//! `radix_sort_builder().with_parallel(false)` for fully single-threaded operation.
+//!
+//! SingleThreadedTuner algorithm choice is:
+//!  * single-threaded only
+//!  * aware of basic count distributions
+//!  * dynamic msb / lsb
+
 use crate::tuner::{Algorithm, Tuner, TuningParams};
 
 pub struct SingleThreadedTuner;
@@ -11,8 +21,6 @@ impl Tuner for SingleThreadedTuner {
         if p.input_len >= 5_000 {
             let distribution_threshold = (p.input_len / 256) * 2;
 
-            // Distribution occurs when the input to be sorted has counts significantly
-            // larger than the others
             for c in counts {
                 if *c >= distribution_threshold {
                     return match p.input_len {

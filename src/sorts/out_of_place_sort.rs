@@ -1,3 +1,48 @@
+//! `out_of_place_sort` is an out-of-place single-threaded radix sort. This is the classic academic
+//! implementation of counting sort. There are 4 different variants implemented here with varying
+//! optimizations.
+//!
+//! This is used as a building block for other complete sorting algorithms.
+//!
+//! ### Standard out_of_place_sort
+//!
+//! This implementation is a very simple out-of-place counting sort. The only notable optimization
+//! is to process data in chunks to take some advantage of multiple execution ports in the CPU.
+//!
+//! ### out_of_place_sort_with_counts
+//!
+//! As the name suggests, this variant is the same as the standard out_of_place_sort except that
+//! as it sorts into the output array, it also checks the next level and adds it to a counts array.
+//!
+//! This shortcut shaves off a tiny bit of time that would be spent counting the next level before
+//! sorting. It doesn't make a huge difference as you impair caching and similar that would
+//! otherwise perform better in both the sort and the next counting pass. That said, it is
+//! significant enough to still include as an option.
+//!
+//! ### lr_out_of_place_sort
+//!
+//! This variant of the standard out_of_place_sort uses two sets of cursors, one left and one right
+//! cursor for writing data. This is able to remain stable as it inspects the input array starting
+//! from the right for all values placed to the right side of each output bucket. Thus maintaining
+//! the stable ordering of values.
+//!
+//! This provides a significant performance benefit when there are many identical values as
+//! typically a pair of identical would prevent the CPU from using multiple execution ports. With
+//! this variant however, the CPU can safely and independently work on two identical values at the
+//! same time as there is no overlapping variable access in either the output array or the prefix
+//! sums array.
+//!
+//! ### lr_out_of_place_sort_with_counts
+//!
+//! As with the other variants, this combines the left-right optimization with counting the next
+//! level.
+//!
+//! ## Characteristics
+//!
+//!  * out-of-place
+//!  * single-threaded
+//!  * lsb-first
+
 use crate::utils::*;
 use crate::RadixKey;
 

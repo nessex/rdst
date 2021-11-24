@@ -1,3 +1,33 @@
+//! `lsb_sort` is a Least-Significant Bit first radix sort.
+//!
+//! ## Characteristics
+//!
+//!  * out-of-place
+//!  * stable
+//!  * single-threaded
+//!
+//! ## Performance
+//!
+//! This sort is generally the fastest single-threaded algorithm implemented in this crate.
+//!
+//! ## Optimizations
+//!
+//! ### Ping-pong arrays
+//!
+//! As this is an out-of-place algorithm, we can save some copying by using the temporary array
+//! as our input array, and our original array as our output array on odd runs of the algorithm.
+//!
+//! ### Level skipping
+//!
+//! When a level has all counts in one bucket (i.e. all values are equal), we can skip the level
+//! entirely. This is done by checking counts rather than the actual data.
+//!
+//! ### Counting while sorting
+//!
+//! This is implemented in the underlying `out_of_place_sort`. While sorting, we also count the next
+//! level to provide a small but significant performance boost. This is not a huge win as it removes
+//! some caching benefits etc., but has been benchmarked at roughly 5-15% speedup.
+
 use crate::sorter::Sorter;
 use crate::sorts::out_of_place_sort::{
     lr_out_of_place_sort, lr_out_of_place_sort_with_counts, out_of_place_sort,

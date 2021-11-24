@@ -1,4 +1,4 @@
-//! Regions Sort
+//! `regions_sort`
 //!
 //! Based on:
 //! Omar Obeya, Endrias Kahssay, Edward Fan, and Julian Shun.
@@ -19,6 +19,24 @@
 //!             4.2.2.2/b: If I is bigger than O, keep the remainder of I in the queue and continue
 //!             4.2.2.2/c: If O is bigger than I, keep the remainder of O in the queue and continue
 //!             4.2.2.3: Swap items in C heading to O, with items in I destined for C (items in C may or may not be destined for O ultimately)
+//!
+//! ## Characteristics
+//!
+//!  * mostly in-place
+//!  * multi-threaded
+//!  * unstable
+//!
+//! ## Performance
+//!
+//! This typically performs worse than the other, simpler, multi-threaded algorithms such as
+//! `recombinating_sort` and `scanning_sort`, however it uses a very clever and efficient algorithm
+//! from a research paper that means for certain inputs and certain memory conditions it can provide
+//! the best performance due to minimizing work spent copying and moving things.
+//!
+//! ## Notes
+//!
+//! This may not be entirely the same as the algorithm described by the research paper. Some things
+//! did not seem to matter, and have been omitted for performance reasons.
 
 use crate::sorter::Sorter;
 use crate::sorts::ska_sort::ska_sort;

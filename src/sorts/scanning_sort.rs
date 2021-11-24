@@ -1,3 +1,23 @@
+//! `scanning_sort` is a custom algorithm for rdst which is a multi-threaded, MSB first radix sort.
+//!
+//! Scanning sort works by scanning over the output buckets, picking up data that shouldn't be there
+//! and putting it in a per-thread temporary store. It then writes any appropriate data it currently
+//! holds in that thread-local store to the current output bucket. After that, the thread moves on
+//! to the next available bucket (each one is mutex locked) and repeats the process until all output
+//! buckets are completely filled with the correct data.
+//!
+//! ## Characteristics
+//!
+//!  * out-of-place
+//!  * multi-threaded
+//!  * unstable
+//!
+//! ## Performance
+//!
+//! For large inputs, this is the fastest multi-threaded sorting algorithm in rdst. The additional
+//! overhead of the thread-local stores and mutexes prevents it from being fast for smaller inputs
+//! however, so it should not be used in all situations.
+
 use crate::sorter::Sorter;
 use crate::utils::*;
 use crate::RadixKey;

@@ -1,9 +1,29 @@
+//! `ska_sort` is a single-threaded, in-place algorithm described by Malte Skarupke.
+//!
+//! https://probablydance.com/2016/12/27/i-wrote-a-faster-sorting-algorithm/
+//!
+//! This implementation isn't entirely faithful to the original, however it follows the general
+//! principle of skipping over the largest output bucket and simply swapping the remaining buckets
+//! until the entire thing is sorted.
+//!
+//! The in-place nature of this algorithm makes it very efficient memory-wise.
+//!
+//! ## Characteristics
+//!
+//!  * in-place
+//!  * memory efficient
+//!  * unstable
+//!  * single-threaded
+//!
+//! ## Performance
+//!
+//! This is generally slower than `lsb_sort` for smaller inputs, but for larger inputs the memory
+//! efficiency of this algorithm makes it take the lead.
+
 use crate::sorter::Sorter;
 use crate::utils::*;
 use crate::RadixKey;
 
-// Based upon (with modifications):
-// https://probablydance.com/2016/12/27/i-wrote-a-faster-sorting-algorithm/
 pub fn ska_sort<T>(
     bucket: &mut [T],
     prefix_sums: &mut [usize; 256],

@@ -1,3 +1,13 @@
+//! `LowMemoryTuner` provides a tuning that uses primarily in-place or low-memory algorithms.
+//! It is not entirely in-place as the speed impact of that is too extreme. Rather, it opts to use
+//! out-of-place algorithms only for small inputs or small portions of larger inputs.
+//!
+//! LowMemoryTuner algorithm choice is:
+//!  * multi-threaded
+//!  * low-memory / in-place algorithms preferred
+//!  * aware of basic count distributions
+//!  * dynamic msb / lsb
+
 use crate::tuner::{Algorithm, Tuner, TuningParams};
 
 pub struct LowMemoryTuner;
@@ -11,8 +21,6 @@ impl Tuner for LowMemoryTuner {
         if p.input_len >= 5_000 {
             let distribution_threshold = (p.input_len / 256) * 2;
 
-            // Distribution occurs when the input to be sorted has counts significantly
-            // larger than the others
             for c in counts {
                 if *c >= distribution_threshold {
                     return match p.input_len {

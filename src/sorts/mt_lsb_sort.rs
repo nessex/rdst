@@ -1,3 +1,29 @@
+//! `mt_lsb_sort` is a multi-threaded Least-Significant Bit first radix sort. Multi-threading
+//! is achieved by splitting the data into tiles, counting those tiles independently and
+//! using the aggregated prefix sums to generate offsets in the output array for each thread
+//! to write to for each radix.
+//!
+//! The output array is split by tile-counts sorted by radix and those output array chunks are
+//! distributed to each thread. As they are distributed in the order in which they originally
+//! appeared, the output remains stable just like a typical single-threaded LSB sort.
+//!
+//! ## Characteristics
+//!
+//!  * out-of-place
+//!  * multi-threaded
+//!  * stable
+//!  * lsb-first
+//!
+//! ## Performance
+//!
+//! While this does not provide the best performance overall, the performance of this algorithm
+//! is extremely stable and predictable. It gracefully degrades into a single-threaded LSB radix sort
+//! when the tiles are reduced to 1 with only a little overhead.
+//!
+//! ## Optimizations
+//!
+//! This shares pretty much all optimizations implemented for LsbSort.
+
 use crate::sorter::Sorter;
 use crate::utils::*;
 use crate::RadixKey;

@@ -1,3 +1,24 @@
+//! `recombinating_sort` is a multi-threaded, out-of-place, unstable radix sort unique to rdst. It
+//! operates on a set of tiles, which aresub-sections of the original data of roughly the same size.
+//!
+//! It works by:
+//!  1. Sorting each tile out-of-place into a temp array
+//!  2. Calculating prefix sums of each tile
+//!  3. Splitting the output array based upon the aggregated counts of all tiles
+//!  4. Writing out the final data for each global count ("country" in regions sort terminology) in parallel
+//!
+//! ## Characteristics
+//!
+//!  * out-of-place
+//!  * multi-threaded
+//!  * unstable
+//!
+//! ## Performance
+//!
+//! This is typically the best performing multi-threaded sorting algorithm until you hit memory
+//! constraints. As this is an out-of-place algorithm, you need 2n memory relative to the input for
+//! this sort, and eventually the extra allocation and freeing required eats away at the performance.
+
 use crate::sorter::Sorter;
 use crate::sorts::out_of_place_sort::out_of_place_sort;
 use crate::utils::*;
