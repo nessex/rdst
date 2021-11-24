@@ -4,7 +4,10 @@
 //!
 //! ## Usage
 //!
-//! ```ignore
+//! ```rust
+//! use rdst::RadixSort;
+//! let mut my_vec = vec![4, 7, 1, 6, 5, 3, 2, 8, 9];
+//!
 //! my_vec.radix_sort_unstable();
 //! ```
 //!
@@ -80,9 +83,9 @@
 //!     #[inline]
 //!     fn get_level(&self, level: usize) -> u8 {
 //!         match level {
-//!           0 => self.key_1[0],
-//!           1 => self.key_2[1],
-//!           _ => self.key_3[0],
+//!           0 => self.key_1,
+//!           1 => self.key_2,
+//!           _ => self.key_3,
 //!         }
 //!     }
 //! }
@@ -92,7 +95,7 @@
 //!
 //! ```
 //! use rdst::RadixSort;
-//! let mut my_vec = vec![10, 15, 0, 22, 9];
+//! let mut my_vec: Vec<usize> = vec![10, 15, 0, 22, 9];
 //! my_vec
 //!     .radix_sort_builder()
 //!     .with_low_mem_tuner()
@@ -121,7 +124,7 @@
 //!     }
 //! }
 //!
-//! let mut my_vec = vec![10, 25, 9, 22, 6];
+//! let mut my_vec: Vec<usize> = vec![10, 25, 9, 22, 6];
 //! my_vec
 //!     .radix_sort_builder()
 //!     .with_tuner(&MyTuner {})

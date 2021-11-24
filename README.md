@@ -97,7 +97,7 @@ impl RadixKey for MyStruct {
 
 ```rust
 use rdst::RadixSort;
-let mut my_vec = vec![10, 15, 0, 22, 9];
+let mut my_vec: Vec<usize> = vec![10, 15, 0, 22, 9];
 my_vec
     .radix_sort_builder()
     .with_low_mem_tuner()
@@ -126,7 +126,7 @@ impl Tuner for MyTuner {
     }
 }
 
-let mut my_vec = vec![10, 25, 9, 22, 6];
+let mut my_vec: Vec<usize> = vec![10, 25, 9, 22, 6];
 my_vec
     .radix_sort_builder()
     .with_tuner(&MyTuner {})

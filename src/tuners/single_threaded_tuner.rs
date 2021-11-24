@@ -1,7 +1,7 @@
 use crate::tuner::{Algorithm, Tuner, TuningParams};
 
-pub struct LowMemoryTuner;
-impl Tuner for LowMemoryTuner {
+pub struct SingleThreadedTuner;
+impl Tuner for SingleThreadedTuner {
     #[inline]
     fn pick_algorithm(&self, p: &TuningParams, counts: &[usize]) -> Algorithm {
         if p.input_len <= 128 {
@@ -17,8 +17,7 @@ impl Tuner for LowMemoryTuner {
                 if *c >= distribution_threshold {
                     return match p.input_len {
                         0..=50_000 => Algorithm::LrLsb,
-                        50_001..=1_000_000 => Algorithm::Ska,
-                        1_000_001..=usize::MAX => Algorithm::Regions,
+                        50_001..=usize::MAX => Algorithm::Ska,
                         _ => Algorithm::LrLsb,
                     }
                 }
@@ -26,9 +25,9 @@ impl Tuner for LowMemoryTuner {
         }
 
         match p.input_len {
-            0..=50_000 => Algorithm::Lsb,
-            50_001..=1_000_000 => Algorithm::Ska,
-            1_000_001..=usize::MAX => Algorithm::Regions,
+            0..=128 => Algorithm::Comparative,
+            129..=400_000 => Algorithm::Lsb,
+            400_001..=usize::MAX => Algorithm::Ska,
             _ => Algorithm::Lsb,
         }
     }
