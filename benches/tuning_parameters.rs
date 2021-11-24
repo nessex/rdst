@@ -1,7 +1,6 @@
 use criterion::*;
 use rayon::current_num_threads;
-use rdst::utils::bench_utils::{bench_common, bench_comparative};
-use rdst::utils::test_utils::NumericTest;
+use rdst::utils::bench_utils::bench_common;
 use rdst::utils::*;
 use std::cmp::max;
 
