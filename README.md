@@ -106,6 +106,23 @@ my_vec
 
 This library also includes a _mostly_ in-place variant of radix sort. This is useful in cases where memory or memory bandwidth are more limited. Generally, this algorithm is slightly slower than the standard algorithm, however in specific circumstances this algorithm may even provide a speed boost. It is worth benchmarking against your use-case if you need the ultimate level of performance.
 
+## Single-threaded Variant
+
+To make this library use an entirely single-threaded set of algorithms and processes, you can use the following snippet.
+
+```rust
+use rdst::RadixSort;
+let mut my_vec: Vec<usize> = vec![10, 15, 0, 22, 9];
+
+my_vec
+    .radix_sort_builder()
+    // Use a tuner that only includes single-threaded algorithms
+    .with_single_threaded_tuner()
+    // Don't run multiple algorithms (even single-threaded ones) in parallel
+    .with_parallel(false)
+    .sort();
+```
+
 ## Custom Tuners
 
 Tuners are things which you can implement to control which sorting algorithms are used. There are many radix sorting algorithms implemented as part of this crate, and they all have their pros and cons. If you have a very specific use-case it may be worth your time to tune the sort yourself.
