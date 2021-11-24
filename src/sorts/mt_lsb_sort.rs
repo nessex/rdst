@@ -1,5 +1,4 @@
-use crate::director::director;
-use crate::tuner::Tuner;
+use crate::sorter::Sorter;
 use crate::utils::*;
 use crate::RadixKey;
 use arbitrary_chunks::ArbitraryChunks;
@@ -18,8 +17,8 @@ pub fn mt_lsb_sort<T>(
     let mut minor_counts = Vec::with_capacity(256 * tiles);
 
     for b in 0..256 {
-        for c in 0..tiles {
-            minor_counts.push(tile_counts[c][b]);
+        for tile in tile_counts.iter() {
+            minor_counts.push(tile[b]);
         }
     }
 
@@ -27,11 +26,11 @@ pub fn mt_lsb_sort<T>(
     chunks.reverse();
 
     let mut collated_chunks: Vec<Vec<&mut [T]>> = Vec::with_capacity(tiles);
-    collated_chunks.resize_with(tiles, || Vec::new());
+    collated_chunks.resize_with(tiles, Vec::new);
 
     for _ in 0..256 {
-        for t in 0..tiles {
-            collated_chunks[t].push(chunks.pop().unwrap());
+        for coll_chunk in collated_chunks.iter_mut().take(tiles) {
+            coll_chunk.push(chunks.pop().unwrap());
         }
     }
 
@@ -39,7 +38,7 @@ pub fn mt_lsb_sort<T>(
         .into_par_iter()
         .zip(src_bucket.par_chunks(tile_size))
         .for_each(|(mut buckets, bucket)| {
-            if bucket.len() == 0 {
+            if bucket.is_empty() {
                 return;
             }
 
@@ -47,7 +46,7 @@ pub fn mt_lsb_sort<T>(
             let mut ends = [0usize; 256];
 
             for (i, b) in buckets.iter().enumerate() {
-                if b.len() == 0 {
+                if b.is_empty() {
                     continue;
                 }
 
@@ -105,80 +104,84 @@ pub fn mt_lsb_sort<T>(
         });
 }
 
-pub fn mt_lsb_sort_adapter<T>(
-    bucket: &mut [T],
-    start_level: usize,
-    end_level: usize,
-    tile_size: usize,
-) where
-    T: RadixKey + Sized + Send + Copy + Sync,
-{
-    if bucket.len() < 2 {
-        return;
-    }
+impl<'a> Sorter<'a> {
+    pub(crate) fn mt_lsb_sort_adapter<T>(
+        &self,
+        bucket: &mut [T],
+        start_level: usize,
+        end_level: usize,
+        tile_size: usize,
+    ) where
+        T: RadixKey + Sized + Send + Copy + Sync,
+    {
+        if bucket.len() < 2 {
+            return;
+        }
 
-    let mut tmp_bucket = get_tmp_bucket(bucket.len());
-    let levels: Vec<usize> = (start_level..=end_level).into_iter().collect();
-    let mut invert = false;
+        let mut tmp_bucket = get_tmp_bucket(bucket.len());
+        let levels: Vec<usize> = (start_level..=end_level).into_iter().collect();
+        let mut invert = false;
 
-    for level in levels {
-        let tile_counts = if invert {
-            get_tile_counts(&tmp_bucket, tile_size, level)
-        } else {
-            get_tile_counts(bucket, tile_size, level)
-        };
+        for level in levels {
+            let tile_counts = if invert {
+                get_tile_counts(&tmp_bucket, tile_size, level)
+            } else {
+                get_tile_counts(bucket, tile_size, level)
+            };
+
+            if invert {
+                mt_lsb_sort(&mut tmp_bucket, bucket, &tile_counts, tile_size, level)
+            } else {
+                mt_lsb_sort(bucket, &mut tmp_bucket, &tile_counts, tile_size, level)
+            };
+
+            invert = !invert;
+        }
 
         if invert {
-            mt_lsb_sort(&mut tmp_bucket, bucket, &tile_counts, tile_size, level)
-        } else {
-            mt_lsb_sort(bucket, &mut tmp_bucket, &tile_counts, tile_size, level)
-        };
-
-        invert = !invert;
+            bucket
+                .par_chunks_mut(tile_size)
+                .zip(tmp_bucket.par_chunks(tile_size))
+                .for_each(|(chunk, tmp_chunk)| {
+                    chunk.copy_from_slice(tmp_chunk);
+                });
+        }
     }
 
-    if invert {
+    pub(crate) fn mt_oop_sort_adapter<T>(
+        &self,
+        bucket: &mut [T],
+        level: usize,
+        counts: &[usize; 256],
+        tile_counts: &[[usize; 256]],
+        tile_size: usize,
+    ) where
+        T: RadixKey + Sized + Send + Copy + Sync,
+    {
+        if bucket.len() <= 1 {
+            return;
+        }
+
+        let mut tmp_bucket = get_tmp_bucket(bucket.len());
+        mt_lsb_sort(bucket, &mut tmp_bucket, tile_counts, tile_size, level);
+
         bucket
             .par_chunks_mut(tile_size)
             .zip(tmp_bucket.par_chunks(tile_size))
             .for_each(|(chunk, tmp_chunk)| {
                 chunk.copy_from_slice(tmp_chunk);
             });
+
+        drop(tmp_bucket);
+
+        self.director(bucket, counts.to_vec(), level - 1);
     }
-}
-
-pub fn mt_oop_sort_adapter<T>(
-    tuner: &(dyn Tuner + Send + Sync),
-    bucket: &mut [T],
-    level: usize,
-    counts: &[usize; 256],
-    tile_counts: &[[usize; 256]],
-    tile_size: usize,
-) where
-    T: RadixKey + Sized + Send + Copy + Sync,
-{
-    if bucket.len() <= 1 {
-        return;
-    }
-
-    let mut tmp_bucket = get_tmp_bucket(bucket.len());
-    mt_lsb_sort(bucket, &mut tmp_bucket, tile_counts, tile_size, level);
-
-    bucket
-        .par_chunks_mut(tile_size)
-        .zip(tmp_bucket.par_chunks(tile_size))
-        .for_each(|(chunk, tmp_chunk)| {
-            chunk.copy_from_slice(tmp_chunk);
-        });
-
-    drop(tmp_bucket);
-
-    director(tuner, bucket, counts.to_vec(), level - 1);
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::sorts::mt_lsb_sort::mt_lsb_sort_adapter;
+    use crate::sorter::Sorter;
+    use crate::tuners::StandardTuner;
     use crate::utils::cdiv;
     use crate::utils::test_utils::{sort_comparison_suite, NumericTest};
     use rayon::current_num_threads;
@@ -187,13 +190,16 @@ mod tests {
     where
         T: NumericTest<T>,
     {
+        let sorter = Sorter::new(true, &StandardTuner);
+
         sort_comparison_suite(shift, |inputs| {
             if inputs.len() == 0 {
                 return;
             }
 
             let tile_size = cdiv(inputs.len(), current_num_threads());
-            mt_lsb_sort_adapter(inputs, 0, T::LEVELS - 1, tile_size);
+
+            sorter.mt_lsb_sort_adapter(inputs, 0, T::LEVELS - 1, tile_size);
         });
     }
 

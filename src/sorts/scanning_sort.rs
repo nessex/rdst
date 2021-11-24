@@ -1,5 +1,4 @@
-use crate::director::director;
-use crate::tuner::Tuner;
+use crate::sorter::Sorter;
 use crate::utils::*;
 use crate::RadixKey;
 use arbitrary_chunks::ArbitraryChunks;
@@ -187,7 +186,7 @@ fn scanner_thread<T>(
     }
 }
 
-pub fn scanning_sort<T>(bucket: &mut [T], msb_counts: &[usize; 256], level: usize)
+pub fn scanning_sort<T>(bucket: &mut [T], counts: &[usize; 256], level: usize)
 where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
@@ -195,8 +194,8 @@ where
     let threads = current_num_threads();
     let uniform_threshold = ((len / threads) as f64 * 1.4) as usize;
     let plateaus = detect_plateaus(bucket, level);
-    let (prefix_sums, _) = apply_plateaus(bucket, &msb_counts, &plateaus);
-    let scanner_buckets = get_scanner_buckets(msb_counts, &prefix_sums, bucket);
+    let (prefix_sums, _) = apply_plateaus(bucket, counts, &plateaus);
+    let scanner_buckets = get_scanner_buckets(counts, &prefix_sums, bucket);
     let threads = min(threads, scanner_buckets.len());
     let scaling_factor = max(1, (threads as f32).log2().ceil() as isize) as usize;
     let scanner_read_size = (32768 / scaling_factor) as isize;
@@ -211,29 +210,31 @@ where
     });
 }
 
-// scanning_radix_sort does a parallel MSB-first sort. Following this, depending on the number of
-// elements remaining in each bucket, it will either do an MSB-sort or an LSB-sort, making this
-// a dynamic hybrid sort.
-pub fn scanning_sort_adapter<T>(
-    tuner: &(dyn Tuner + Send + Sync),
-    bucket: &mut [T],
-    counts: &[usize; 256],
-    level: usize,
-) where
-    T: RadixKey + Sized + Send + Copy + Sync,
-{
-    scanning_sort(bucket, &counts, level);
+impl<'a> Sorter<'a> {
+    // scanning_radix_sort does a parallel MSB-first sort. Following this, depending on the number of
+    // elements remaining in each bucket, it will either do an MSB-sort or an LSB-sort, making this
+    // a dynamic hybrid sort.
+    pub(crate) fn scanning_sort_adapter<T>(
+        &self,
+        bucket: &mut [T],
+        counts: &[usize; 256],
+        level: usize,
+    ) where
+        T: RadixKey + Sized + Send + Copy + Sync,
+    {
+        scanning_sort(bucket, counts, level);
 
-    if level == 0 {
-        return;
+        if level == 0 {
+            return;
+        }
+
+        self.director(bucket, counts.to_vec(), level - 1);
     }
-
-    director(tuner, bucket, counts.to_vec(), level - 1);
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::sorts::scanning_sort::scanning_sort_adapter;
+    use crate::sorter::Sorter;
     use crate::tuners::StandardTuner;
     use crate::utils::par_get_counts;
     use crate::utils::test_utils::{sort_comparison_suite, NumericTest};
@@ -242,10 +243,12 @@ mod tests {
     where
         T: NumericTest<T>,
     {
-        let tuner = StandardTuner {};
+        let sorter = Sorter::new(true, &StandardTuner);
+
         sort_comparison_suite(shift, |inputs| {
             let counts = par_get_counts(inputs, T::LEVELS - 1);
-            scanning_sort_adapter(&tuner, inputs, &counts, T::LEVELS - 1)
+
+            sorter.scanning_sort_adapter(inputs, &counts, T::LEVELS - 1)
         });
     }
 

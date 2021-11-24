@@ -5,7 +5,7 @@ impl Tuner for StandardTuner {
     #[inline]
     fn pick_algorithm(&self, p: &TuningParams, counts: &[usize]) -> Algorithm {
         if p.input_len <= 128 {
-            return Algorithm::ComparativeSort;
+            return Algorithm::Comparative;
         }
 
         let depth = p.total_levels - p.level - 1;
@@ -19,19 +19,19 @@ impl Tuner for StandardTuner {
                 if *c >= distribution_threshold {
                     return if depth == 0 {
                         match p.input_len {
-                            0..=200_000 => Algorithm::LrLsbSort,
-                            200_001..=350_000 => Algorithm::SkaSort,
-                            350_001..=4_000_000 => Algorithm::MtLsbSort,
-                            4_000_001..=usize::MAX => Algorithm::RegionsSort,
-                            _ => Algorithm::LrLsbSort,
+                            0..=200_000 => Algorithm::LrLsb,
+                            200_001..=350_000 => Algorithm::Ska,
+                            350_001..=4_000_000 => Algorithm::MtLsb,
+                            4_000_001..=usize::MAX => Algorithm::Regions,
+                            _ => Algorithm::LrLsb,
                         }
                     } else {
                         match p.input_len {
-                            0..=200_000 => Algorithm::LrLsbSort,
-                            200_001..=800_000 => Algorithm::SkaSort,
-                            800_001..=5_000_000 => Algorithm::RecombinatingSort,
-                            5_000_001..=usize::MAX => Algorithm::RegionsSort,
-                            _ => Algorithm::LrLsbSort,
+                            0..=200_000 => Algorithm::LrLsb,
+                            200_001..=800_000 => Algorithm::Ska,
+                            800_001..=5_000_000 => Algorithm::Recombinating,
+                            5_000_001..=usize::MAX => Algorithm::Regions,
+                            _ => Algorithm::LrLsb,
                         }
                     };
                 }
@@ -40,19 +40,19 @@ impl Tuner for StandardTuner {
 
         if depth > 0 {
             match p.input_len {
-                0..=200_000 => Algorithm::LsbSort,
-                200_001..=800_000 => Algorithm::SkaSort,
-                800_001..=50_000_000 => Algorithm::RecombinatingSort,
-                50_000_001..=usize::MAX => Algorithm::ScanningSort,
-                _ => Algorithm::LsbSort,
+                0..=200_000 => Algorithm::Lsb,
+                200_001..=800_000 => Algorithm::Ska,
+                800_001..=50_000_000 => Algorithm::Recombinating,
+                50_000_001..=usize::MAX => Algorithm::Scanning,
+                _ => Algorithm::Lsb,
             }
         } else {
             match p.input_len {
-                0..=150_000 => Algorithm::LsbSort,
-                150_001..=260_000 => Algorithm::SkaSort,
-                260_001..=50_000_000 => Algorithm::RecombinatingSort,
-                50_000_001..=usize::MAX => Algorithm::ScanningSort,
-                _ => Algorithm::LsbSort,
+                0..=150_000 => Algorithm::Lsb,
+                150_001..=260_000 => Algorithm::Ska,
+                260_001..=50_000_000 => Algorithm::Recombinating,
+                50_000_001..=usize::MAX => Algorithm::Scanning,
+                _ => Algorithm::Lsb,
             }
         }
     }

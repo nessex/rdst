@@ -4,21 +4,21 @@ pub struct TuningParams {
     pub level: usize,
     pub total_levels: usize,
     pub input_len: usize,
-    pub parent_len: usize,
+    pub parent_len: Option<usize>,
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum Algorithm {
     #[allow(unused)]
-    MtOopSort,
-    MtLsbSort,
-    ScanningSort,
-    RecombinatingSort,
-    ComparativeSort,
-    LrLsbSort,
-    LsbSort,
-    RegionsSort,
-    SkaSort,
+    MtOop,
+    MtLsb,
+    Scanning,
+    Recombinating,
+    Comparative,
+    LrLsb,
+    Lsb,
+    Regions,
+    Ska,
 }
 
 pub trait Tuner {

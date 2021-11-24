@@ -19,7 +19,7 @@ where
         (
             "rdst_low_mem",
             Box::new(|mut input| {
-                input.radix_sort_low_mem_unstable();
+                input.radix_sort_builder().with_low_mem_tuner().sort();
                 black_box(input);
             }),
         ),
@@ -50,7 +50,7 @@ where
         (
             "rdst_low_mem",
             Box::new(|mut input| {
-                input.radix_sort_low_mem_unstable();
+                input.radix_sort_builder().with_low_mem_tuner().sort();
                 black_box(input);
             }),
         ),

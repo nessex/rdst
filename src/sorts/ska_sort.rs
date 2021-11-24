@@ -1,5 +1,4 @@
-use crate::director::director;
-use crate::tuner::Tuner;
+use crate::sorter::Sorter;
 use crate::utils::*;
 use crate::RadixKey;
 
@@ -54,30 +53,27 @@ pub fn ska_sort<T>(
     }
 }
 
-#[allow(dead_code)]
-pub fn ska_sort_adapter<T>(
-    tuner: &(dyn Tuner + Send + Sync),
-    bucket: &mut [T],
-    counts: &[usize; 256],
-    level: usize,
-) where
-    T: RadixKey + Sized + Send + Copy + Sync,
-{
-    let plateaus = detect_plateaus(bucket, level);
-    let (mut prefix_sums, end_offsets) = apply_plateaus(bucket, counts, &plateaus);
+impl<'a> Sorter<'a> {
+    pub(crate) fn ska_sort_adapter<T>(&self, bucket: &mut [T], counts: &[usize; 256], level: usize)
+    where
+        T: RadixKey + Sized + Send + Copy + Sync,
+    {
+        let plateaus = detect_plateaus(bucket, level);
+        let (mut prefix_sums, end_offsets) = apply_plateaus(bucket, counts, &plateaus);
 
-    ska_sort(bucket, &mut prefix_sums, &end_offsets, level);
+        ska_sort(bucket, &mut prefix_sums, &end_offsets, level);
 
-    if level == 0 {
-        return;
+        if level == 0 {
+            return;
+        }
+
+        self.director(bucket, counts.to_vec(), level - 1);
     }
-
-    director(tuner, bucket, counts.to_vec(), level - 1);
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::sorts::ska_sort::ska_sort_adapter;
+    use crate::sorter::Sorter;
     use crate::tuners::StandardTuner;
     use crate::utils::get_counts;
     use crate::utils::test_utils::{sort_comparison_suite, NumericTest};
@@ -86,10 +82,12 @@ mod tests {
     where
         T: NumericTest<T>,
     {
-        let tuner = StandardTuner {};
+        let sorter = Sorter::new(true, &StandardTuner);
+
         sort_comparison_suite(shift, |inputs| {
             let counts = get_counts(inputs, T::LEVELS - 1);
-            ska_sort_adapter(&tuner, inputs, &counts, T::LEVELS - 1)
+
+            sorter.ska_sort_adapter(inputs, &counts, T::LEVELS - 1);
         });
     }
 

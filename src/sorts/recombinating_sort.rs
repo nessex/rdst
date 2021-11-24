@@ -1,6 +1,5 @@
-use crate::director::director;
+use crate::sorter::Sorter;
 use crate::sorts::out_of_place_sort::out_of_place_sort;
-use crate::tuner::Tuner;
 use crate::utils::*;
 use crate::RadixKey;
 use arbitrary_chunks::ArbitraryChunks;
@@ -53,32 +52,34 @@ pub fn recombinating_sort<T>(
         });
 }
 
-pub fn recombinating_sort_adapter<T>(
-    tuner: &(dyn Tuner + Send + Sync),
-    bucket: &mut [T],
-    counts: &[usize; 256],
-    tile_counts: &[[usize; 256]],
-    tile_size: usize,
-    level: usize,
-) where
-    T: RadixKey + Sized + Send + Copy + Sync,
-{
-    if bucket.len() <= 1 {
-        return;
+impl<'a> Sorter<'a> {
+    pub(crate) fn recombinating_sort_adapter<T>(
+        &self,
+        bucket: &mut [T],
+        counts: &[usize; 256],
+        tile_counts: &[[usize; 256]],
+        tile_size: usize,
+        level: usize,
+    ) where
+        T: RadixKey + Sized + Send + Copy + Sync,
+    {
+        if bucket.len() <= 1 {
+            return;
+        }
+
+        recombinating_sort(bucket, counts, tile_counts, tile_size, level);
+
+        if level == 0 {
+            return;
+        }
+
+        self.director(bucket, counts.to_vec(), level - 1);
     }
-
-    recombinating_sort(bucket, counts, tile_counts, tile_size, level);
-
-    if level == 0 {
-        return;
-    }
-
-    director(tuner, bucket, counts.to_vec(), level - 1);
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::sorts::recombinating_sort::recombinating_sort_adapter;
+    use crate::sorter::Sorter;
     use crate::tuners::StandardTuner;
     use crate::utils::test_utils::{sort_comparison_suite, NumericTest};
     use crate::utils::{aggregate_tile_counts, cdiv, get_tile_counts};
@@ -88,7 +89,8 @@ mod tests {
     where
         T: NumericTest<T>,
     {
-        let tuner = StandardTuner {};
+        let sorter = Sorter::new(true, &StandardTuner);
+
         sort_comparison_suite(shift, |inputs| {
             let level = T::LEVELS - 1;
             let tile_size = cdiv(inputs.len(), current_num_threads());
@@ -100,8 +102,7 @@ mod tests {
             let tile_counts = get_tile_counts(inputs, tile_size, level);
             let counts = aggregate_tile_counts(&tile_counts);
 
-            recombinating_sort_adapter(
-                &tuner,
+            sorter.recombinating_sort_adapter(
                 inputs,
                 &counts,
                 &tile_counts,

@@ -99,10 +99,10 @@
 //!
 //! Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in the work by you, as defined in the Apache-2.0 license, shall be dual licensed as above, without any additional terms or conditions.
 
-mod director;
 mod radix_key;
 #[cfg(feature = "default-implementations")]
 mod radix_key_impl;
+mod radix_sort_builder;
 
 #[cfg(not(any(test, feature = "bench")))]
 mod sorts;
@@ -115,7 +115,7 @@ mod utils;
 pub mod utils;
 
 mod radix_sort;
-mod sort_manager;
+mod sorter;
 #[cfg(not(any(test, feature = "tuning", feature = "bench")))]
 mod tuner;
 #[cfg(any(test, feature = "tuning", feature = "bench"))]

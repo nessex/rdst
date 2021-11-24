@@ -102,6 +102,7 @@ where
     counts_1
 }
 
+#[allow(clippy::uninit_vec)]
 #[inline]
 pub fn get_tmp_bucket<T>(len: usize) -> Vec<T> {
     let mut tmp_bucket = Vec::with_capacity(len);
@@ -258,8 +259,8 @@ pub fn apply_plateaus<T>(
 where
     T: RadixKey + Copy + Sized + Send + Sync,
 {
-    let mut prefix_sums = get_prefix_sums(&counts);
-    let end_offsets = get_end_offsets(&counts, &prefix_sums);
+    let mut prefix_sums = get_prefix_sums(counts);
+    let end_offsets = get_end_offsets(counts, &prefix_sums);
 
     for (radix, l, r) in plateaus {
         let len = *r - *l;
@@ -327,7 +328,7 @@ where
 
 #[inline]
 pub fn aggregate_tile_counts(tile_counts: &[[usize; 256]]) -> [usize; 256] {
-    let mut out = tile_counts[0].clone();
+    let mut out = tile_counts[0];
     for tile in tile_counts.iter().skip(1) {
         for i in 0..256 {
             out[i] += tile[i];
@@ -350,5 +351,5 @@ pub fn is_homogenous_bucket(counts: &[usize; 256]) -> bool {
         }
     }
 
-    return true;
+    true
 }

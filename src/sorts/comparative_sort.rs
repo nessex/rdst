@@ -1,35 +1,43 @@
+use crate::sorter::Sorter;
 use crate::RadixKey;
 use std::cmp::Ordering;
 
-pub fn comparative_sort<T>(bucket: &mut [T], start_level: usize)
-where
-    T: RadixKey + Sized + Send + Copy + Sync,
-{
-    bucket.sort_unstable_by(|a, b| -> Ordering {
-        let mut level = start_level;
-        loop {
-            let cmp = a.get_level(level).cmp(&b.get_level(level));
+impl<'a> Sorter<'a> {
+    pub(crate) fn comparative_sort<T>(&self, bucket: &mut [T], start_level: usize)
+    where
+        T: RadixKey + Sized + Send + Copy + Sync,
+    {
+        bucket.sort_unstable_by(|a, b| -> Ordering {
+            let mut level = start_level;
+            loop {
+                let cmp = a.get_level(level).cmp(&b.get_level(level));
 
-            if level != 0 && cmp == Ordering::Equal {
-                level -= 1;
-                continue;
+                if level != 0 && cmp == Ordering::Equal {
+                    level -= 1;
+                    continue;
+                }
+
+                return cmp;
             }
-
-            return cmp;
-        }
-    });
+        });
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::sorts::comparative_sort::comparative_sort;
+    use crate::sorter::Sorter;
+    use crate::tuners::StandardTuner;
     use crate::utils::test_utils::{sort_comparison_suite, NumericTest};
 
     fn test_comparative_sort_adapter<T>(shift: T)
     where
         T: NumericTest<T>,
     {
-        sort_comparison_suite(shift, |inputs| comparative_sort(inputs, T::LEVELS - 1));
+        let sorter = Sorter::new(true, &StandardTuner);
+
+        sort_comparison_suite(shift, |inputs| {
+            sorter.comparative_sort(inputs, T::LEVELS - 1);
+        });
     }
 
     #[test]
@@ -60,11 +68,5 @@ mod tests {
     #[test]
     pub fn test_usize() {
         test_comparative_sort_adapter(32usize);
-    }
-
-    #[test]
-    pub fn test_empty() {
-        // This is expected not to panic
-        comparative_sort::<usize>(&mut [], 0);
     }
 }

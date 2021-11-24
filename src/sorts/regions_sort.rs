@@ -20,9 +20,8 @@
 //!             4.2.2.2/c: If O is bigger than I, keep the remainder of O in the queue and continue
 //!             4.2.2.3: Swap items in C heading to O, with items in I destined for C (items in C may or may not be destined for O ultimately)
 
-use crate::director::director;
+use crate::sorter::Sorter;
 use crate::sorts::ska_sort::ska_sort;
-use crate::tuner::Tuner;
 use crate::utils::*;
 use crate::RadixKey;
 use partition::partition_index;
@@ -205,7 +204,7 @@ pub fn regions_sort<T>(
             ska_sort(chunk, &mut prefix_sums, &end_offsets, level);
         });
 
-    let mut outbounds = generate_outbounds(bucket, tile_counts, &counts);
+    let mut outbounds = generate_outbounds(bucket, tile_counts, counts);
     let mut operations = Vec::new();
 
     // This loop calculates and executes all operations that can be done in parallel, each pass.
@@ -244,32 +243,34 @@ pub fn regions_sort<T>(
     }
 }
 
-pub fn regions_sort_adapter<T>(
-    tuner: &(dyn Tuner + Send + Sync),
-    bucket: &mut [T],
-    counts: &[usize; 256],
-    tile_counts: &[[usize; 256]],
-    tile_size: usize,
-    level: usize,
-) where
-    T: RadixKey + Sized + Send + Copy + Sync,
-{
-    if bucket.len() <= 1 {
-        return;
+impl<'a> Sorter<'a> {
+    pub(crate) fn regions_sort_adapter<T>(
+        &self,
+        bucket: &mut [T],
+        counts: &[usize; 256],
+        tile_counts: &[[usize; 256]],
+        tile_size: usize,
+        level: usize,
+    ) where
+        T: RadixKey + Sized + Send + Copy + Sync,
+    {
+        if bucket.len() <= 1 {
+            return;
+        }
+
+        regions_sort(bucket, counts, tile_counts, tile_size, level);
+
+        if level == 0 {
+            return;
+        }
+
+        self.director(bucket, counts.to_vec(), level - 1);
     }
-
-    regions_sort(bucket, counts, tile_counts, tile_size, level);
-
-    if level == 0 {
-        return;
-    }
-
-    director(tuner, bucket, counts.to_vec(), level - 1);
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::sorts::regions_sort::regions_sort_adapter;
+    use crate::sorter::Sorter;
     use crate::tuners::StandardTuner;
     use crate::utils::test_utils::{sort_comparison_suite, NumericTest};
     use crate::utils::{aggregate_tile_counts, cdiv, get_tile_counts};
@@ -279,7 +280,8 @@ mod tests {
     where
         T: NumericTest<T>,
     {
-        let tuner = StandardTuner {};
+        let sorter = Sorter::new(true, &StandardTuner);
+
         sort_comparison_suite(shift, |inputs| {
             if inputs.len() == 0 {
                 return;
@@ -288,14 +290,8 @@ mod tests {
             let tile_size = cdiv(inputs.len(), current_num_threads());
             let tile_counts = get_tile_counts(inputs, tile_size, T::LEVELS - 1);
             let counts = aggregate_tile_counts(&tile_counts);
-            regions_sort_adapter(
-                &tuner,
-                inputs,
-                &counts,
-                &tile_counts,
-                tile_size,
-                T::LEVELS - 1,
-            );
+
+            sorter.regions_sort_adapter(inputs, &counts, &tile_counts, tile_size, T::LEVELS - 1);
         });
     }
 
