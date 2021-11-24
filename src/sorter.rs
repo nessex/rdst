@@ -103,7 +103,7 @@ impl<'a> Sorter<'a> {
 
             if homogenous {
                 if level != 0 {
-                    self.director(chunk, counts.to_vec(), level - 1);
+                    self.director(chunk, &counts, level - 1);
                 }
 
                 return;
@@ -130,7 +130,7 @@ impl<'a> Sorter<'a> {
     }
 
     #[inline]
-    pub fn multi_threaded_director<T>(&self, bucket: &mut [T], counts: Vec<usize>, level: usize)
+    pub fn multi_threaded_director<T>(&self, bucket: &mut [T], counts: &[usize; 256], level: usize)
     where
         T: RadixKey + Send + Copy + Sync,
     {
@@ -144,7 +144,7 @@ impl<'a> Sorter<'a> {
     }
 
     #[inline]
-    pub fn single_threaded_director<T>(&self, bucket: &mut [T], counts: Vec<usize>, level: usize)
+    pub fn single_threaded_director<T>(&self, bucket: &mut [T], counts: &[usize; 256], level: usize)
     where
         T: RadixKey + Send + Sync + Copy,
     {
@@ -157,7 +157,7 @@ impl<'a> Sorter<'a> {
     }
 
     #[inline]
-    pub fn director<T>(&self, bucket: &mut [T], counts: Vec<usize>, level: usize)
+    pub fn director<T>(&self, bucket: &mut [T], counts: &[usize; 256], level: usize)
     where
         T: RadixKey + Send + Sync + Copy,
     {

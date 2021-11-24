@@ -20,7 +20,7 @@ work_profiles = []
 
 [dependencies]
 rayon = "1.5.1"
-arbitrary-chunks = "0.3.0"
+arbitrary-chunks = "0.4.0"
 try-mutex = "0.4.0"
 partition = "0.1.2"
 criterion = { version = "0.3.5", optional = true }

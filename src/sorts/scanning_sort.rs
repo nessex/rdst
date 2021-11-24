@@ -29,7 +29,7 @@ fn get_scanner_buckets<'a, T>(
 ) -> Vec<ScannerBucket<'a, T>> {
     let mut running_count = 0;
     let mut out: Vec<_> = bucket
-        .arbitrary_chunks_mut(counts.to_vec())
+        .arbitrary_chunks_mut(counts)
         .enumerate()
         .map(|(index, chunk)| {
             let head = prefix_sums[index] - running_count;
@@ -228,7 +228,7 @@ impl<'a> Sorter<'a> {
             return;
         }
 
-        self.director(bucket, counts.to_vec(), level - 1);
+        self.director(bucket, counts, level - 1);
     }
 }
 

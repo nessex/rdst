@@ -67,7 +67,7 @@ impl<'a> Sorter<'a> {
             return;
         }
 
-        self.director(bucket, counts.to_vec(), level - 1);
+        self.director(bucket, counts, level - 1);
     }
 }
 

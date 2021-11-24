@@ -31,7 +31,7 @@ pub fn recombinating_sort<T>(
         .collect();
 
     bucket
-        .arbitrary_chunks_mut(counts.to_vec())
+        .arbitrary_chunks_mut(counts)
         .enumerate()
         .par_bridge()
         .for_each(|(index, global_chunk)| {
@@ -73,7 +73,7 @@ impl<'a> Sorter<'a> {
             return;
         }
 
-        self.director(bucket, counts.to_vec(), level - 1);
+        self.director(bucket, counts, level - 1);
     }
 }
 

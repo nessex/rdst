@@ -22,7 +22,7 @@ pub fn mt_lsb_sort<T>(
         }
     }
 
-    let mut chunks: Vec<&mut [T]> = dst_bucket.arbitrary_chunks_mut(minor_counts).collect();
+    let mut chunks: Vec<&mut [T]> = dst_bucket.arbitrary_chunks_mut(&minor_counts).collect();
     chunks.reverse();
 
     let mut collated_chunks: Vec<Vec<&mut [T]>> = Vec::with_capacity(tiles);
@@ -174,7 +174,7 @@ impl<'a> Sorter<'a> {
 
         drop(tmp_bucket);
 
-        self.director(bucket, counts.to_vec(), level - 1);
+        self.director(bucket, counts, level - 1);
     }
 }
 
