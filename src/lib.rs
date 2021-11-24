@@ -109,18 +109,17 @@ mod sorts;
 #[cfg(any(test, feature = "bench"))]
 pub mod sorts;
 
-#[cfg(not(any(test, feature = "bench")))]
+#[cfg(not(any(test, feature = "bench", feature = "tuning")))]
 mod utils;
-#[cfg(any(test, feature = "bench"))]
+#[cfg(any(test, feature = "bench", feature = "tuning"))]
 pub mod utils;
 
 mod radix_sort;
 mod sorter;
-#[cfg(not(any(test, feature = "tuning", feature = "bench")))]
-mod tuner;
-#[cfg(any(test, feature = "tuning", feature = "bench"))]
-pub mod tuner;
 mod tuners;
+
+// Public modules
+pub mod tuner;
 
 // Public exports
 pub use radix_key::RadixKey;
