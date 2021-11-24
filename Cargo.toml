@@ -60,12 +60,12 @@ harness = false
 name = "tuning_parameters"
 harness = false
 
-[[example]]
+[[bin]]
 name = "profiling"
-test = false
+path = "src/cmd/profiling.rs"
 required-features = ["bench"]
 
-[[example]]
+[[bin]]
 name = "timings"
-test = false
+path = "src/cmd/timings.rs"
 required-features = ["bench", "tuning"]
