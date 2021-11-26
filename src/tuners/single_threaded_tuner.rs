@@ -18,25 +18,26 @@ impl Tuner for SingleThreadedTuner {
             return Algorithm::Comparative;
         }
 
+        let depth = p.total_levels - p.level - 1;
+
         if p.input_len >= 5_000 {
             let distribution_threshold = (p.input_len / 256) * 2;
 
             for c in counts {
                 if *c >= distribution_threshold {
-                    return match p.input_len {
-                        0..=50_000 => Algorithm::LrLsb,
-                        50_001..=usize::MAX => Algorithm::Ska,
-                        _ => Algorithm::LrLsb,
+                    return if p.input_len > 100_000 && depth < 2 {
+                        Algorithm::Ska
+                    } else {
+                        Algorithm::LrLsb
                     }
                 }
             }
         }
 
-        match p.input_len {
-            0..=128 => Algorithm::Comparative,
-            129..=400_000 => Algorithm::Lsb,
-            400_001..=usize::MAX => Algorithm::Ska,
-            _ => Algorithm::Lsb,
+        if p.input_len > 800_000 && depth == 0 {
+            Algorithm::Ska
+        } else {
+            Algorithm::Lsb
         }
     }
 }
