@@ -20,6 +20,7 @@
 //! This is generally slower than `lsb_sort` for smaller inputs, but for larger inputs the memory
 //! efficiency of this algorithm makes it take the lead.
 
+use partition::partition_index;
 use crate::sorter::Sorter;
 use crate::utils::*;
 use crate::RadixKey;
@@ -51,6 +52,17 @@ pub fn ska_sort<T>(
     if largest == bucket.len() {
         // Already sorted
         return;
+    } else if largest > (bucket.len() / 2) {
+        // Partition in-place the largest chunk so we don't spend all our time
+        // swapping things in and out that are already in the correct place.
+
+        let li = largest_index as u8;
+        let offs = partition_index(
+            &mut bucket[prefix_sums[largest_index]..end_offsets[largest_index]],
+               |v| v.get_level(level) == li
+        );
+
+        prefix_sums[largest_index] += offs;
     }
 
     finished_map[largest_index] = true;
