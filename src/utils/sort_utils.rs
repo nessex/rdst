@@ -1,5 +1,7 @@
 use crate::RadixKey;
+#[cfg(feature = "multi-threaded")]
 use rayon::prelude::*;
+#[cfg(feature = "multi-threaded")]
 use std::sync::mpsc::channel;
 
 #[inline]
@@ -26,6 +28,7 @@ pub fn get_end_offsets(counts: &[usize; 256], prefix_sums: &[usize; 256]) -> [us
 }
 
 #[inline]
+#[cfg(feature = "multi-threaded")]
 pub fn par_get_counts<T>(bucket: &[T], level: usize) -> [usize; 256]
 where
     T: RadixKey + Sized + Send + Sync,
@@ -320,10 +323,17 @@ where
     #[cfg(feature = "work_profiles")]
     println!("({}) TILE_COUNT", level);
 
-    bucket
+    #[cfg(feature = "multi-threaded")]
+    return bucket
         .par_chunks(tile_size)
         .map(|chunk| par_get_counts(chunk, level))
-        .collect()
+        .collect();
+
+    #[cfg(not(feature = "multi-threaded"))]
+    return bucket
+        .chunks(tile_size)
+        .map(|chunk| get_counts(chunk, level))
+        .collect();
 }
 
 #[inline]
