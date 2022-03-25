@@ -18,10 +18,16 @@ where
         // This is an invariant of RadixKey that must be upheld.
         assert_ne!(T::LEVELS, 0, "RadixKey must have at least 1 level");
 
+        let (tuner, multi_threaded): (&(dyn Tuner + Send + Sync), bool) = if cfg!(feature = "multi-threaded") {
+            (&StandardTuner, true)
+        } else {
+            (&SingleThreadedTuner, false)
+        };
+
         Self {
             data,
-            multi_threaded: true,
-            tuner: &StandardTuner,
+            multi_threaded,
+            tuner,
         }
     }
 
@@ -42,6 +48,7 @@ where
     ///     .with_single_threaded_tuner()
     ///     .sort();
     /// ```
+    #[cfg(feature = "multi-threaded")]
     pub fn with_parallel(mut self, parallel: bool) -> Self {
         self.multi_threaded = parallel;
 
@@ -62,6 +69,7 @@ where
     ///     .with_low_mem_tuner()
     ///     .sort();
     /// ```
+    #[cfg(feature = "multi-threaded")]
     pub fn with_low_mem_tuner(mut self) -> Self {
         self.tuner = &LowMemoryTuner;
 
