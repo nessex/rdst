@@ -1,7 +1,7 @@
 [package]
 name = "rdst"
 description = "A flexible parallel unstable radix sort that supports sorting by any arbitrarily defined sequence of bytes."
-version = "0.19.2"
+version = "0.20.0"
 authors = ["Nathan Essex <nathan@essex.id.au>"]
 edition = "2018"
 license = "Apache-2.0 OR MIT"
@@ -12,14 +12,14 @@ keywords = ["radix","sort","rayon","parallel","multithreaded"]
 documentation = "https://docs.rs/rdst/"
 
 [features]
-default = ["default-implementations"]
+default = ["multi-threaded"]
 bench = ["criterion", "block-pseudorand"]
 tuning = ["criterion", "block-pseudorand", "jemallocator"]
-default-implementations = []
+multi-threaded = ["rayon"]
 work_profiles = []
 
 [dependencies]
-rayon = "1.5.1"
+rayon = { version = "1.5.1", optional = true }
 arbitrary-chunks = "0.4.0"
 try-mutex = "0.4.0"
 partition = "0.1.2"
@@ -28,6 +28,7 @@ block-pseudorand = { version = "0.1.1", optional = true }
 jemallocator = { version = "0.3.2", optional = true }
 
 [dev-dependencies]
+rayon = "1.5.1"
 voracious_radix_sort = { version = "1.1.0", features = ["voracious_multithread"] }
 num_cpus = "1.13.0"
 criterion = "0.3.5"

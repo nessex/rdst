@@ -2,7 +2,9 @@ use crate::tuner::{Algorithm, Tuner, TuningParams};
 use crate::utils::*;
 use crate::RadixKey;
 use arbitrary_chunks::ArbitraryChunks;
+#[cfg(feature = "multi-threaded")]
 use rayon::current_num_threads;
+#[cfg(feature = "multi-threaded")]
 use rayon::prelude::*;
 use std::cmp::max;
 
@@ -26,14 +28,18 @@ impl<'a> Sorter<'a> {
         bucket: &mut [T],
         counts: &[usize; 256],
         tile_counts: Option<Vec<[usize; 256]>>,
+        #[allow(unused)]
         tile_size: usize,
         algorithm: Algorithm,
     ) where
         T: RadixKey + Copy + Sized + Send + Sync,
     {
+        #[allow(unused)]
         if let Some(tile_counts) = tile_counts {
             match algorithm {
+                #[cfg(feature = "multi-threaded")]
                 Algorithm::Scanning => self.scanning_sort_adapter(bucket, counts, level),
+                #[cfg(feature = "multi-threaded")]
                 Algorithm::Recombinating => {
                     self.recombinating_sort_adapter(bucket, counts, &tile_counts, tile_size, level)
                 }
@@ -41,21 +47,26 @@ impl<'a> Sorter<'a> {
                 Algorithm::Lsb => self.lsb_sort_adapter(false, bucket, counts, 0, level),
                 Algorithm::Ska => self.ska_sort_adapter(bucket, counts, level),
                 Algorithm::Comparative => self.comparative_sort(bucket, level),
+                #[cfg(feature = "multi-threaded")]
                 Algorithm::Regions => {
                     self.regions_sort_adapter(bucket, counts, &tile_counts, tile_size, level)
                 }
+                #[cfg(feature = "multi-threaded")]
                 Algorithm::MtOop => {
                     self.mt_oop_sort_adapter(bucket, level, counts, &tile_counts, tile_size)
                 }
+                #[cfg(feature = "multi-threaded")]
                 Algorithm::MtLsb => self.mt_lsb_sort_adapter(bucket, 0, level, tile_size),
             }
         } else {
             match algorithm {
+                #[cfg(feature = "multi-threaded")]
                 Algorithm::Scanning => self.scanning_sort_adapter(bucket, counts, level),
                 Algorithm::LrLsb => self.lsb_sort_adapter(true, bucket, counts, 0, level),
                 Algorithm::Lsb => self.lsb_sort_adapter(false, bucket, counts, 0, level),
                 Algorithm::Ska => self.ska_sort_adapter(bucket, counts, level),
                 Algorithm::Comparative => self.comparative_sort(bucket, level),
+                #[cfg(feature = "multi-threaded")]
                 e => panic!("Bad algorithm: {:?} for len: {}", e, bucket.len()),
             }
         }
@@ -86,7 +97,11 @@ impl<'a> Sorter<'a> {
             parent_len,
         };
 
-        let mut tile_counts = if self.multi_threaded && chunk.len() >= 260_000 {
+        let mut tile_counts = if
+            cfg!(feature = "multi-threaded") &&
+            self.multi_threaded &&
+            chunk.len() >= 260_000
+        {
             Some(get_tile_counts(chunk, tile_size, level))
         } else {
             None
@@ -115,6 +130,7 @@ impl<'a> Sorter<'a> {
         // Ensure tile_counts is always set when it is required
         if tile_counts.is_none() {
             tile_counts = match algorithm {
+                #[cfg(feature = "multi-threaded")]
                 Algorithm::MtOop | Algorithm::Recombinating | Algorithm::Regions => {
                     Some(vec![counts.clone()])
                 }
@@ -133,13 +149,19 @@ impl<'a> Sorter<'a> {
     where
         T: RadixKey + Sized + Send + Copy + Sync,
     {
+        #[cfg(feature = "multi-threaded")]
         let threads = current_num_threads();
+
+        #[cfg(not(feature = "multi-threaded"))]
+        let threads = 1;
+
         let level = T::LEVELS - 1;
 
         self.handle_chunk(bucket, level, None, threads);
     }
 
     #[inline]
+    #[cfg(feature = "multi-threaded")]
     pub fn multi_threaded_director<T>(&self, bucket: &mut [T], counts: &[usize; 256], level: usize)
     where
         T: RadixKey + Send + Copy + Sync,
@@ -171,7 +193,8 @@ impl<'a> Sorter<'a> {
     where
         T: RadixKey + Send + Sync + Copy,
     {
-        if self.multi_threaded {
+        if cfg!(feature = "multi-threaded") && self.multi_threaded {
+            #[cfg(feature = "multi-threaded")]
             self.multi_threaded_director(bucket, counts, level);
         } else {
             self.single_threaded_director(bucket, counts, level);

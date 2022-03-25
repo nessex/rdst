@@ -8,8 +8,8 @@ pub struct TuningParams {
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
+#[cfg(feature = "multi-threaded")]
 pub enum Algorithm {
-    #[allow(unused)]
     MtOop,
     MtLsb,
     Scanning,
@@ -18,6 +18,15 @@ pub enum Algorithm {
     LrLsb,
     Lsb,
     Regions,
+    Ska,
+}
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+#[cfg(not(feature = "multi-threaded"))]
+pub enum Algorithm {
+    Comparative,
+    LrLsb,
+    Lsb,
     Ska,
 }
 
