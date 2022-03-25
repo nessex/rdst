@@ -121,6 +121,16 @@
 //!     .sort();
 //! ```
 //!
+//! NOTE: If you are ONLY using the single-threaded variant of this radix sort, you can disable the default `"multi-threaded"` feature on the `rdst` dependency to remove large sub-dependencies like Rayon.
+//!
+//! ```toml
+//! [dependencies.rdst]
+//! version = "x.y.z"
+//! default-features = false
+//! ```
+//!
+//! With the `"multi-threaded"` feature disabled, even the default `my_data.radix_sort_unstable()` will use a single-threaded tuner.
+//!
 //! ## Custom Tuners
 //!
 //! Tuners are things which you can implement to control which sorting algorithms are used. There are many radix sorting algorithms implemented as part of this crate, and they all have their pros and cons. If you have a very specific use-case it may be worth your time to tune the sort yourself.
