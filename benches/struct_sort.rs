@@ -76,11 +76,11 @@ fn gen_input_sorted(n: usize) -> Vec<LargeStruct> {
 }
 
 fn full_sort_struct(c: &mut Criterion) {
-    let mut input_sets: Vec<Vec<LargeStruct>> = vec![
-        gen_input_t2d(160_000),
-        gen_input_t2d(409_600),
-        gen_input_sorted(170_000),
-        gen_input_sorted(509_600),
+    let mut input_sets: Vec<(&str, Vec<LargeStruct>)> = vec![
+        ("160k random", gen_input_t2d(160_000)),
+        ("409k random", gen_input_t2d(409_600)),
+        ("160k already sorted", gen_input_sorted(160_000)),
+        ("409k already sorted", gen_input_sorted(409_600)),
     ];
 
     let tests: Vec<(&str, Box<dyn Fn(Vec<LargeStruct>)>)> = vec![
@@ -118,12 +118,14 @@ fn full_sort_struct(c: &mut Criterion) {
     group.plot_config(PlotConfiguration::default().summary_scale(AxisScale::Logarithmic));
 
     for set in input_sets.iter_mut() {
-        let l = set.len();
+        let l = set.1.len();
         group.throughput(Throughput::Elements(l as u64));
 
         for t in tests.iter() {
-            group.bench_with_input(BenchmarkId::new((*t).0.clone(), l), set, |bench, set| {
-                bench.iter_batched(|| set.clone(), &*t.1, BatchSize::SmallInput);
+            let name = format!("{} {}", set.0, t.0);
+
+            group.bench_with_input(BenchmarkId::new(name, l), set, |bench, set| {
+                bench.iter_batched(|| set.1.clone(), &*t.1, BatchSize::SmallInput);
             });
         }
     }
