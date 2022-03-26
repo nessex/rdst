@@ -1,6 +1,15 @@
 use crate::sorter::Sorter;
 use crate::tuner::Tuner;
-use crate::tuners::{LowMemoryTuner, SingleThreadedTuner, StandardTuner};
+#[cfg(feature = "multi-threaded")]
+use {
+    crate::tuners::{
+        LowMemoryTuner,
+        StandardTuner,
+    }
+};
+use crate::tuners::{
+    SingleThreadedTuner,
+};
 use crate::RadixKey;
 
 pub struct RadixSortBuilder<'a, T> {
@@ -18,10 +27,15 @@ where
         // This is an invariant of RadixKey that must be upheld.
         assert_ne!(T::LEVELS, 0, "RadixKey must have at least 1 level");
 
+        #[cfg(feature = "multi-threaded")]
+        let (tuner, multi_threaded) = (&StandardTuner, true);
+        #[cfg(not(feature = "multi-threaded"))]
+        let (tuner, multi_threaded) = (&SingleThreadedTuner, false);
+
         Self {
             data,
-            multi_threaded: true,
-            tuner: &StandardTuner,
+            multi_threaded,
+            tuner,
         }
     }
 
@@ -62,6 +76,7 @@ where
     ///     .with_low_mem_tuner()
     ///     .sort();
     /// ```
+    #[cfg(feature = "multi-threaded")]
     pub fn with_low_mem_tuner(mut self) -> Self {
         self.tuner = &LowMemoryTuner;
 

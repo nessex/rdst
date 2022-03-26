@@ -1,5 +1,7 @@
 use crate::RadixKey;
+#[cfg(feature = "multi-threaded")]
 use rayon::prelude::*;
+#[cfg(feature = "multi-threaded")]
 use std::sync::mpsc::channel;
 
 #[inline]
@@ -25,6 +27,8 @@ pub fn get_end_offsets(counts: &[usize; 256], prefix_sums: &[usize; 256]) -> [us
     end_offsets
 }
 
+#[inline]
+#[cfg(feature = "multi-threaded")]
 pub fn par_get_counts<T>(bucket: &[T], level: usize) -> ([usize; 256], bool)
 where
     T: RadixKey + Sized + Send + Sync,
@@ -34,6 +38,7 @@ where
 }
 
 #[inline]
+#[cfg(feature = "multi-threaded")]
 pub fn par_get_counts_with_ends<T>(bucket: &[T], level: usize) -> ([usize; 256], bool, u8, u8)
 where
     T: RadixKey + Sized + Send + Sync,
@@ -389,9 +394,16 @@ where
     #[cfg(feature = "work_profiles")]
     println!("({}) TILE_COUNT", level);
 
+    #[cfg(feature = "multi-threaded")]
     let tiles: Vec<([usize; 256], bool, u8, u8)> = bucket
         .par_chunks(tile_size)
         .map(|chunk| par_get_counts_with_ends(chunk, level))
+        .collect();
+
+    #[cfg(not(feature = "multi-threaded"))]
+    let tiles: Vec<([usize; 256], bool, u8, u8)> = bucket
+        .chunks(tile_size)
+        .map(|chunk| get_counts_with_ends(chunk, level))
         .collect();
 
     let mut all_sorted = true;
