@@ -90,6 +90,10 @@ impl<'a> Sorter<'a> {
     where
         T: RadixKey + Sized + Send + Copy + Sync,
     {
+        if bucket.len() < 2 {
+            return;
+        }
+
         let plateaus = detect_plateaus(bucket, level);
         let (mut prefix_sums, end_offsets) = apply_plateaus(bucket, counts, &plateaus);
 

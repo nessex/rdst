@@ -23,6 +23,10 @@ impl<'a> Sorter<'a> {
     where
         T: RadixKey + Sized + Send + Copy + Sync,
     {
+        if bucket.len() < 2 {
+            return;
+        }
+
         bucket.sort_unstable_by(|a, b| -> Ordering {
             let mut level = start_level;
             loop {

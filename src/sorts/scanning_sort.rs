@@ -242,6 +242,10 @@ impl<'a> Sorter<'a> {
     ) where
         T: RadixKey + Sized + Send + Copy + Sync,
     {
+        if bucket.len() < 2 {
+            return;
+        }
+
         scanning_sort(bucket, counts, level);
 
         if level == 0 {

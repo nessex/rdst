@@ -97,24 +97,39 @@ impl<'a> Sorter<'a> {
             parent_len,
         };
 
-        let mut tile_counts = if
+        let (mut tile_counts, already_sorted) = if
             cfg!(feature = "multi-threaded") &&
             self.multi_threaded &&
             chunk.len() >= 260_000
         {
             let (tile_counts, already_sorted) = get_tile_counts(chunk, tile_size, level);
-            if already_sorted { return; }
 
-            Some(tile_counts)
+            (Some(tile_counts), already_sorted)
         } else {
-            None
+            (None, false)
         };
 
         let counts = if let Some(tile_counts) = &tile_counts {
-            aggregate_tile_counts(tile_counts)
+            let counts = aggregate_tile_counts(tile_counts);
+
+            if already_sorted {
+                if level != 0 {
+                    self.director(chunk, &counts, level - 1);
+                }
+
+                return;
+            }
+
+            counts
         } else {
             let (counts, already_sorted) = get_counts(chunk, level);
-            if already_sorted { return; }
+            if already_sorted {
+                if level != 0 {
+                    self.director(chunk, &counts, level - 1);
+                }
+
+                return;
+            }
 
             counts
         };

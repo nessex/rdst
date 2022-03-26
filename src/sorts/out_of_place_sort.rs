@@ -55,6 +55,10 @@ pub fn out_of_place_sort<T>(
 ) where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
+    if src_bucket.len() < 2 {
+        return;
+    }
+
     let mut prefix_sums = get_prefix_sums(counts);
 
     let chunks = src_bucket.chunks_exact(8);
@@ -105,6 +109,10 @@ pub fn out_of_place_sort_with_counts<T>(
 where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
+    if src_bucket.len() < 2 {
+        return [0usize; 256];
+    }
+
     let next_level = level + 1;
     let mut prefix_sums = get_prefix_sums(counts);
     let mut next_counts_0 = [0usize; 256];
@@ -181,6 +189,10 @@ pub fn lr_out_of_place_sort<T>(
 ) where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
+    if src_bucket.len() < 2 {
+        return;
+    }
+
     let mut offsets = get_prefix_sums(counts);
     let mut ends = [0usize; 256];
 
@@ -248,6 +260,10 @@ pub fn lr_out_of_place_sort_with_counts<T>(
 where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
+    if src_bucket.len() < 2 {
+        return [0usize; 256];
+    }
+
     let next_level = level + 1;
     let mut next_counts_0 = [0usize; 256];
     let mut next_counts_1 = [0usize; 256];

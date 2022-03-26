@@ -84,7 +84,7 @@ impl<'a> Sorter<'a> {
     ) where
         T: RadixKey + Sized + Send + Copy + Sync,
     {
-        if bucket.len() <= 1 {
+        if bucket.len() < 2 {
             return;
         }
 

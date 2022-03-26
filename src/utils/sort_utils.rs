@@ -33,6 +33,10 @@ pub fn par_get_counts<T>(bucket: &[T], level: usize) -> ([usize; 256], bool)
 where
     T: RadixKey + Sized + Send + Sync,
 {
+    if bucket.len() == 0 {
+        return ([0usize; 256], true);
+    }
+
     let (counts, sorted, _, _) = par_get_counts_with_ends(bucket, level);
     (counts, sorted)
 }
@@ -53,10 +57,10 @@ where
     let threads = rayon::current_num_threads();
     let chunk_divisor = 8;
     let chunk_size = (bucket.len() / threads / chunk_divisor) + 1;
-    debug_assert_ne!(chunk_size, 0);
     let chunks = bucket.par_chunks(chunk_size);
     let len = chunks.len();
     let (tx, rx) = channel();
+
     chunks.enumerate().for_each_with(tx, |tx, (i, chunk)| {
         let counts = get_counts_with_ends(chunk, level);
         tx.send((i, counts.0, counts.1, counts.2, counts.3)).unwrap();
@@ -100,8 +104,6 @@ pub fn get_counts_with_ends<T>(bucket: &[T], level: usize) -> ([usize; 256], boo
 where
     T: RadixKey,
 {
-    debug_assert_ne!(bucket.len(), 0);
-
     #[cfg(feature = "work_profiles")]
     println!("({}) COUNT", level);
 
