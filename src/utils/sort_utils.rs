@@ -28,7 +28,7 @@ pub fn get_end_offsets(counts: &[usize; 256], prefix_sums: &[usize; 256]) -> [us
 }
 
 #[inline]
-#[cfg(feature = "multi-threaded")]
+#[cfg(any(test, feature = "bench", feature = "tuning"))]
 pub fn par_get_counts<T>(bucket: &[T], level: usize) -> ([usize; 256], bool)
 where
     T: RadixKey + Sized + Send + Sync,
@@ -63,7 +63,7 @@ where
     });
 
     let mut msb_counts = [0usize; 256];
-    let mut already_sorted = false;
+    let mut already_sorted = true;
     let mut boundaries = vec![(0u8, 0u8); len];
 
     for _ in 0..len {
