@@ -120,7 +120,7 @@ mod tests {
                 return;
             }
 
-            let tile_counts = get_tile_counts(inputs, tile_size, level);
+            let (tile_counts, _) = get_tile_counts(inputs, tile_size, level);
             let counts = aggregate_tile_counts(&tile_counts);
 
             sorter.recombinating_sort_adapter(

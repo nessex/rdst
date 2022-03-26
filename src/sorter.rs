@@ -87,7 +87,10 @@ impl<'a> Sorter<'a> {
         };
 
         let mut tile_counts = if self.multi_threaded && chunk.len() >= 260_000 {
-            Some(get_tile_counts(chunk, tile_size, level))
+            let (tile_counts, already_sorted) = get_tile_counts(chunk, tile_size, level);
+            if already_sorted { return; }
+
+            Some(tile_counts)
         } else {
             None
         };
@@ -95,7 +98,10 @@ impl<'a> Sorter<'a> {
         let counts = if let Some(tile_counts) = &tile_counts {
             aggregate_tile_counts(tile_counts)
         } else {
-            get_counts(chunk, level)
+            let (counts, already_sorted) = get_counts(chunk, level);
+            if already_sorted { return; }
+
+            counts
         };
 
         if chunk.len() >= 30_000 {

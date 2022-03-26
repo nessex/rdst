@@ -153,11 +153,15 @@ impl<'a> Sorter<'a> {
         let mut invert = false;
 
         for level in levels {
-            let tile_counts = if invert {
+            let (tile_counts, already_sorted) = if invert {
                 get_tile_counts(&tmp_bucket, tile_size, level)
             } else {
                 get_tile_counts(bucket, tile_size, level)
             };
+
+            if already_sorted {
+                continue;
+            }
 
             if invert {
                 mt_lsb_sort(&mut tmp_bucket, bucket, &tile_counts, tile_size, level)

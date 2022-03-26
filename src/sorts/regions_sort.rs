@@ -306,7 +306,7 @@ mod tests {
             }
 
             let tile_size = cdiv(inputs.len(), current_num_threads());
-            let tile_counts = get_tile_counts(inputs, tile_size, T::LEVELS - 1);
+            let (tile_counts, _) = get_tile_counts(inputs, tile_size, T::LEVELS - 1);
             let counts = aggregate_tile_counts(&tile_counts);
 
             sorter.regions_sort_adapter(inputs, &counts, &tile_counts, tile_size, T::LEVELS - 1);

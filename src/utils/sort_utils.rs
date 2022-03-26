@@ -25,8 +25,16 @@ pub fn get_end_offsets(counts: &[usize; 256], prefix_sums: &[usize; 256]) -> [us
     end_offsets
 }
 
+pub fn par_get_counts<T>(bucket: &[T], level: usize) -> ([usize; 256], bool)
+where
+    T: RadixKey + Sized + Send + Sync,
+{
+    let (counts, sorted, _, _) = par_get_counts_with_ends(bucket, level);
+    (counts, sorted)
+}
+
 #[inline]
-pub fn par_get_counts<T>(bucket: &[T], level: usize) -> [usize; 256]
+pub fn par_get_counts_with_ends<T>(bucket: &[T], level: usize) -> ([usize; 256], bool, u8, u8)
 where
     T: RadixKey + Sized + Send + Sync,
 {
@@ -34,46 +42,90 @@ where
     println!("({}) PAR_COUNT", level);
 
     if bucket.len() < 400_000 {
-        return get_counts(bucket, level);
+        return get_counts_with_ends(bucket, level);
     }
 
     let threads = rayon::current_num_threads();
     let chunk_divisor = 8;
     let chunk_size = (bucket.len() / threads / chunk_divisor) + 1;
+    debug_assert_ne!(chunk_size, 0);
     let chunks = bucket.par_chunks(chunk_size);
     let len = chunks.len();
     let (tx, rx) = channel();
-    chunks.for_each_with(tx, |tx, chunk| {
-        let counts = get_counts(chunk, level);
-        tx.send(counts).unwrap();
+    chunks.enumerate().for_each_with(tx, |tx, (i, chunk)| {
+        let counts = get_counts_with_ends(chunk, level);
+        tx.send((i, counts.0, counts.1, counts.2, counts.3)).unwrap();
     });
 
     let mut msb_counts = [0usize; 256];
+    let mut already_sorted = false;
+    let mut boundaries = vec![(0u8, 0u8); len];
 
     for _ in 0..len {
-        let counts = rx.recv().unwrap();
+        let (i, counts, chunk_sorted, start, end) = rx.recv().unwrap();
+
+        if !chunk_sorted {
+            already_sorted = false;
+        }
+
+        boundaries[i].0 = start;
+        boundaries[i].1 = end;
 
         for (i, c) in counts.iter().enumerate() {
             msb_counts[i] += *c;
         }
     }
 
-    msb_counts
+    // Check the boundaries of each counted chunk, to see if the full bucket
+    // is already sorted
+    if already_sorted {
+        for w in boundaries.windows(2) {
+            if w[1].0 < w[0].1 {
+                already_sorted = false;
+                break;
+            }
+        }
+    }
+
+    (msb_counts, already_sorted, boundaries[0].0, boundaries[boundaries.len()-1].1)
 }
 
 #[inline]
-pub fn get_counts<T>(bucket: &[T], level: usize) -> [usize; 256]
+pub fn get_counts_with_ends<T>(bucket: &[T], level: usize) -> ([usize; 256], bool, u8, u8)
 where
     T: RadixKey,
 {
+    debug_assert_ne!(bucket.len(), 0);
+
     #[cfg(feature = "work_profiles")]
     println!("({}) COUNT", level);
 
+    let mut already_sorted = true;
+    let mut continue_from = bucket.len();
     let mut counts_1 = [0usize; 256];
+    let mut last = 0usize;
+
+    for i in 0..bucket.len() {
+        let b = bucket[i].get_level(level) as usize;
+        counts_1[b] += 1;
+
+        if b < last {
+            continue_from = i + 1;
+            already_sorted = false;
+            break;
+        }
+
+        last = b;
+    }
+
+    if continue_from == bucket.len() {
+        return (counts_1, already_sorted, bucket[0].get_level(level), last as u8);
+    }
+
     let mut counts_2 = [0usize; 256];
     let mut counts_3 = [0usize; 256];
     let mut counts_4 = [0usize; 256];
-    let chunks = bucket.chunks_exact(4);
+    let chunks = bucket[continue_from..].chunks_exact(4);
     let rem = chunks.remainder();
 
     chunks.into_iter().for_each(|chunk| {
@@ -99,7 +151,24 @@ where
         counts_1[i] += counts_4[i];
     }
 
-    counts_1
+    let b_first = bucket.first().unwrap().get_level(level);
+    let b_last = bucket.last().unwrap().get_level(level);
+
+    (counts_1, already_sorted, b_first, b_last)
+}
+
+#[inline]
+pub fn get_counts<T>(bucket: &[T], level: usize) -> ([usize; 256], bool)
+where
+    T: RadixKey,
+{
+    if bucket.len() == 0 {
+        return ([0usize; 256], true);
+    }
+
+    let (counts, sorted, _, _) = get_counts_with_ends(bucket, level);
+
+    (counts, sorted)
 }
 
 #[allow(clippy::uninit_vec)]
@@ -313,17 +382,29 @@ pub const fn cdiv(a: usize, b: usize) -> usize {
 }
 
 #[inline]
-pub fn get_tile_counts<T>(bucket: &[T], tile_size: usize, level: usize) -> Vec<[usize; 256]>
+pub fn get_tile_counts<T>(bucket: &[T], tile_size: usize, level: usize) -> (Vec<[usize; 256]>, bool)
 where
     T: RadixKey + Copy + Sized + Send + Sync,
 {
     #[cfg(feature = "work_profiles")]
     println!("({}) TILE_COUNT", level);
 
-    bucket
+    let tiles: Vec<([usize; 256], bool, u8, u8)> = bucket
         .par_chunks(tile_size)
-        .map(|chunk| par_get_counts(chunk, level))
-        .collect()
+        .map(|chunk| par_get_counts_with_ends(chunk, level))
+        .collect();
+
+    let mut all_sorted = true;
+
+    // Check if any of the tiles, or any of the tile boundaries are unsorted
+    for tile in tiles.windows(2) {
+        if !tile[0].1 || !tile[1].1 || tile[1].2 < tile[0].3 {
+            all_sorted = false;
+            break;
+        }
+    }
+
+    (tiles.into_iter().map(|v| v.0).collect(), all_sorted)
 }
 
 #[inline]

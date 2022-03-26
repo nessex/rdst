@@ -62,7 +62,10 @@ impl<'a> Sorter<'a> {
             } else if let Some(next_counts) = next_counts {
                 next_counts
             } else {
-                get_counts(bucket, level)
+                let (counts, already_sorted) = get_counts(bucket, level);
+                if already_sorted { continue 'outer }
+
+                counts
             };
 
             for c in counts.iter() {
@@ -142,13 +145,13 @@ mod tests {
         let sorter = Sorter::new(true, &StandardTuner);
 
         sort_comparison_suite(shift, |inputs| {
-            let counts = get_counts(inputs, T::LEVELS - 1);
+            let (counts, _) = get_counts(inputs, T::LEVELS - 1);
 
             sorter.lsb_sort_adapter(false, inputs, &counts, 0, T::LEVELS - 1)
         });
 
         sort_comparison_suite(shift, |inputs| {
-            let counts = get_counts(inputs, T::LEVELS - 1);
+            let (counts, _) = get_counts(inputs, T::LEVELS - 1);
 
             sorter.lsb_sort_adapter(true, inputs, &counts, 0, T::LEVELS - 1);
         });

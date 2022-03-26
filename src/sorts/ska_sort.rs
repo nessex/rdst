@@ -117,7 +117,7 @@ mod tests {
         let sorter = Sorter::new(true, &StandardTuner);
 
         sort_comparison_suite(shift, |inputs| {
-            let counts = get_counts(inputs, T::LEVELS - 1);
+            let (counts, _) = get_counts(inputs, T::LEVELS - 1);
 
             sorter.ska_sort_adapter(inputs, &counts, T::LEVELS - 1);
         });

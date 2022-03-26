@@ -266,7 +266,7 @@ mod tests {
         let sorter = Sorter::new(true, &StandardTuner);
 
         sort_comparison_suite(shift, |inputs| {
-            let counts = par_get_counts(inputs, T::LEVELS - 1);
+            let (counts, _) = par_get_counts(inputs, T::LEVELS - 1);
 
             sorter.scanning_sort_adapter(inputs, &counts, T::LEVELS - 1)
         });

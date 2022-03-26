@@ -9,14 +9,14 @@ fn tune_counts(c: &mut Criterion) {
         (
             "get_counts",
             Box::new(|input: Vec<_>| {
-                let c = get_counts(&input, 0);
+                let (c, _) = get_counts(&input, 0);
                 black_box(c);
             }),
         ),
         (
             "par_get_counts",
             Box::new(|input: Vec<_>| {
-                let c = par_get_counts(&input, 0);
+                let (c, _) = par_get_counts(&input, 0);
                 black_box(c);
             }),
         ),
@@ -24,7 +24,7 @@ fn tune_counts(c: &mut Criterion) {
             "get_tile_counts",
             Box::new(|input: Vec<_>| {
                 let tile_size = max(30_000, cdiv(input.len(), current_num_threads()));
-                let c = get_tile_counts(&input, tile_size, 0);
+                let (c, _) = get_tile_counts(&input, tile_size, 0);
                 black_box(c);
             }),
         ),
@@ -32,7 +32,7 @@ fn tune_counts(c: &mut Criterion) {
             "get_tile_counts_and_aggregate",
             Box::new(|input: Vec<_>| {
                 let tile_size = max(30_000, cdiv(input.len(), current_num_threads()));
-                let c = get_tile_counts(&input, tile_size, 0);
+                let (c, _) = get_tile_counts(&input, tile_size, 0);
                 let a = aggregate_tile_counts(&c);
                 black_box(a);
             }),

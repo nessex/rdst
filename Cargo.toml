@@ -42,6 +42,10 @@ name = "full_sort"
 harness = false
 
 [[bench]]
+name = "struct_sort"
+harness = false
+
+[[bench]]
 name = "tuning_parameters"
 harness = false
 
