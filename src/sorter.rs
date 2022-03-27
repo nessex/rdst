@@ -28,8 +28,7 @@ impl<'a> Sorter<'a> {
         bucket: &mut [T],
         counts: &[usize; 256],
         tile_counts: Option<Vec<[usize; 256]>>,
-        #[allow(unused)]
-        tile_size: usize,
+        #[allow(unused)] tile_size: usize,
         algorithm: Algorithm,
     ) where
         T: RadixKey + Copy + Sized + Send + Sync,
@@ -97,17 +96,14 @@ impl<'a> Sorter<'a> {
             parent_len,
         };
 
-        let (mut tile_counts, already_sorted) = if
-            cfg!(feature = "multi-threaded") &&
-            self.multi_threaded &&
-            chunk.len() >= 260_000
-        {
-            let (tile_counts, already_sorted) = get_tile_counts(chunk, tile_size, level);
+        let (mut tile_counts, already_sorted) =
+            if cfg!(feature = "multi-threaded") && self.multi_threaded && chunk.len() >= 260_000 {
+                let (tile_counts, already_sorted) = get_tile_counts(chunk, tile_size, level);
 
-            (Some(tile_counts), already_sorted)
-        } else {
-            (None, false)
-        };
+                (Some(tile_counts), already_sorted)
+            } else {
+                (None, false)
+            };
 
         let counts = if let Some(tile_counts) = &tile_counts {
             let counts = aggregate_tile_counts(tile_counts);

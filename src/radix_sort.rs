@@ -46,12 +46,12 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::cmp::Ordering;
-    use std::fmt::Debug;
-    use block_pseudorand::block_rand;
     use crate::tuner::{Algorithm, Tuner, TuningParams};
     use crate::utils::test_utils::{sort_comparison_suite, NumericTest};
     use crate::RadixSort;
+    use block_pseudorand::block_rand;
+    use std::cmp::Ordering;
+    use std::fmt::Debug;
 
     fn test_full_sort<T>(shift: T)
     where
@@ -107,7 +107,7 @@ mod tests {
             left.cmp(&right)
         }
     }
-    
+
     impl FpTotalCmp for f64 {
         // Ref: https://doc.rust-lang.org/std/primitive.f64.html#method.total_cmp
         fn fp_total_cmp(&self, other: Self) -> Ordering {
@@ -121,8 +121,11 @@ mod tests {
         }
     }
 
-    fn test_fp<T: Copy + Debug + PartialEq + PartialOrd + FpTotalCmp>(iterations: usize, len: usize, sort_fn: fn(&mut [T]))
-    {
+    fn test_fp<T: Copy + Debug + PartialEq + PartialOrd + FpTotalCmp>(
+        iterations: usize,
+        len: usize,
+        sort_fn: fn(&mut [T]),
+    ) {
         for _ in 0..iterations {
             let mut inputs: Vec<T> = block_rand(len);
             let mut expected = inputs.clone();

@@ -1,9 +1,12 @@
+use block_pseudorand::block_rand;
+use criterion::{
+    black_box, criterion_group, criterion_main, AxisScale, BatchSize, BenchmarkId, Criterion,
+    PlotConfiguration, Throughput,
+};
+use rdst::{RadixKey, RadixSort};
 use std::cmp::Ordering;
 use std::time::Duration;
-use block_pseudorand::block_rand;
-use criterion::{AxisScale, BatchSize, BenchmarkId, black_box, Criterion, criterion_group, criterion_main, PlotConfiguration, Throughput};
-use voracious_radix_sort::{Radixable, RadixSort as Vor};
-use rdst::{RadixKey, RadixSort};
+use voracious_radix_sort::{RadixSort as Vor, Radixable};
 
 #[derive(Debug, Clone, Copy)]
 pub struct LargeStruct {
@@ -53,26 +56,30 @@ fn gen_input_t2d(n: usize) -> Vec<LargeStruct> {
     let mut data_2: Vec<f32> = block_rand(n / 10);
     data.append(&mut data_2);
 
-    data.into_iter().map(|v| LargeStruct {
-        sort_key: v,
-        a: (0, 0),
-        b: 0,
-        c: 0,
-        d: None
-    }).collect()
+    data.into_iter()
+        .map(|v| LargeStruct {
+            sort_key: v,
+            a: (0, 0),
+            b: 0,
+            c: 0,
+            d: None,
+        })
+        .collect()
 }
 
 fn gen_input_sorted(n: usize) -> Vec<LargeStruct> {
     let mut data: Vec<f32> = block_rand(n);
     data.radix_sort_unstable();
 
-    data.into_iter().map(|v| LargeStruct {
-        sort_key: v,
-        a: (0, 0),
-        b: 0,
-        c: 0,
-        d: None
-    }).collect()
+    data.into_iter()
+        .map(|v| LargeStruct {
+            sort_key: v,
+            a: (0, 0),
+            b: 0,
+            c: 0,
+            d: None,
+        })
+        .collect()
 }
 
 fn full_sort_struct(c: &mut Criterion) {
@@ -87,7 +94,10 @@ fn full_sort_struct(c: &mut Criterion) {
         (
             "rdst",
             Box::new(|mut input| {
-                input.radix_sort_builder().with_single_threaded_tuner().sort();
+                input
+                    .radix_sort_builder()
+                    .with_single_threaded_tuner()
+                    .sort();
                 black_box(input);
             }),
         ),
@@ -104,7 +114,11 @@ fn full_sort_struct(c: &mut Criterion) {
                 input.sort_unstable_by_key(|v| {
                     let s = v.sort_key.to_bits();
 
-                    if s >> 31 == 1 { !s } else { s ^ (1 << 31) }
+                    if s >> 31 == 1 {
+                        !s
+                    } else {
+                        s ^ (1 << 31)
+                    }
                 });
                 black_box(input);
             }),
@@ -133,8 +147,5 @@ fn full_sort_struct(c: &mut Criterion) {
     group.finish();
 }
 
-criterion_group!(
-    struct_sort,
-    full_sort_struct,
-);
+criterion_group!(struct_sort, full_sort_struct,);
 criterion_main!(struct_sort);

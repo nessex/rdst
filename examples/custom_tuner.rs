@@ -1,5 +1,5 @@
-use rdst::RadixSort;
 use rdst::tuner::{Algorithm, Tuner, TuningParams};
+use rdst::RadixSort;
 
 struct MyTuner;
 
@@ -17,8 +17,6 @@ fn main() {
     let mut inputs = Vec::new();
     inputs.extend_from_slice(&[55, 22, 73, 4, 89, 0, 100, 3]);
 
-    inputs.radix_sort_builder()
-        .with_tuner(&MyTuner {})
-        .sort();
+    inputs.radix_sort_builder().with_tuner(&MyTuner {}).sort();
     println!("{:?}", &inputs[..]);
 }

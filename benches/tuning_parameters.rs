@@ -42,8 +42,5 @@ fn tune_counts(c: &mut Criterion) {
     bench_common(c, 0u32, "tune_counts", tests);
 }
 
-criterion_group!(
-    tuning_parameters,
-    tune_counts,
-);
+criterion_group!(tuning_parameters, tune_counts,);
 criterion_main!(tuning_parameters);

@@ -29,7 +29,7 @@ impl Tuner for SingleThreadedTuner {
                         Algorithm::Ska
                     } else {
                         Algorithm::LrLsb
-                    }
+                    };
                 }
             }
         }

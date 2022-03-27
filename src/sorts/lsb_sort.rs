@@ -63,7 +63,9 @@ impl<'a> Sorter<'a> {
                 next_counts
             } else {
                 let (counts, already_sorted) = get_counts(bucket, level);
-                if already_sorted { continue 'outer }
+                if already_sorted {
+                    continue 'outer;
+                }
 
                 counts
             };

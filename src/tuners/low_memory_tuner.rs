@@ -28,7 +28,7 @@ impl Tuner for LowMemoryTuner {
                         50_001..=1_000_000 => Algorithm::Ska,
                         1_000_001..=usize::MAX => Algorithm::Regions,
                         _ => Algorithm::LrLsb,
-                    }
+                    };
                 }
             }
         }

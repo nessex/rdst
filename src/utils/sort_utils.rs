@@ -63,7 +63,8 @@ where
 
     chunks.enumerate().for_each_with(tx, |tx, (i, chunk)| {
         let counts = get_counts_with_ends(chunk, level);
-        tx.send((i, counts.0, counts.1, counts.2, counts.3)).unwrap();
+        tx.send((i, counts.0, counts.1, counts.2, counts.3))
+            .unwrap();
     });
 
     let mut msb_counts = [0usize; 256];
@@ -96,7 +97,12 @@ where
         }
     }
 
-    (msb_counts, already_sorted, boundaries[0].0, boundaries[boundaries.len()-1].1)
+    (
+        msb_counts,
+        already_sorted,
+        boundaries[0].0,
+        boundaries[boundaries.len() - 1].1,
+    )
 }
 
 #[inline]
@@ -126,7 +132,12 @@ where
     }
 
     if continue_from == bucket.len() {
-        return (counts_1, already_sorted, bucket[0].get_level(level), last as u8);
+        return (
+            counts_1,
+            already_sorted,
+            bucket[0].get_level(level),
+            last as u8,
+        );
     }
 
     let mut counts_2 = [0usize; 256];

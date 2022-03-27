@@ -1,15 +1,8 @@
 use crate::sorter::Sorter;
 use crate::tuner::Tuner;
+use crate::tuners::SingleThreadedTuner;
 #[cfg(feature = "multi-threaded")]
-use {
-    crate::tuners::{
-        LowMemoryTuner,
-        StandardTuner,
-    }
-};
-use crate::tuners::{
-    SingleThreadedTuner,
-};
+use crate::tuners::{LowMemoryTuner, StandardTuner};
 use crate::RadixKey;
 
 pub struct RadixSortBuilder<'a, T> {
