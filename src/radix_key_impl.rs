@@ -164,10 +164,11 @@ impl RadixKey for f32 {
 
     #[inline]
     fn get_level(&self, level: usize) -> u8 {
-        let s = self.to_bits();
-        let u = if s >> 31 == 1 { !s } else { s ^ (1 << 31) };
+        let mut s = self.to_bits() as i32;
 
-        (u >> (level * 8)) as u8
+        s ^= (((s >> 31) as u32) >> 1) as i32;
+
+        ((s ^ i32::MIN) >> (level * 8)) as u8
     }
 }
 
@@ -176,9 +177,9 @@ impl RadixKey for f64 {
 
     #[inline]
     fn get_level(&self, level: usize) -> u8 {
-        let s = self.to_bits();
-        let u = if s >> 63 == 1 { !s } else { s ^ (1 << 63) };
+        let mut s = self.to_bits() as i64;
+        s ^= (((s >> 63) as u64) >> 1) as i64;
 
-        (u >> (level * 8)) as u8
+        ((s ^ i64::MIN) >> (level * 8)) as u8
     }
 }

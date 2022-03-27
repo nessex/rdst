@@ -46,6 +46,9 @@ where
 
 #[cfg(test)]
 mod tests {
+    use std::cmp::Ordering;
+    use std::fmt::Debug;
+    use block_pseudorand::block_rand;
     use crate::tuner::{Algorithm, Tuner, TuningParams};
     use crate::utils::test_utils::{sort_comparison_suite, NumericTest};
     use crate::RadixSort;
@@ -83,6 +86,55 @@ mod tests {
                 .with_tuner(&CustomTuner {})
                 .sort()
         });
+    }
+
+    // This is a generic copy of the
+    // nightly total_cmp implementations from the
+    // standard library
+    trait FpTotalCmp {
+        fn fp_total_cmp(&self, other: Self) -> Ordering;
+    }
+
+    impl FpTotalCmp for f32 {
+        // Ref: https://doc.rust-lang.org/std/primitive.f32.html#method.total_cmp
+        fn fp_total_cmp(&self, other: Self) -> Ordering {
+            let mut left = self.to_bits() as i32;
+            let mut right = other.to_bits() as i32;
+
+            left ^= (((left >> 31) as u32) >> 1) as i32;
+            right ^= (((right >> 31) as u32) >> 1) as i32;
+
+            left.cmp(&right)
+        }
+    }
+    
+    impl FpTotalCmp for f64 {
+        // Ref: https://doc.rust-lang.org/std/primitive.f64.html#method.total_cmp
+        fn fp_total_cmp(&self, other: Self) -> Ordering {
+            let mut left = self.to_bits() as i64;
+            let mut right = other.to_bits() as i64;
+
+            left ^= (((left >> 63) as u64) >> 1) as i64;
+            right ^= (((right >> 63) as u64) >> 1) as i64;
+
+            left.cmp(&right)
+        }
+    }
+
+    fn test_fp<T: Copy + Debug + PartialEq + PartialOrd + FpTotalCmp>(iterations: usize, len: usize, sort_fn: fn(&mut [T]))
+    {
+        for _ in 0..iterations {
+            let mut inputs: Vec<T> = block_rand(len);
+            let mut expected = inputs.clone();
+            expected.sort_by(|a, b| a.fp_total_cmp(*b));
+
+            sort_fn(&mut inputs);
+
+            let actual = format!("{:?}", inputs);
+            let expected = format!("{:?}", expected);
+
+            assert_eq!(actual, expected);
+        }
     }
 
     #[test]
@@ -147,12 +199,16 @@ mod tests {
 
     #[test]
     pub fn test_f32() {
-        test_full_sort(16u32);
+        test_fp::<f32>(1_000, 10, |inputs| {
+            inputs.radix_sort_unstable();
+        });
     }
 
     #[test]
     pub fn test_f64() {
-        test_full_sort(32u64);
+        test_fp::<f64>(1_000, 10, |inputs| {
+            inputs.radix_sort_unstable();
+        });
     }
 
     #[test]
@@ -217,12 +273,16 @@ mod tests {
 
     #[test]
     pub fn test_low_mem_f32() {
-        test_low_mem_full_sort(16u32);
+        test_fp::<f32>(1_000, 10, |inputs| {
+            inputs.radix_sort_builder().with_low_mem_tuner().sort();
+        });
     }
 
     #[test]
     pub fn test_low_mem_f64() {
-        test_low_mem_full_sort(32u64);
+        test_fp::<f64>(1_000, 10, |inputs| {
+            inputs.radix_sort_builder().with_low_mem_tuner().sort();
+        });
     }
 
     #[test]
