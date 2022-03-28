@@ -213,8 +213,7 @@ where
     let len = bucket.len();
     let threads = current_num_threads();
     let uniform_threshold = ((len / threads) as f64 * 1.4) as usize;
-    let plateaus = detect_plateaus(bucket, level);
-    let (prefix_sums, _) = apply_plateaus(bucket, counts, &plateaus);
+    let prefix_sums = get_prefix_sums(counts);
     let scanner_buckets = get_scanner_buckets(counts, &prefix_sums, bucket);
     let threads = min(threads, scanner_buckets.len());
     let scaling_factor = max(1, (threads as f32).log2().ceil() as isize) as usize;

@@ -33,7 +33,7 @@ pub fn ska_sort<T>(
 ) where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
-    let mut finished = 1;
+    let mut finished = 0;
     let mut finished_map = [false; 256];
     let mut largest = 0;
     let mut largest_index = 0;
@@ -65,7 +65,10 @@ pub fn ska_sort<T>(
         prefix_sums[largest_index] += offs;
     }
 
-    finished_map[largest_index] = true;
+    if finished_map[largest_index] == false {
+        finished_map[largest_index] = true;
+        finished += 1;
+    }
 
     while finished != 256 {
         for b in 0..256 {
@@ -94,8 +97,8 @@ impl<'a> Sorter<'a> {
             return;
         }
 
-        let plateaus = detect_plateaus(bucket, level);
-        let (mut prefix_sums, end_offsets) = apply_plateaus(bucket, counts, &plateaus);
+        let mut prefix_sums = get_prefix_sums(counts);
+        let end_offsets = get_end_offsets(counts, &prefix_sums);
 
         ska_sort(bucket, &mut prefix_sums, &end_offsets, level);
 

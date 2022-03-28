@@ -217,8 +217,8 @@ pub fn regions_sort<T>(
         .par_chunks_mut(tile_size)
         .zip(tile_counts.par_iter())
         .for_each(|(chunk, counts)| {
-            let plateaus = detect_plateaus(chunk, level);
-            let (mut prefix_sums, end_offsets) = apply_plateaus(chunk, &*counts, &plateaus);
+            let mut prefix_sums = get_prefix_sums(counts);
+            let end_offsets = get_end_offsets(counts, &prefix_sums);
             ska_sort(chunk, &mut prefix_sums, &end_offsets, level);
         });
 
