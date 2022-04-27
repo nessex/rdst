@@ -37,6 +37,17 @@ impl<T> NumericTest<T> for T where
 {
 }
 
+pub struct SingleAlgoTuner {
+    pub(crate) algo: Algorithm,
+}
+
+impl Tuner for SingleAlgoTuner {
+    #[inline]
+    fn pick_algorithm(&self, _p: &TuningParams, _counts: &[usize]) -> Algorithm {
+        self.algo
+    }
+}
+
 pub fn gen_inputs<T>(n: usize, shift: T) -> Vec<T>
 where
     T: NumericTest<T>,
@@ -112,22 +123,11 @@ pub fn sort_single_algorithm<T>(count: usize, algo: Algorithm)
 where
     T: RadixKey + Sized + Copy + Debug + PartialEq + Ord + Send + Sync,
 {
-    struct TmpTuner {
-        algo: Algorithm,
-    }
-
-    impl Tuner for TmpTuner {
-        #[inline]
-        fn pick_algorithm(&self, _p: &TuningParams, _counts: &[usize]) -> Algorithm {
-            self.algo
-        }
-    }
-
     let mut input_set = block_rand::<T>(count);
     let mut input_set_expected = input_set.clone();
     input_set
         .radix_sort_builder()
-        .with_tuner(&TmpTuner { algo })
+        .with_tuner(&SingleAlgoTuner { algo })
         .sort();
 
     input_set_expected.sort_unstable();

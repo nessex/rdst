@@ -47,7 +47,7 @@ where
 #[cfg(test)]
 mod tests {
     use crate::tuner::{Algorithm, Tuner, TuningParams};
-    use crate::utils::test_utils::{sort_comparison_suite, NumericTest};
+    use crate::utils::test_utils::{sort_comparison_suite, NumericTest, SingleAlgoTuner};
     use crate::RadixSort;
     use block_pseudorand::block_rand;
     use std::cmp::Ordering;
@@ -305,6 +305,9 @@ mod tests {
         data
             .radix_sort_builder()
             .with_parallel(false)
+            .with_tuner(&SingleAlgoTuner {
+                algo: Algorithm::Regions,
+            })
             .sort();
     }
 }

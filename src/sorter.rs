@@ -87,7 +87,12 @@ impl<'a> Sorter<'a> {
             return;
         }
 
-        let tile_size = max(30_000, cdiv(chunk.len(), threads));
+        let use_tiles = cfg!(feature = "multi-threaded") && self.multi_threaded && chunk.len() >= 260_000;
+        let tile_size = if use_tiles {
+            max(30_000, cdiv(chunk.len(), threads))
+        } else {
+            chunk.len()
+        };
         let tp = TuningParams {
             threads,
             level,
@@ -99,7 +104,7 @@ impl<'a> Sorter<'a> {
         let mut tile_counts: Option<Vec<[usize; 256]>> = None;
         let mut already_sorted = false;
 
-        if cfg!(feature = "multi-threaded") && self.multi_threaded && chunk.len() >= 260_000 {
+        if use_tiles {
             let (tc, s) = get_tile_counts(chunk, tile_size, level);
             tile_counts = Some(tc);
             already_sorted = s;
