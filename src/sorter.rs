@@ -96,50 +96,30 @@ impl<'a> Sorter<'a> {
             parent_len,
         };
 
-        let (mut tile_counts, already_sorted) =
-            if cfg!(feature = "multi-threaded") && self.multi_threaded && chunk.len() >= 260_000 {
-                let (tile_counts, already_sorted) = get_tile_counts(chunk, tile_size, level);
+        let mut tile_counts: Option<Vec<[usize; 256]>> = None;
+        let mut already_sorted = false;
 
-                (Some(tile_counts), already_sorted)
-            } else {
-                (None, false)
-            };
+        if cfg!(feature = "multi-threaded") && self.multi_threaded && chunk.len() >= 260_000 {
+            let (tc, s) = get_tile_counts(chunk, tile_size, level);
+            tile_counts = Some(tc);
+            already_sorted = s;
+        }
 
         let counts = if let Some(tile_counts) = &tile_counts {
-            let counts = aggregate_tile_counts(tile_counts);
-
-            if already_sorted {
-                if level != 0 {
-                    self.director(chunk, &counts, level - 1);
-                }
-
-                return;
-            }
-
-            counts
+            aggregate_tile_counts(tile_counts)
         } else {
-            let (counts, already_sorted) = get_counts(chunk, level);
-            if already_sorted {
-                if level != 0 {
-                    self.director(chunk, &counts, level - 1);
-                }
-
-                return;
-            }
+            let (counts, s) = get_counts(chunk, level);
+            already_sorted = s;
 
             counts
         };
 
-        if chunk.len() >= 30_000 {
-            let homogenous = is_homogenous_bucket(&counts);
-
-            if homogenous {
-                if level != 0 {
-                    self.director(chunk, &counts, level - 1);
-                }
-
-                return;
+        if already_sorted || (chunk.len() >= 30_000 && is_homogenous_bucket(&counts))  {
+            if level != 0 {
+                self.director(chunk, &counts, level - 1);
             }
+
+            return;
         }
 
         let algorithm = self.tuner.pick_algorithm(&tp, &counts);
