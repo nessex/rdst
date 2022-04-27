@@ -297,4 +297,14 @@ mod tests {
     pub fn test_custom_tuner_u64() {
         test_custom_tuner_full_sort(32u64);
     }
+
+    #[test]
+    pub fn test_f64_parallel_false_only() {
+        let mut data = block_rand::<f64>(10_000_000);
+
+        data
+            .radix_sort_builder()
+            .with_parallel(false)
+            .sort();
+    }
 }
