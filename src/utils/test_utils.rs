@@ -1,4 +1,5 @@
-use crate::RadixKey;
+use crate::tuner::{Algorithm, Tuner, TuningParams};
+use crate::{RadixKey, RadixSort};
 use block_pseudorand::block_rand;
 use rayon::prelude::*;
 use std::fmt::Debug;
@@ -105,4 +106,31 @@ where
     for s in input_set {
         validate_sort(s, &sort_fn);
     }
+}
+
+pub fn sort_single_algorithm<T>(count: usize, algo: Algorithm)
+where
+    T: RadixKey + Sized + Copy + Debug + PartialEq + Ord + Send + Sync,
+{
+    struct TmpTuner {
+        algo: Algorithm,
+    }
+
+    impl Tuner for TmpTuner {
+        #[inline]
+        fn pick_algorithm(&self, _p: &TuningParams, _counts: &[usize]) -> Algorithm {
+            self.algo
+        }
+    }
+
+    let mut input_set = block_rand::<T>(count);
+    let mut input_set_expected = input_set.clone();
+    input_set
+        .radix_sort_builder()
+        .with_tuner(&TmpTuner { algo })
+        .sort();
+
+    input_set_expected.sort_unstable();
+
+    assert_eq!(input_set, input_set_expected);
 }

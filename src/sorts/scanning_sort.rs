@@ -258,9 +258,10 @@ impl<'a> Sorter<'a> {
 #[cfg(test)]
 mod tests {
     use crate::sorter::Sorter;
+    use crate::tuner::Algorithm;
     use crate::tuners::StandardTuner;
     use crate::utils::par_get_counts;
-    use crate::utils::test_utils::{sort_comparison_suite, NumericTest};
+    use crate::utils::test_utils::{sort_comparison_suite, sort_single_algorithm, NumericTest};
 
     fn test_scanning_sort<T>(shift: T)
     where
@@ -303,5 +304,10 @@ mod tests {
     #[test]
     pub fn test_usize() {
         test_scanning_sort(32usize);
+    }
+
+    #[test]
+    pub fn test_basic_integration() {
+        sort_single_algorithm::<u32>(1_000_000, Algorithm::Scanning);
     }
 }

@@ -101,8 +101,9 @@ impl<'a> Sorter<'a> {
 #[cfg(test)]
 mod tests {
     use crate::sorter::Sorter;
+    use crate::tuner::Algorithm;
     use crate::tuners::StandardTuner;
-    use crate::utils::test_utils::{sort_comparison_suite, NumericTest};
+    use crate::utils::test_utils::{sort_comparison_suite, sort_single_algorithm, NumericTest};
     use crate::utils::{aggregate_tile_counts, cdiv, get_tile_counts};
     use rayon::current_num_threads;
 
@@ -161,5 +162,10 @@ mod tests {
     #[test]
     pub fn test_usize() {
         test_recombinating_sort(32usize);
+    }
+
+    #[test]
+    pub fn test_basic_integration() {
+        sort_single_algorithm::<u32>(1_000_000, Algorithm::Recombinating);
     }
 }

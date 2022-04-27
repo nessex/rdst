@@ -148,9 +148,10 @@ impl<'a> Sorter<'a> {
         if tile_counts.is_none() {
             tile_counts = match algorithm {
                 #[cfg(feature = "multi-threaded")]
-                Algorithm::MtOop | Algorithm::Recombinating | Algorithm::Regions => {
-                    Some(vec![counts.clone()])
-                }
+                Algorithm::MtOop
+                | Algorithm::MtLsb
+                | Algorithm::Recombinating
+                | Algorithm::Regions => Some(vec![counts.clone()]),
                 _ => None,
             };
         }
