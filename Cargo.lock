@@ -426,7 +426,7 @@ dependencies = [
 
 [[package]]
 name = "rdst"
-version = "0.20.5"
+version = "0.20.6"
 dependencies = [
  "arbitrary-chunks",
  "block-pseudorand",
