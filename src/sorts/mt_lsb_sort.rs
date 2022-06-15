@@ -272,4 +272,11 @@ mod tests {
     pub fn test_basic_integration() {
         sort_single_algorithm::<u32>(1_000_000, Algorithm::MtLsb);
     }
+
+    #[test]
+    pub fn test_regression_issue_5() {
+        // Replicates https://github.com/Nessex/rdst/issues/5
+        // MtLsb returns unsorted data when there is only 1 tile
+        sort_single_algorithm::<u32>(400, Algorithm::MtLsb);
+    }
 }

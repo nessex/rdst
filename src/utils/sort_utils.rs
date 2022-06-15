@@ -231,11 +231,16 @@ where
 
     let mut all_sorted = true;
 
-    // Check if any of the tiles, or any of the tile boundaries are unsorted
-    for tile in tiles.windows(2) {
-        if !tile[0].1 || !tile[1].1 || tile[1].2 < tile[0].3 {
-            all_sorted = false;
-            break;
+    if tiles.len() == 1 {
+        // If there is only one tile, we already have a flag for if it is sorted
+        all_sorted = tiles[0].1;
+    } else {
+        // Check if any of the tiles, or any of the tile boundaries are unsorted
+        for tile in tiles.windows(2) {
+            if !tile[0].1 || !tile[1].1 || tile[1].2 < tile[0].3 {
+                all_sorted = false;
+                break;
+            }
         }
     }
 
@@ -268,4 +273,35 @@ pub fn is_homogenous_bucket(counts: &[usize; 256]) -> bool {
     }
 
     true
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::utils::get_tile_counts;
+
+    #[test]
+    pub fn test_get_tile_counts_correctly_marks_already_sorted_single_tile() {
+        let mut data: Vec<u8> = vec![0, 5, 2, 3, 1];
+
+        let (_counts, already_sorted) = get_tile_counts(&mut data, 5, 0);
+        assert_eq!(already_sorted, false);
+
+        let mut data: Vec<u8> = vec![0, 0, 1, 1, 2];
+
+        let (_counts, already_sorted) = get_tile_counts(&mut data, 5, 0);
+        assert_eq!(already_sorted, true);
+    }
+
+    #[test]
+    pub fn test_get_tile_counts_correctly_marks_already_sorted_multiple_tiles() {
+        let mut data: Vec<u8> = vec![0, 5, 2, 3, 1];
+
+        let (_counts, already_sorted) = get_tile_counts(&mut data, 2, 0);
+        assert_eq!(already_sorted, false);
+
+        let mut data: Vec<u8> = vec![0, 0, 1, 1, 2];
+
+        let (_counts, already_sorted) = get_tile_counts(&mut data, 2, 0);
+        assert_eq!(already_sorted, true);
+    }
 }
