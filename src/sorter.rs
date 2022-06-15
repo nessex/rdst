@@ -87,7 +87,8 @@ impl<'a> Sorter<'a> {
             return;
         }
 
-        let use_tiles = cfg!(feature = "multi-threaded") && self.multi_threaded && chunk.len() >= 260_000;
+        let use_tiles =
+            cfg!(feature = "multi-threaded") && self.multi_threaded && chunk.len() >= 260_000;
         let tile_size = if use_tiles {
             max(30_000, cdiv(chunk.len(), threads))
         } else {
@@ -119,7 +120,7 @@ impl<'a> Sorter<'a> {
             counts
         };
 
-        if already_sorted || (chunk.len() >= 30_000 && is_homogenous_bucket(&counts))  {
+        if already_sorted || (chunk.len() >= 30_000 && is_homogenous_bucket(&counts)) {
             if level != 0 {
                 self.director(chunk, &counts, level - 1);
             }

@@ -302,8 +302,7 @@ mod tests {
     pub fn test_f64_parallel_false_only() {
         let mut data = block_rand::<f64>(10_000_000);
 
-        data
-            .radix_sort_builder()
+        data.radix_sort_builder()
             .with_parallel(false)
             .with_tuner(&SingleAlgoTuner {
                 algo: Algorithm::Regions,
