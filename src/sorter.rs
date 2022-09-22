@@ -137,7 +137,7 @@ impl<'a> Sorter<'a> {
                 Algorithm::MtOop
                 | Algorithm::MtLsb
                 | Algorithm::Recombinating
-                | Algorithm::Regions => Some(vec![counts.clone()]),
+                | Algorithm::Regions => Some(vec![counts]),
                 _ => None,
             };
         }

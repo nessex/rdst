@@ -118,8 +118,8 @@ where
     let mut counts_1 = [0usize; 256];
     let mut last = 0usize;
 
-    for i in 0..bucket.len() {
-        let b = bucket[i].get_level(level) as usize;
+    for (i, item) in bucket.iter().enumerate() {
+        let b = item.get_level(level) as usize;
         counts_1[b] += 1;
 
         if b < last {
@@ -180,7 +180,7 @@ pub fn get_counts<T>(bucket: &[T], level: usize) -> ([usize; 256], bool)
 where
     T: RadixKey,
 {
-    if bucket.len() == 0 {
+    if bucket.is_empty() {
         return ([0usize; 256], true);
     }
 

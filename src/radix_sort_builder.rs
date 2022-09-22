@@ -151,7 +151,7 @@ where
             return;
         }
 
-        let sorter = Sorter::new(self.multi_threaded, &*self.tuner);
+        let sorter = Sorter::new(self.multi_threaded, self.tuner);
         sorter.top_level_director(self.data);
     }
 }
