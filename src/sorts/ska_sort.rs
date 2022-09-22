@@ -65,7 +65,7 @@ pub fn ska_sort<T>(
         prefix_sums[largest_index] += offs;
     }
 
-    if finished_map[largest_index] == false {
+    if !finished_map[largest_index] {
         finished_map[largest_index] = true;
         finished += 1;
     }

@@ -45,7 +45,7 @@ pub fn recombinating_sort<T>(
         .map(|((chunk, tmp_chunk), counts)| {
             out_of_place_sort(chunk, tmp_chunk, counts, level);
 
-            let sums = get_prefix_sums(&*counts);
+            let sums = get_prefix_sums(counts);
 
             (*counts, sums)
         })
