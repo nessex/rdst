@@ -124,3 +124,39 @@ pub fn bench_medley<T>(
 
     group.finish();
 }
+
+pub fn bench_single<T>(
+    c: &mut Criterion,
+    group: &str,
+    tests: Vec<(&str, Box<dyn Fn(Vec<T>)>)>,
+    shift: T,
+    items: usize,
+) where
+    T: NumericTest<T> + Clone,
+{
+    let input = gen_inputs(items, shift);
+
+    let mut group = c.benchmark_group(group);
+    group.sample_size(10);
+    group.measurement_time(Duration::from_secs(30));
+    group.warm_up_time(Duration::from_secs(5));
+    group.throughput(Throughput::Elements(input.len() as u64));
+
+    for t in tests.iter() {
+        group.bench_with_input(
+            BenchmarkId::new((*t).0.clone(), input.len()),
+            &0u32,
+            |bench, _set| {
+                bench.iter_batched(
+                    || input.clone(),
+                    |input| {
+                        (*t).1(input);
+                    },
+                    BatchSize::SmallInput,
+                );
+            },
+        );
+    }
+
+    group.finish();
+}
