@@ -455,7 +455,6 @@ dependencies = [
  "num_cpus",
  "partition",
  "rayon",
- "try-mutex",
  "voracious_radix_sort",
 ]
 
@@ -552,12 +551,6 @@ dependencies = [
  "serde",
  "serde_json",
 ]
-
-[[package]]
-name = "try-mutex"
-version = "0.4.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "75ee08103bab3e8cc6ff5100f7aadc9780404f1eb09811cf572afe358b0a7721"
 
 [[package]]
 name = "unicode-ident"

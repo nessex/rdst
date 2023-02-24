@@ -26,7 +26,7 @@ use partition::partition_index;
 use rayon::current_num_threads;
 use rayon::prelude::*;
 use std::cmp::{max, min};
-use try_mutex::TryMutex;
+use std::sync::Mutex;
 
 struct ScannerBucketInner<'a, T> {
     write_head: usize,
@@ -38,7 +38,7 @@ struct ScannerBucketInner<'a, T> {
 struct ScannerBucket<'a, T> {
     index: usize,
     len: isize,
-    inner: TryMutex<ScannerBucketInner<'a, T>>,
+    inner: Mutex<ScannerBucketInner<'a, T>>,
 }
 
 #[inline]
@@ -58,7 +58,7 @@ fn get_scanner_buckets<'a, T>(
             ScannerBucket {
                 index,
                 len: chunk.len() as isize,
-                inner: TryMutex::new(ScannerBucketInner {
+                inner: Mutex::new(ScannerBucketInner {
                     write_head: head,
                     read_head: head,
                     chunk,
@@ -98,8 +98,8 @@ fn scanner_thread<T>(
         }
 
         let mut guard = match m.inner.try_lock() {
-            Some(g) => g,
-            None => continue,
+            Ok(g) => g,
+            Err(_) => continue,
         };
 
         if !guard.locally_partitioned {
@@ -120,8 +120,8 @@ fn scanner_thread<T>(
             }
 
             let mut guard = match m.inner.try_lock() {
-                Some(g) => g,
-                None => continue,
+                Ok(g) => g,
+                Err(_) => continue,
             };
 
             if guard.write_head >= m.len as usize {
