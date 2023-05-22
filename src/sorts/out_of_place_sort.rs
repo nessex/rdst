@@ -56,6 +56,7 @@ pub fn out_of_place_sort<T>(
     T: RadixKey + Sized + Send + Copy + Sync,
 {
     if src_bucket.len() < 2 {
+        dst_bucket.copy_from_slice(src_bucket);
         return;
     }
 
@@ -109,8 +110,13 @@ pub fn out_of_place_sort_with_counts<T>(
 where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
-    if src_bucket.len() < 2 {
+    if src_bucket.len() == 0 {
         return [0usize; 256];
+    } else if src_bucket.len() == 1 {
+        let mut counts = [0usize; 256];
+        dst_bucket.copy_from_slice(src_bucket);
+        counts[src_bucket[0].get_level(level) as usize] = 1;
+        return counts;
     }
 
     let next_level = level + 1;
@@ -190,6 +196,7 @@ pub fn lr_out_of_place_sort<T>(
     T: RadixKey + Sized + Send + Copy + Sync,
 {
     if src_bucket.len() < 2 {
+        dst_bucket.copy_from_slice(src_bucket);
         return;
     }
 
@@ -260,8 +267,13 @@ pub fn lr_out_of_place_sort_with_counts<T>(
 where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
-    if src_bucket.len() < 2 {
+    if src_bucket.len() == 0 {
         return [0usize; 256];
+    } else if src_bucket.len() == 1 {
+        let mut counts = [0usize; 256];
+        dst_bucket.copy_from_slice(src_bucket);
+        counts[src_bucket[0].get_level(level) as usize] = 1;
+        return counts;
     }
 
     let next_level = level + 1;

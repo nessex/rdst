@@ -291,9 +291,10 @@ mod tests {
     use crate::sorter::Sorter;
     use crate::tuner::Algorithm;
     use crate::tuners::StandardTuner;
-    use crate::utils::test_utils::{sort_comparison_suite, sort_single_algorithm, NumericTest};
+    use crate::utils::test_utils::{sort_comparison_suite, sort_single_algorithm, NumericTest, validate_u32_patterns};
     use crate::utils::{aggregate_tile_counts, cdiv, get_tile_counts};
     use rayon::current_num_threads;
+    use crate::RadixKey;
 
     fn test_regions_sort<T>(shift: T)
     where
@@ -347,5 +348,22 @@ mod tests {
     #[test]
     pub fn test_basic_integration() {
         sort_single_algorithm::<u32>(1_000_000, Algorithm::Regions);
+    }
+
+    #[test]
+    pub fn test_u32_patterns() {
+        let sorter = Sorter::new(true, &StandardTuner);
+
+        validate_u32_patterns(|inputs| {
+            if inputs.len() == 0 {
+                return;
+            }
+
+            let tile_size = cdiv(inputs.len(), current_num_threads());
+            let (tile_counts, _) = get_tile_counts(inputs, tile_size, u32::LEVELS - 1);
+            let counts = aggregate_tile_counts(&tile_counts);
+
+            sorter.regions_sort_adapter(inputs, &counts, &tile_counts, tile_size, u32::LEVELS - 1);
+        });
     }
 }

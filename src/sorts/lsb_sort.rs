@@ -64,6 +64,7 @@ impl<'a> Sorter<'a> {
             } else {
                 let (counts, already_sorted) = get_counts(bucket, level);
                 if already_sorted {
+                    next_counts = None;
                     continue 'outer;
                 }
 
@@ -72,13 +73,14 @@ impl<'a> Sorter<'a> {
 
             for c in counts.iter() {
                 if *c == bucket.len() {
+                    next_counts = None;
                     continue 'outer;
                 } else if *c > 0 {
                     break;
                 }
             }
 
-            let should_count = level < (end_level - 1);
+            let should_count = end_level != 0 && level < (end_level - 1);
             if !should_count {
                 next_counts = None;
             }
@@ -135,11 +137,12 @@ impl<'a> Sorter<'a> {
 
 #[cfg(test)]
 mod tests {
+    use crate::RadixKey;
     use crate::sorter::Sorter;
     use crate::tuner::Algorithm;
     use crate::tuners::StandardTuner;
     use crate::utils::get_counts;
-    use crate::utils::test_utils::{sort_comparison_suite, sort_single_algorithm, NumericTest};
+    use crate::utils::test_utils::{sort_comparison_suite, sort_single_algorithm, NumericTest, validate_u32_patterns};
 
     fn test_lsb_sort_adapter<T>(shift: T)
     where
@@ -198,5 +201,15 @@ mod tests {
     #[test]
     pub fn test_basic_integration_lr() {
         sort_single_algorithm::<u32>(1_000_000, Algorithm::LrLsb);
+    }
+
+    #[test]
+    pub fn test_u32_patterns() {
+        validate_u32_patterns(|inputs| {
+            let sorter = Sorter::new(true, &StandardTuner);
+            let (counts, _) = get_counts(inputs, u32::LEVELS - 1);
+
+            sorter.lsb_sort_adapter(true, inputs, &counts, 0, u32::LEVELS - 1);
+        });
     }
 }

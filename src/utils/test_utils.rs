@@ -102,8 +102,21 @@ where
     let mut inputs_clone = inputs.clone();
 
     sort_fn(&mut inputs);
-    inputs_clone.sort_unstable();
 
+    let mut eq = true;
+
+    for i in inputs.windows(2) {
+        if i[0] > i[1] {
+            eq = false;
+            break;
+        }
+    }
+
+    if eq {
+        return;
+    }
+
+    inputs_clone.sort_unstable();
     assert_eq!(inputs, inputs_clone);
 }
 
@@ -116,6 +129,37 @@ where
 
     for s in input_set {
         validate_sort(s, &sort_fn);
+    }
+}
+
+pub fn validate_u32_patterns<F>(sort_fn: F)
+where
+    F: Fn(&mut [u32]),
+{
+    let input_sets: Vec<Vec<u32>> = vec![
+        vec![u32::MAX; 128],
+        block_rand(128),
+        block_rand(128_000),
+        block_rand(4),
+    ];
+
+    for inputs in input_sets.iter() {
+        validate_sort(inputs.clone(), &sort_fn);
+
+        // Empty levels
+        validate_sort(inputs.iter().map(|v| *v & 0xFFFF_FF00).collect::<Vec<u32>>(), &sort_fn);
+        validate_sort(inputs.iter().map(|v| *v & 0xFFFF_00FF).collect::<Vec<u32>>(), &sort_fn);
+        validate_sort(inputs.iter().map(|v| *v & 0xFF00_FFFF).collect::<Vec<u32>>(), &sort_fn);
+        validate_sort(inputs.iter().map(|v| *v & 0x00FF_FFFF).collect::<Vec<u32>>(), &sort_fn);
+        validate_sort(inputs.iter().map(|v| *v & 0x0000_FFFF).collect::<Vec<u32>>(), &sort_fn);
+        validate_sort(inputs.iter().map(|v| *v & 0xFFFF_0000).collect::<Vec<u32>>(), &sort_fn);
+
+        validate_sort(inputs.iter().map(|v| *v & 0b10000000000000000000000000000000).collect::<Vec<u32>>(), &sort_fn);
+        validate_sort(inputs.iter().map(|v| *v & 0b00000000000000000000000000000001).collect::<Vec<u32>>(), &sort_fn);
+        validate_sort(inputs.iter().map(|v| *v & 0b11111111111111111111111111111110).collect::<Vec<u32>>(), &sort_fn);
+        validate_sort(inputs.iter().map(|v| *v & 0b01111111111111111111111111111111).collect::<Vec<u32>>(), &sort_fn);
+        validate_sort(inputs.iter().map(|v| *v & 0b10101010101010101010101010101010).collect::<Vec<u32>>(), &sort_fn);
+        validate_sort(inputs.iter().map(|v| *v & 0b01010101010101010101010101010101).collect::<Vec<u32>>(), &sort_fn);
     }
 }
 

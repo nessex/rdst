@@ -257,11 +257,12 @@ impl<'a> Sorter<'a> {
 
 #[cfg(test)]
 mod tests {
+    use crate::RadixKey;
     use crate::sorter::Sorter;
     use crate::tuner::Algorithm;
     use crate::tuners::StandardTuner;
     use crate::utils::par_get_counts;
-    use crate::utils::test_utils::{sort_comparison_suite, sort_single_algorithm, NumericTest};
+    use crate::utils::test_utils::{sort_comparison_suite, sort_single_algorithm, NumericTest, validate_u32_patterns};
 
     fn test_scanning_sort<T>(shift: T)
     where
@@ -309,5 +310,16 @@ mod tests {
     #[test]
     pub fn test_basic_integration() {
         sort_single_algorithm::<u32>(1_000_000, Algorithm::Scanning);
+    }
+
+    #[test]
+    pub fn test_u32_patterns() {
+        let sorter = Sorter::new(true, &StandardTuner);
+
+        validate_u32_patterns(|inputs| {
+            let (counts, _) = par_get_counts(inputs, u32::LEVELS - 1);
+
+            sorter.scanning_sort_adapter(inputs, &counts, u32::LEVELS - 1)
+        });
     }
 }

@@ -218,8 +218,9 @@ mod tests {
     use crate::tuner::Algorithm;
     use crate::tuners::StandardTuner;
     use crate::utils::cdiv;
-    use crate::utils::test_utils::{sort_comparison_suite, sort_single_algorithm, NumericTest};
+    use crate::utils::test_utils::{sort_comparison_suite, sort_single_algorithm, NumericTest, validate_u32_patterns};
     use rayon::current_num_threads;
+    use crate::RadixKey;
 
     fn test_mt_lsb_sort_adapter<T>(shift: T)
     where
@@ -278,5 +279,19 @@ mod tests {
         // Replicates https://github.com/Nessex/rdst/issues/5
         // MtLsb returns unsorted data when there is only 1 tile
         sort_single_algorithm::<u32>(400, Algorithm::MtLsb);
+    }
+
+    #[test]
+    pub fn test_u32_patterns() {
+        validate_u32_patterns(|inputs| {
+            if inputs.len() == 0 {
+                return;
+            }
+
+            let sorter = Sorter::new(true, &StandardTuner);
+            let tile_size = cdiv(inputs.len(), current_num_threads());
+
+            sorter.mt_lsb_sort_adapter(inputs, 0, u32::LEVELS - 1, tile_size);
+        });
     }
 }
