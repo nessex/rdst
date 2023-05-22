@@ -110,7 +110,7 @@ pub fn out_of_place_sort_with_counts<T>(
 where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
-    if src_bucket.len() == 0 {
+    if src_bucket.is_empty() {
         return [0usize; 256];
     } else if src_bucket.len() == 1 {
         let mut counts = [0usize; 256];
@@ -267,7 +267,7 @@ pub fn lr_out_of_place_sort_with_counts<T>(
 where
     T: RadixKey + Sized + Send + Copy + Sync,
 {
-    if src_bucket.len() == 0 {
+    if src_bucket.is_empty() {
         return [0usize; 256];
     } else if src_bucket.len() == 1 {
         let mut counts = [0usize; 256];
