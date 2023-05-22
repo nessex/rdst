@@ -218,9 +218,11 @@ mod tests {
     use crate::tuner::Algorithm;
     use crate::tuners::StandardTuner;
     use crate::utils::cdiv;
-    use crate::utils::test_utils::{sort_comparison_suite, sort_single_algorithm, NumericTest, validate_u32_patterns};
-    use rayon::current_num_threads;
+    use crate::utils::test_utils::{
+        sort_comparison_suite, sort_single_algorithm, validate_u32_patterns, NumericTest,
+    };
     use crate::RadixKey;
+    use rayon::current_num_threads;
 
     fn test_mt_lsb_sort_adapter<T>(shift: T)
     where

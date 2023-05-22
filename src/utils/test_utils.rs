@@ -147,19 +147,91 @@ where
         validate_sort(inputs.clone(), &sort_fn);
 
         // Empty levels
-        validate_sort(inputs.iter().map(|v| *v & 0xFFFF_FF00).collect::<Vec<u32>>(), &sort_fn);
-        validate_sort(inputs.iter().map(|v| *v & 0xFFFF_00FF).collect::<Vec<u32>>(), &sort_fn);
-        validate_sort(inputs.iter().map(|v| *v & 0xFF00_FFFF).collect::<Vec<u32>>(), &sort_fn);
-        validate_sort(inputs.iter().map(|v| *v & 0x00FF_FFFF).collect::<Vec<u32>>(), &sort_fn);
-        validate_sort(inputs.iter().map(|v| *v & 0x0000_FFFF).collect::<Vec<u32>>(), &sort_fn);
-        validate_sort(inputs.iter().map(|v| *v & 0xFFFF_0000).collect::<Vec<u32>>(), &sort_fn);
+        validate_sort(
+            inputs
+                .iter()
+                .map(|v| *v & 0xFFFF_FF00)
+                .collect::<Vec<u32>>(),
+            &sort_fn,
+        );
+        validate_sort(
+            inputs
+                .iter()
+                .map(|v| *v & 0xFFFF_00FF)
+                .collect::<Vec<u32>>(),
+            &sort_fn,
+        );
+        validate_sort(
+            inputs
+                .iter()
+                .map(|v| *v & 0xFF00_FFFF)
+                .collect::<Vec<u32>>(),
+            &sort_fn,
+        );
+        validate_sort(
+            inputs
+                .iter()
+                .map(|v| *v & 0x00FF_FFFF)
+                .collect::<Vec<u32>>(),
+            &sort_fn,
+        );
+        validate_sort(
+            inputs
+                .iter()
+                .map(|v| *v & 0x0000_FFFF)
+                .collect::<Vec<u32>>(),
+            &sort_fn,
+        );
+        validate_sort(
+            inputs
+                .iter()
+                .map(|v| *v & 0xFFFF_0000)
+                .collect::<Vec<u32>>(),
+            &sort_fn,
+        );
 
-        validate_sort(inputs.iter().map(|v| *v & 0b10000000000000000000000000000000).collect::<Vec<u32>>(), &sort_fn);
-        validate_sort(inputs.iter().map(|v| *v & 0b00000000000000000000000000000001).collect::<Vec<u32>>(), &sort_fn);
-        validate_sort(inputs.iter().map(|v| *v & 0b11111111111111111111111111111110).collect::<Vec<u32>>(), &sort_fn);
-        validate_sort(inputs.iter().map(|v| *v & 0b01111111111111111111111111111111).collect::<Vec<u32>>(), &sort_fn);
-        validate_sort(inputs.iter().map(|v| *v & 0b10101010101010101010101010101010).collect::<Vec<u32>>(), &sort_fn);
-        validate_sort(inputs.iter().map(|v| *v & 0b01010101010101010101010101010101).collect::<Vec<u32>>(), &sort_fn);
+        validate_sort(
+            inputs
+                .iter()
+                .map(|v| *v & 0b10000000000000000000000000000000)
+                .collect::<Vec<u32>>(),
+            &sort_fn,
+        );
+        validate_sort(
+            inputs
+                .iter()
+                .map(|v| *v & 0b00000000000000000000000000000001)
+                .collect::<Vec<u32>>(),
+            &sort_fn,
+        );
+        validate_sort(
+            inputs
+                .iter()
+                .map(|v| *v & 0b11111111111111111111111111111110)
+                .collect::<Vec<u32>>(),
+            &sort_fn,
+        );
+        validate_sort(
+            inputs
+                .iter()
+                .map(|v| *v & 0b01111111111111111111111111111111)
+                .collect::<Vec<u32>>(),
+            &sort_fn,
+        );
+        validate_sort(
+            inputs
+                .iter()
+                .map(|v| *v & 0b10101010101010101010101010101010)
+                .collect::<Vec<u32>>(),
+            &sort_fn,
+        );
+        validate_sort(
+            inputs
+                .iter()
+                .map(|v| *v & 0b01010101010101010101010101010101)
+                .collect::<Vec<u32>>(),
+            &sort_fn,
+        );
     }
 }
 

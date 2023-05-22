@@ -103,10 +103,12 @@ mod tests {
     use crate::sorter::Sorter;
     use crate::tuner::Algorithm;
     use crate::tuners::StandardTuner;
-    use crate::utils::test_utils::{sort_comparison_suite, sort_single_algorithm, NumericTest, validate_u32_patterns};
+    use crate::utils::test_utils::{
+        sort_comparison_suite, sort_single_algorithm, validate_u32_patterns, NumericTest,
+    };
     use crate::utils::{aggregate_tile_counts, cdiv, get_tile_counts};
-    use rayon::current_num_threads;
     use crate::RadixKey;
+    use rayon::current_num_threads;
 
     fn test_recombinating_sort<T>(shift: T)
     where
@@ -185,13 +187,7 @@ mod tests {
             let (tile_counts, _) = get_tile_counts(inputs, tile_size, level);
             let counts = aggregate_tile_counts(&tile_counts);
 
-            sorter.recombinating_sort_adapter(
-                inputs,
-                &counts,
-                &tile_counts,
-                tile_size,
-                level,
-            )
+            sorter.recombinating_sort_adapter(inputs, &counts, &tile_counts, tile_size, level)
         });
     }
 }
