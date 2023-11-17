@@ -3,7 +3,7 @@
 ///
 /// e.g.
 /// ```
-/// RUSTFLAGS='-g -C opt-level=3 -C force-frame-pointers=y -C target-cpu=native -C target-feature=+neon' cargo +nightly instruments -t time --example profiling --features=tuning
+/// RUSTFLAGS='-g -C opt-level=3 -C force-frame-pointers=y -C target-cpu=native -C target-feature=+neon' cargo +nightly instruments -t time --bin profiling --features=tuning
 /// ```
 use rdst::utils::test_utils::gen_inputs;
 use rdst::RadixSort;

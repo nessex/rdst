@@ -74,6 +74,10 @@ fn full_sort_u64(c: &mut Criterion) {
     full_sort_common(c, 0u64, "u64");
 }
 
+fn full_sort_u128(c: &mut Criterion) {
+    full_sort_common(c, 0u128, "u128");
+}
+
 fn full_sort_u32_bimodal(c: &mut Criterion) {
     full_sort_common(c, 16u32, "u32_bimodal");
 }
@@ -82,19 +86,27 @@ fn full_sort_u64_bimodal(c: &mut Criterion) {
     full_sort_common(c, 32u64, "u64_bimodal");
 }
 
+fn full_sort_u128_bimodal(c: &mut Criterion) {
+    full_sort_common(c, 64u128, "u128_bimodal");
+}
+
 fn full_sort_medley(c: &mut Criterion) {
     full_sort_medley_set(c, "u32", 0u32);
     full_sort_medley_set(c, "u32_bimodal", 16u32);
     full_sort_medley_set(c, "u64", 0u64);
     full_sort_medley_set(c, "u64_bimodal", 32u64);
+    full_sort_medley_set(c, "u128", 0u128);
+    full_sort_medley_set(c, "u128_bimodal", 64u128);
 }
 
 criterion_group!(
     benches,
     full_sort_u32,
     full_sort_u64,
+    full_sort_u128,
     full_sort_u32_bimodal,
     full_sort_u64_bimodal,
+    full_sort_u128_bimodal,
     full_sort_medley,
 );
 criterion_main!(benches);

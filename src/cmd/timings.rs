@@ -9,7 +9,7 @@
 //! You may need to tweak the command below for your own machine.
 //!
 //! ```
-//! RUSTFLAGS='-C opt-level=3 -C target-cpu=native -C target-feature=+neon' cargo +nightly run --example timings --features=tuning -- 1234 "Hello world"
+//! RUSTFLAGS='-C opt-level=3 -C target-cpu=native -C target-feature=+neon' cargo +nightly run --bin timings --features=tuning -- 1234 "Hello world"
 //! ```
 //!
 //!  - `1234` is where you place the ID for your run. If you are just running a brief test this can be `N/A`, otherwise it should be something like a commit SHA that you can use to find the code for this run again.
@@ -101,6 +101,12 @@ fn main() {
 
     let inputs = gen_bench_exponential_input_set(32u64);
     bench(inputs, "u64_bimodal", &mut out, &mut headers);
+
+    let inputs = gen_bench_exponential_input_set(0u128);
+    bench(inputs, "u128", &mut out, &mut headers);
+
+    let inputs = gen_bench_exponential_input_set(64u128);
+    bench(inputs, "u128_bimodal", &mut out, &mut headers);
 
     if print_headers {
         print_row(headers);

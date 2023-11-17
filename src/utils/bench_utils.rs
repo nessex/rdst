@@ -78,7 +78,7 @@ pub fn bench_common<T>(
         group.throughput(Throughput::Elements(l as u64));
 
         for t in tests.iter() {
-            group.bench_with_input(BenchmarkId::new((*t).0.clone(), l), set, |bench, set| {
+            group.bench_with_input(BenchmarkId::new((*t).0, l), set, |bench, set| {
                 bench.iter_batched(|| set.clone(), &*t.1, BatchSize::SmallInput);
             });
         }
@@ -106,7 +106,7 @@ pub fn bench_medley<T>(
 
     for t in tests.iter() {
         group.bench_with_input(
-            BenchmarkId::new((*t).0.clone(), len),
+            BenchmarkId::new((*t).0, len),
             &0u32,
             |bench, _set| {
                 bench.iter_batched(
@@ -144,7 +144,7 @@ pub fn bench_single<T>(
 
     for t in tests.iter() {
         group.bench_with_input(
-            BenchmarkId::new((*t).0.clone(), input.len()),
+            BenchmarkId::new((*t).0, input.len()),
             &0u32,
             |bench, _set| {
                 bench.iter_batched(
