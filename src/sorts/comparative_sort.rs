@@ -2,6 +2,13 @@
 //! whole numbers to support all the same use-cases as the original radix sort including
 //! sorting across multiple keys or partial keys etc.
 //!
+//! The purpose of this sort is to ensure that the library can provide a simpler interface. Without
+//! this sort, users would have to implement both `RadixKey` for the radix sort, _and_ `Ord` for
+//! the comparison sort. With this, only `RadixKey` is required.
+//!
+//! While the performance generally sucks, it is still faster than setting up for a full radix sort
+//! in situations where there are very few items.
+//!
 //! ## Characteristics
 //!
 //!  * in-place
@@ -12,7 +19,7 @@
 //!
 //! This is even slower than a typical comparison sort and so is only used as a fallback for very
 //! small inputs. However for those very small inputs it provides a significant speed-up due to
-//! having essentially no overhead.
+//! having essentially no overhead (from count arrays, buffers etc.) compared to a radix sort.
 
 use crate::sorter::Sorter;
 use crate::RadixKey;

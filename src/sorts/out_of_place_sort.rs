@@ -7,7 +7,7 @@
 //! ### Standard out_of_place_sort
 //!
 //! This implementation is a very simple out-of-place counting sort. The only notable optimization
-//! is to process data in chunks to take some advantage of multiple execution ports in the CPU.
+//! is to process data in chunks to take some advantage of multiple execution ports in each CPU core.
 //!
 //! ### out_of_place_sort_with_counts
 //!
@@ -27,15 +27,15 @@
 //! the stable ordering of values.
 //!
 //! This provides a significant performance benefit when there are many identical values as
-//! typically a pair of identical would prevent the CPU from using multiple execution ports. With
-//! this variant however, the CPU can safely and independently work on two identical values at the
+//! typically a pair of identical values would prevent the CPU from using multiple execution ports.
+//! With this variant however, the CPU can safely and independently work on two identical values at the
 //! same time as there is no overlapping variable access in either the output array or the prefix
 //! sums array.
 //!
 //! ### lr_out_of_place_sort_with_counts
 //!
-//! As with the other variants, this combines the left-right optimization with counting the next
-//! level.
+//! As with the other with_counts variant, this combines the left-right optimization with counting
+//! the next level.
 //!
 //! ## Characteristics
 //!

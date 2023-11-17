@@ -1,10 +1,25 @@
-//! `scanning_sort` is a custom algorithm for rdst which is a multi-threaded, MSB first radix sort.
+//! `scanning_sort` is a custom algorithm for rdst. It is a multi-threaded, MSB first radix sort.
 //!
-//! Scanning sort works by scanning over the output buckets, picking up data that shouldn't be there
-//! and putting it in a per-thread temporary store. It then writes any appropriate data it currently
-//! holds in that thread-local store to the current output bucket. After that, the thread moves on
-//! to the next available bucket (each one is mutex locked) and repeats the process until all output
-//! buckets are completely filled with the correct data.
+//! Scanning sort works by:
+//!
+//!  1. Chunk the input array into buckets based on the counts for this level
+//!  2. Create a worker for each rayon global thread pool thread (roughly, one per core)
+//!  2. Create a temporary thread-local buffer for each worker (one vec for each radix)
+//!  3. Each thread:
+//!  3.1. Iterates over the buckets, trying to gain a mutex lock on one
+//!  3.2. On first lock of the bucket, it partitions the bucket into [correct data | incorrect data] in-place
+//!  3.3. Scan over the contents of the bucket, picking up data that shouldn't be there and putting it in the thread-local buffer
+//!  3.4. Writes any buffered contents that _should_ be in this bucket, into the bucket
+//!  3.5. Repeats 3 until all buckets are completely filled with the correct data
+//!
+//! Along the way, each output bucket has a read head and a write head, which is a pointer to the latest content read and written respectively.
+//! When the read head reaches the end of the bucket, there is no more content to be buffered by any worker.
+//! When the write head reaches the end of the bucket, that bucket contains all data that should be there, and is marked completed.
+//! Once there are no more buckets that can be locked by the worker (all remaining buckets are locked), each worker exits.
+//! Once all buckets are completed, and all workers have exited, the sort is finished.
+//!
+//! Thread-local buffers can hold up to 128 values for each radix, or 32,768 values in total. There's one per thread, so the total amount of memory can add up to quite a lot.
+//! 128 values was chosen based upon performance numbers from benchmarking, and is not currently configurable.
 //!
 //! ## Characteristics
 //!

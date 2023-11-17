@@ -17,8 +17,8 @@
 //!
 //! ## Performance
 //!
-//! This is generally slower than `lsb_sort` for smaller inputs, but for larger inputs the memory
-//! efficiency of this algorithm makes it take the lead.
+//! This is generally slower than `lsb_sort` for smaller types T or smaller input arrays. For larger
+//! types or inputs, the memory efficiency of this algorithm can make it faster than `lsb_sort`.
 
 use crate::sorter::Sorter;
 use crate::utils::*;

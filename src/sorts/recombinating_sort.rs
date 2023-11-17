@@ -1,11 +1,14 @@
 //! `recombinating_sort` is a multi-threaded, out-of-place, unstable radix sort unique to rdst. It
-//! operates on a set of tiles, which aresub-sections of the original data of roughly the same size.
+//! operates on a set of tiles, which are sub-sections of the original data of roughly the same size.
 //!
 //! It works by:
 //!  1. Sorting each tile out-of-place into a temp array
 //!  2. Calculating prefix sums of each tile
 //!  3. Splitting the output array based upon the aggregated counts of all tiles
 //!  4. Writing out the final data for each global count ("country" in regions sort terminology) in parallel
+//!
+//! Because each thread operates on separate tiles, and then separate output buckets, this is parallel from start to finish.
+//! The intermediate tiles mean this requires 2n memory relative to the input, plus some memory for each set of counts, and incurs two copies for each item.
 //!
 //! ## Characteristics
 //!

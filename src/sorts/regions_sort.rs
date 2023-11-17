@@ -35,8 +35,8 @@
 //!
 //! ## Notes
 //!
-//! This may not be entirely the same as the algorithm described by the research paper. Some things
-//! did not seem to matter, and have been omitted for performance reasons.
+//! This may not be entirely the same as the algorithm described by the research paper. Some steps
+//! did not seem to provide any value, and have been omitted for performance reasons.
 
 use crate::sorter::Sorter;
 use crate::sorts::ska_sort::ska_sort;
