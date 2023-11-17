@@ -26,7 +26,7 @@ where
         (
             "voracious",
             Box::new(|mut input| {
-                input.voracious_mt_sort(num_cpus::get());
+                input.voracious_mt_sort(std::thread::available_parallelism().unwrap().get());
                 black_box(input);
             }),
         ),
@@ -57,7 +57,7 @@ where
         (
             "voracious",
             Box::new(|mut input| {
-                input.voracious_mt_sort(num_cpus::get());
+                input.voracious_mt_sort(std::thread::available_parallelism().unwrap().get());
                 black_box(input);
             }),
         ),
