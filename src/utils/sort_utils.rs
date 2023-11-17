@@ -28,7 +28,7 @@ pub fn get_end_offsets(counts: &[usize; 256], prefix_sums: &[usize; 256]) -> [us
 }
 
 #[inline]
-#[cfg(any(test, feature = "bench", feature = "tuning"))]
+#[cfg(any(test, bench, tuning))]
 pub fn par_get_counts<T>(bucket: &[T], level: usize) -> ([usize; 256], bool)
 where
     T: RadixKey + Sized + Send + Sync,

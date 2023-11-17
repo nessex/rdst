@@ -1,11 +1,11 @@
 #[cfg(all(
     feature = "multi-threaded",
-    any(test, feature = "bench", feature = "tuning")
+    any(test, bench, tuning)
 ))]
 pub mod bench_utils;
 #[cfg(all(
     feature = "multi-threaded",
-    any(test, feature = "bench", feature = "tuning")
+    any(test, bench, tuning)
 ))]
 pub mod test_utils;
 

@@ -9,7 +9,7 @@
 //! You may need to tweak the command below for your own machine.
 //!
 //! ```
-//! RUSTFLAGS='-C opt-level=3 -C target-cpu=native -C target-feature=+neon' cargo +nightly run --bin timings --features=tuning -- 1234 "Hello world"
+//! RUSTFLAGS='--cfg bench --cfg tuning -C opt-level=3 -C target-cpu=native -C target-feature=+neon' cargo +nightly run --bin timings --features timings -- 1234 "Hello world"
 //! ```
 //!
 //!  - `1234` is where you place the ID for your run. If you are just running a brief test this can be `N/A`, otherwise it should be something like a commit SHA that you can use to find the code for this run again.
@@ -18,11 +18,16 @@
 
 #![feature(string_remove_matches)]
 
-use jemallocator::Jemalloc;
+#[cfg(not(all(tuning, bench)))]
+compile_error!("This binary must be run with `RUSTFLAGS='--cfg tuning --cfg bench'`");
+
+#[cfg(all(tuning, not(target_env = "msvc")))]
+use tikv_jemallocator::Jemalloc;
 use rdst::utils::bench_utils::gen_bench_exponential_input_set;
 use rdst::{RadixKey, RadixSort};
 use std::time::Instant;
 
+#[cfg(all(tuning, not(target_env = "msvc")))]
 #[global_allocator]
 static ALLOC: Jemalloc = Jemalloc;
 

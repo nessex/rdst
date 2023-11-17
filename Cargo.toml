@@ -13,23 +13,29 @@ documentation = "https://docs.rs/rdst/"
 
 [features]
 default = ["multi-threaded"]
-bench = ["criterion", "block-pseudorand"]
-tuning = ["criterion", "block-pseudorand", "jemallocator"]
 multi-threaded = ["rayon"]
 work_profiles = []
+profiling = ["multi-threaded"]
+timings = ["multi-threaded"]
 
 [dependencies]
 rayon = { version = "1.8", optional = true }
 arbitrary-chunks = "0.4.1"
 partition = "0.1.2"
-criterion = { version = "0.5.1", optional = true }
-block-pseudorand = { version = "0.1.2", optional = true }
-jemallocator = { version = "0.5.4", optional = true }
 
 [dev-dependencies]
 rayon = "1.8"
-voracious_radix_sort = { version = "1.2", features = ["voracious_multithread"] }
+criterion = "0.5.1"
+block-pseudorand = "0.1.2"
+
+[target.'cfg(all(not(target_env = "msvc"), tuning))'.dependencies]
+tikv-jemallocator = "0.5.4"
+
+# Workaround for reducing compile time when not tuning or benchmarking
+# Suggestions for a better alternative very welcome...
+[target.'cfg(any(bench, tuning))'.dependencies]
 num_cpus = "1.16.0"
+voracious_radix_sort = { version = "1.2", features = ["voracious_multithread"] }
 criterion = "0.5.1"
 block-pseudorand = "0.1.2"
 
@@ -54,11 +60,15 @@ name = "tuning_parameters"
 harness = false
 
 [[bin]]
+# Requires: RUSTFLAGS="--cfg bench --cfg tuning" AND --features profiling
+# Suggestions for a better alternative very welcome...
 name = "profiling"
 path = "src/cmd/profiling.rs"
-required-features = ["tuning"]
+required-features = ["profiling"]
 
 [[bin]]
+# Requires: RUSTFLAGS="--cfg bench --cfg tuning" AND --features timings
+# Suggestions for a better alternative very welcome...
 name = "timings"
 path = "src/cmd/timings.rs"
-required-features = ["tuning"]
+required-features = ["timings"]

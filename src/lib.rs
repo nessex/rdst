@@ -175,14 +175,14 @@ mod radix_key;
 mod radix_key_impl;
 mod radix_sort_builder;
 
-#[cfg(not(any(test, feature = "bench")))]
+#[cfg(not(any(test, bench)))]
 mod sorts;
-#[cfg(any(test, feature = "bench"))]
+#[cfg(any(test, bench))]
 pub mod sorts;
 
-#[cfg(not(any(test, feature = "bench", feature = "tuning")))]
+#[cfg(not(any(test, bench, tuning)))]
 mod utils;
-#[cfg(any(test, feature = "bench", feature = "tuning"))]
+#[cfg(any(test, bench, tuning))]
 pub mod utils;
 
 mod radix_sort;

@@ -3,8 +3,12 @@
 ///
 /// e.g.
 /// ```
-/// RUSTFLAGS='-g -C opt-level=3 -C force-frame-pointers=y -C target-cpu=native -C target-feature=+neon' cargo +nightly instruments -t time --bin profiling --features=tuning
+/// RUSTFLAGS='--cfg bench --cfg tuning -g -C opt-level=3 -C force-frame-pointers=y -C target-cpu=native -C target-feature=+neon' cargo +nightly instruments -t time --bin profiling --features profiling
 /// ```
+
+#[cfg(not(all(tuning, bench)))]
+compile_error!("This binary must be run with `RUSTFLAGS='--cfg tuning --cfg bench'`");
+
 use rdst::utils::test_utils::gen_inputs;
 use rdst::RadixSort;
 use std::thread::sleep;
