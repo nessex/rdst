@@ -232,6 +232,19 @@ where
                 .collect::<Vec<u32>>(),
             &sort_fn,
         );
+        // This is to test a heavily skewed distribution
+        // Particularly for the logic in the standard tuner that can trigger Algorithm::LrLsb
+        validate_sort(
+            inputs
+                .iter()
+                .enumerate()
+                .map(|(i, v)| match i {
+                    0..=4 => (*v & 0xFFFF_FF00) | 0x77,
+                    _ => *v & 0xFFFF_FF00,
+                })
+                .collect::<Vec<u32>>(),
+            &sort_fn,
+        );
     }
 }
 
