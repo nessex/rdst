@@ -62,7 +62,12 @@ impl<'a> Sorter<'a> {
             } else if let Some(next_counts) = next_counts {
                 next_counts
             } else {
-                let (counts, already_sorted) = get_counts(bucket, level);
+                let (counts, already_sorted) = if invert {
+                    get_counts(&tmp_bucket, level)
+                } else {
+                    get_counts(bucket, level)
+                };
+
                 if already_sorted {
                     next_counts = None;
                     continue 'outer;
