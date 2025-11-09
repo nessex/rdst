@@ -56,8 +56,3 @@ required-features = ["multi-threaded"]
 name = "struct_sort"
 harness = false
 required-features = ["multi-threaded"]
-
-[[bench]]
-name = "tuning_parameters"
-harness = false
-required-features = ["multi-threaded"]
