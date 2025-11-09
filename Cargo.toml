@@ -61,17 +61,3 @@ required-features = ["multi-threaded"]
 name = "tuning_parameters"
 harness = false
 required-features = ["multi-threaded"]
-
-[[bin]]
-# Requires: RUSTFLAGS="--cfg bench --cfg tuning" AND --features profiling
-# Suggestions for a better alternative very welcome...
-name = "profiling"
-path = "src/cmd/profiling.rs"
-required-features = ["profiling"]
-
-[[bin]]
-# Requires: RUSTFLAGS="--cfg bench --cfg tuning" AND --features timings
-# Suggestions for a better alternative very welcome...
-name = "timings"
-path = "src/cmd/timings.rs"
-required-features = ["timings"]

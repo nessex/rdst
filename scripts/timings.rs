@@ -1,3 +1,19 @@
+#!/usr/bin/env -S cargo +nightly -Zscript
+---
+[package]
+edition = "2024"
+
+[dependencies]
+block-pseudorand = "0.1.2"
+rayon = "1.8"
+rdst = { path = "../" }
+
+[profile.dev]
+codegen-units = 1
+opt-level = 3
+debug = false
+---
+
 //! # timings
 //!
 //! This is used to run the sorting algorithm across a medley of inputs and output the results
@@ -9,7 +25,7 @@
 //! You may need to tweak the command below for your own machine.
 //!
 //! ```
-//! RUSTFLAGS='--cfg bench --cfg tuning -C opt-level=3 -C target-cpu=native -C target-feature=+neon' cargo +nightly run --bin timings --features timings -- 1234 "Hello world"
+//! RUSTFLAGS='-C target-cpu=apple-m1 -C target-feature=+neon' ./timings.rs 1234 "Hello world"
 //! ```
 //!
 //!  - `1234` is where you place the ID for your run. If you are just running a brief test this can be `N/A`, otherwise it should be something like a commit SHA that you can use to find the code for this run again.
@@ -18,18 +34,80 @@
 
 #![feature(string_remove_matches)]
 
-#[cfg(not(all(tuning, bench)))]
-compile_error!("This binary must be run with `RUSTFLAGS='--cfg tuning --cfg bench'`");
-
-use rdst::utils::bench_utils::gen_bench_exponential_input_set;
+use rayon::prelude::*;
+use std::fmt::Debug;
+use std::ops::{Shl, ShlAssign, Shr, ShrAssign};
 use rdst::{RadixKey, RadixSort};
 use std::time::Instant;
-#[cfg(all(tuning, not(target_env = "msvc")))]
-use tikv_jemallocator::Jemalloc;
+use block_pseudorand::block_rand;
 
-#[cfg(all(tuning, not(target_env = "msvc")))]
-#[global_allocator]
-static ALLOC: Jemalloc = Jemalloc;
+pub trait NumericTest<T>:
+RadixKey
++ Sized
++ Copy
++ Debug
++ PartialEq
++ Ord
++ Send
++ Sync
++ Shl<Output = T>
++ Shr<Output = T>
++ ShrAssign
++ ShlAssign
+{
+}
+
+impl<T> NumericTest<T> for T where
+    T: RadixKey
+    + Sized
+    + Copy
+    + Debug
+    + PartialEq
+    + Ord
+    + Send
+    + Sync
+    + Shl<Output = T>
+    + Shr<Output = T>
+    + ShrAssign
+    + ShlAssign
+{
+}
+
+fn gen_inputs<T>(n: usize, shift: T) -> Vec<T>
+where
+    T: NumericTest<T>,
+{
+    let mut inputs: Vec<T> = block_rand(n);
+
+    inputs[0..(n / 2)].par_iter_mut().for_each(|v| *v >>= shift);
+    inputs[(n / 2)..n].par_iter_mut().for_each(|v| *v <<= shift);
+
+    inputs
+}
+
+fn gen_exponential_input_set<T>(shift: T) -> Vec<Vec<T>>
+where
+    T: NumericTest<T>,
+{
+    let n = 200_000_000;
+    let inputs = gen_inputs(n, shift);
+    let mut len = inputs.len();
+    let mut out = Vec::new();
+
+    loop {
+        let start = (inputs.len() - len) / 2;
+        let end = start + len;
+
+        out.push(inputs[start..end].to_vec());
+
+        len = len / 2;
+        if len == 0 {
+            break;
+        }
+    }
+
+    out
+}
 
 fn print_row(data: Vec<String>) {
     let mut first = true;
@@ -95,22 +173,22 @@ fn main() {
     assert_eq!(out.len(), 2);
     let mut headers = vec!["id".to_string(), "description".to_string()];
 
-    let inputs = gen_bench_exponential_input_set(0u32);
+    let inputs = gen_exponential_input_set(0u32);
     bench(inputs, "u32", &mut out, &mut headers);
 
-    let inputs = gen_bench_exponential_input_set(16u32);
+    let inputs = gen_exponential_input_set(16u32);
     bench(inputs, "u32_bimodal", &mut out, &mut headers);
 
-    let inputs = gen_bench_exponential_input_set(0u64);
+    let inputs = gen_exponential_input_set(0u64);
     bench(inputs, "u64", &mut out, &mut headers);
 
-    let inputs = gen_bench_exponential_input_set(32u64);
+    let inputs = gen_exponential_input_set(32u64);
     bench(inputs, "u64_bimodal", &mut out, &mut headers);
 
-    let inputs = gen_bench_exponential_input_set(0u128);
+    let inputs = gen_exponential_input_set(0u128);
     bench(inputs, "u128", &mut out, &mut headers);
 
-    let inputs = gen_bench_exponential_input_set(64u128);
+    let inputs = gen_exponential_input_set(64u128);
     bench(inputs, "u128_bimodal", &mut out, &mut headers);
 
     if print_headers {
