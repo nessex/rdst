@@ -13,28 +13,73 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout sources
-      uses: actions/checkout@v3
-    - name: Install nightly toolchain with clippy available
-      uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: nightly
-        override: true
-        components: rustfmt, clippy
-    - name: Run cargo fmt
-      uses: actions-rs/cargo@v1
-      with:
-        command: fmt
-        args: --all -- --check
-    - name: Run cargo clippy
-      uses: actions-rs/cargo@v1
-      with:
-        command: clippy
-        args: -- -D warnings
+      - name: Checkout sources
+        uses: actions/checkout@v4
+      - name: Install nightly toolchain with clippy available
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+          components: rustfmt, clippy
+      - name: Run cargo fmt
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
+      - name: Run cargo clippy
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: -- -D warnings
   test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - name: Run tests
-      run: cargo test --verbose --release
+      - uses: actions/checkout@v4
+      - name: Run tests
+        run: cargo test --verbose --release
+
+  test-fixture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run fixture
+        working-directory: fixture
+        run: cargo run --release
+
+  test-profiling:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install nightly toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+      - name: Run profiling script
+        run: ./scripts/profiling.rs
+
+  test-timings:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install nightly toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+      - name: Run timings script
+        run: ./scripts/timings.rs 1234 "Hello world"
+
+  test-examples:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run simple_usage
+        run: cargo run --example simple_usage
+      - name: Run single_threaded
+        run: cargo run --example single_threaded
+      - name: Run custom_tuner
+        run: cargo run --example custom_tuner
