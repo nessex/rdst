@@ -28,9 +28,6 @@ rayon = "1.8"
 criterion = "0.5.1"
 block-pseudorand = "0.1.2"
 
-[target.'cfg(all(not(target_env = "msvc"), tuning))'.dependencies]
-tikv-jemallocator = "0.5.4"
-
 # Workaround for reducing compile time when not tuning or benchmarking
 # Suggestions for a better alternative very welcome...
 [target.'cfg(any(bench, tuning))'.dependencies]
