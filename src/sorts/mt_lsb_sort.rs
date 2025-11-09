@@ -208,6 +208,10 @@ impl<'a> Sorter<'a> {
 
         drop(tmp_bucket);
 
+        if level == 0 {
+            return;
+        }
+
         self.director(bucket, counts, level - 1);
     }
 }
@@ -216,7 +220,7 @@ impl<'a> Sorter<'a> {
 mod tests {
     use crate::sorter::Sorter;
     use crate::tuner::Algorithm;
-    use crate::utils::cdiv;
+    use crate::utils::{aggregate_tile_counts, cdiv, get_tile_counts};
     use crate::utils::test_utils::{
         sort_comparison_suite, sort_single_algorithm, validate_u32_patterns, NumericTest,
         SingleAlgoTuner,
@@ -232,6 +236,10 @@ mod tests {
             algo: Algorithm::MtLsb,
         };
 
+        let tuner_oop = SingleAlgoTuner {
+            algo: Algorithm::MtOop,
+        };
+
         sort_comparison_suite(shift, |inputs| {
             if inputs.len() == 0 {
                 return;
@@ -241,6 +249,20 @@ mod tests {
             let sorter = Sorter::new(true, &tuner);
 
             sorter.mt_lsb_sort_adapter(inputs, 0, T::LEVELS - 1, tile_size);
+        });
+
+        sort_comparison_suite(shift, |inputs| {
+            if inputs.len() == 0 {
+                return;
+            }
+
+            let level = T::LEVELS - 1;
+            let tile_size = cdiv(inputs.len(), current_num_threads());
+            let sorter = Sorter::new(true, &tuner_oop);
+            let (tile_counts, _) = get_tile_counts(inputs, tile_size, level);
+            let counts = aggregate_tile_counts(&tile_counts);
+
+            sorter.mt_oop_sort_adapter(inputs, T::LEVELS - 1, &counts, &tile_counts, tile_size);
         });
     }
 
