@@ -1,30 +1,71 @@
-use crate::utils::test_utils::{gen_inputs, NumericTest};
+use block_pseudorand::block_rand;
 use criterion::{AxisScale, BatchSize, BenchmarkId, Criterion, PlotConfiguration, Throughput};
+use rayon::iter::IntoParallelRefMutIterator;
+use rayon::prelude::*;
+use rdst::RadixKey;
+use std::fmt::Debug;
+use std::ops::{Shl, ShlAssign, Shr, ShrAssign};
 use std::time::Duration;
 
+pub trait NumericTest<T>:
+RadixKey
++ Sized
++ Copy
++ Debug
++ PartialEq
++ Ord
++ Send
++ Sync
++ Shl<Output = T>
++ Shr<Output = T>
++ ShrAssign
++ ShlAssign
+{
+}
+
+impl<T> NumericTest<T> for T where
+    T: RadixKey
+    + Sized
+    + Copy
+    + Debug
+    + PartialEq
+    + Ord
+    + Send
+    + Sync
+    + Shl<Output = T>
+    + Shr<Output = T>
+    + ShrAssign
+    + ShlAssign
+{
+}
+
+#[allow(dead_code)]
+pub fn gen_inputs<T>(n: usize, shift: T) -> Vec<T>
+where
+    T: NumericTest<T>,
+{
+    let mut inputs: Vec<T> = block_rand(n);
+
+    inputs[0..(n / 2)].par_iter_mut().for_each(|v| *v >>= shift);
+    inputs[(n / 2)..n].par_iter_mut().for_each(|v| *v <<= shift);
+
+    inputs
+}
+
+#[allow(dead_code)]
 pub fn gen_bench_input_set<T>(shift: T) -> Vec<Vec<T>>
 where
     T: NumericTest<T>,
 {
-    let n = 200_000_000;
+    let n = 50_000_000;
     let half = n / 2;
     let inputs = gen_inputs(n, shift);
 
     // Middle values are used for the case where shift is provided
     let mut out = vec![
         inputs[(half - 2_500)..(half + 2_500)].to_vec(),
-        inputs[(half - 5_000)..(half + 5_000)].to_vec(),
         inputs[(half - 25_000)..(half + 25_000)].to_vec(),
-        inputs[(half - 50_000)..(half + 50_000)].to_vec(),
-        inputs[(half - 100_000)..(half + 100_000)].to_vec(),
-        inputs[(half - 150_000)..(half + 150_000)].to_vec(),
         inputs[(half - 250_000)..(half + 250_000)].to_vec(),
-        inputs[(half - 500_000)..(half + 500_000)].to_vec(),
-        inputs[(half - 1_000_000)..(half + 1_000_000)].to_vec(),
-        inputs[(half - 2_500_000)..(half + 2_500_000)].to_vec(),
-        inputs[(half - 5_000_000)..(half + 5_000_000)].to_vec(),
-        inputs[(half - 25_000_000)..(half + 25_000_000)].to_vec(),
-        inputs[(half - 50_000_000)..(half + 50_000_000)].to_vec(),
         inputs,
     ];
 
@@ -33,6 +74,7 @@ where
     out
 }
 
+#[allow(dead_code)]
 pub fn gen_bench_exponential_input_set<T>(shift: T) -> Vec<Vec<T>>
 where
     T: NumericTest<T>,
@@ -57,6 +99,7 @@ where
     out
 }
 
+#[allow(dead_code)]
 pub fn bench_common<T>(
     c: &mut Criterion,
     shift: T,
@@ -87,6 +130,7 @@ pub fn bench_common<T>(
     group.finish();
 }
 
+#[allow(dead_code)]
 pub fn bench_medley<T>(
     c: &mut Criterion,
     group: &str,
@@ -121,6 +165,7 @@ pub fn bench_medley<T>(
     group.finish();
 }
 
+#[allow(dead_code)]
 pub fn bench_single<T>(
     c: &mut Criterion,
     group: &str,
