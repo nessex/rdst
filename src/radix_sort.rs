@@ -15,7 +15,7 @@ pub trait RadixSort<T> {
     /// ```
     fn radix_sort_unstable(&mut self);
 
-    fn radix_sort_builder(&mut self) -> RadixSortBuilder<T>;
+    fn radix_sort_builder(&'_ mut self) -> RadixSortBuilder<'_, T>;
 }
 
 impl<T> RadixSort<T> for Vec<T>
@@ -26,7 +26,7 @@ where
         self.radix_sort_builder().sort();
     }
 
-    fn radix_sort_builder(&mut self) -> RadixSortBuilder<T> {
+    fn radix_sort_builder(&'_ mut self) -> RadixSortBuilder<'_, T> {
         RadixSortBuilder::new(self)
     }
 }
@@ -39,7 +39,7 @@ where
         self.radix_sort_builder().sort();
     }
 
-    fn radix_sort_builder(&mut self) -> RadixSortBuilder<T> {
+    fn radix_sort_builder(&'_ mut self) -> RadixSortBuilder<'_, T> {
         RadixSortBuilder::new(self)
     }
 }
