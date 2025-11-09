@@ -8,23 +8,7 @@ use std::ops::{Shl, ShlAssign, Shr, ShrAssign};
 use std::time::Duration;
 
 pub trait NumericTest<T>:
-RadixKey
-+ Sized
-+ Copy
-+ Debug
-+ PartialEq
-+ Ord
-+ Send
-+ Sync
-+ Shl<Output = T>
-+ Shr<Output = T>
-+ ShrAssign
-+ ShlAssign
-{
-}
-
-impl<T> NumericTest<T> for T where
-    T: RadixKey
+    RadixKey
     + Sized
     + Copy
     + Debug
@@ -36,6 +20,22 @@ impl<T> NumericTest<T> for T where
     + Shr<Output = T>
     + ShrAssign
     + ShlAssign
+{
+}
+
+impl<T> NumericTest<T> for T where
+    T: RadixKey
+        + Sized
+        + Copy
+        + Debug
+        + PartialEq
+        + Ord
+        + Send
+        + Sync
+        + Shl<Output = T>
+        + Shr<Output = T>
+        + ShrAssign
+        + ShlAssign
 {
 }
 

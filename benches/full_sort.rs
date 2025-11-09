@@ -1,8 +1,8 @@
 mod bench_utils;
 
+use bench_utils::{bench_common, bench_medley, NumericTest};
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use rdst::RadixSort;
-use bench_utils::{bench_common, bench_medley, NumericTest};
 
 fn full_sort_common<T>(c: &mut Criterion, shift: T, name_suffix: &str)
 where

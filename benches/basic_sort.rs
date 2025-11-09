@@ -1,8 +1,8 @@
 mod bench_utils;
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use bench_utils::bench_single;
 use bench_utils::NumericTest;
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use rdst::RadixSort;
 
 fn basic_sort_set<T>(c: &mut Criterion, suffix: &str, shift: T, count: usize)
