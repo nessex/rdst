@@ -216,10 +216,10 @@ impl<'a> Sorter<'a> {
 mod tests {
     use crate::sorter::Sorter;
     use crate::tuner::Algorithm;
-    use crate::tuners::StandardTuner;
     use crate::utils::cdiv;
     use crate::utils::test_utils::{
         sort_comparison_suite, sort_single_algorithm, validate_u32_patterns, NumericTest,
+        SingleAlgoTuner,
     };
     use crate::RadixKey;
     use rayon::current_num_threads;
@@ -228,7 +228,9 @@ mod tests {
     where
         T: NumericTest<T>,
     {
-        let sorter = Sorter::new(true, &StandardTuner);
+        let tuner = SingleAlgoTuner {
+            algo: Algorithm::MtLsb,
+        };
 
         sort_comparison_suite(shift, |inputs| {
             if inputs.len() == 0 {
@@ -236,6 +238,7 @@ mod tests {
             }
 
             let tile_size = cdiv(inputs.len(), current_num_threads());
+            let sorter = Sorter::new(true, &tuner);
 
             sorter.mt_lsb_sort_adapter(inputs, 0, T::LEVELS - 1, tile_size);
         });
@@ -290,7 +293,10 @@ mod tests {
                 return;
             }
 
-            let sorter = Sorter::new(true, &StandardTuner);
+            let tuner = SingleAlgoTuner {
+                algo: Algorithm::MtLsb,
+            };
+            let sorter = Sorter::new(true, &tuner);
             let tile_size = cdiv(inputs.len(), current_num_threads());
 
             sorter.mt_lsb_sort_adapter(inputs, 0, u32::LEVELS - 1, tile_size);

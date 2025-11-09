@@ -290,9 +290,9 @@ impl<'a> Sorter<'a> {
 mod tests {
     use crate::sorter::Sorter;
     use crate::tuner::Algorithm;
-    use crate::tuners::StandardTuner;
     use crate::utils::test_utils::{
         sort_comparison_suite, sort_single_algorithm, validate_u32_patterns, NumericTest,
+        SingleAlgoTuner,
     };
     use crate::utils::{aggregate_tile_counts, cdiv, get_tile_counts};
     use crate::RadixKey;
@@ -302,7 +302,9 @@ mod tests {
     where
         T: NumericTest<T>,
     {
-        let sorter = Sorter::new(true, &StandardTuner);
+        let tuner = SingleAlgoTuner {
+            algo: Algorithm::Regions,
+        };
 
         sort_comparison_suite(shift, |inputs| {
             if inputs.len() == 0 {
@@ -312,6 +314,7 @@ mod tests {
             let tile_size = cdiv(inputs.len(), current_num_threads());
             let (tile_counts, _) = get_tile_counts(inputs, tile_size, T::LEVELS - 1);
             let counts = aggregate_tile_counts(&tile_counts);
+            let sorter = Sorter::new(true, &tuner);
 
             sorter.regions_sort_adapter(inputs, &counts, &tile_counts, tile_size, T::LEVELS - 1);
         });
@@ -354,7 +357,9 @@ mod tests {
 
     #[test]
     pub fn test_u32_patterns() {
-        let sorter = Sorter::new(true, &StandardTuner);
+        let tuner = SingleAlgoTuner {
+            algo: Algorithm::Regions,
+        };
 
         validate_u32_patterns(|inputs| {
             if inputs.len() == 0 {
@@ -364,6 +369,7 @@ mod tests {
             let tile_size = cdiv(inputs.len(), current_num_threads());
             let (tile_counts, _) = get_tile_counts(inputs, tile_size, u32::LEVELS - 1);
             let counts = aggregate_tile_counts(&tile_counts);
+            let sorter = Sorter::new(true, &tuner);
 
             sorter.regions_sort_adapter(inputs, &counts, &tile_counts, tile_size, u32::LEVELS - 1);
         });

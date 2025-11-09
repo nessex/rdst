@@ -144,10 +144,10 @@ impl<'a> Sorter<'a> {
 mod tests {
     use crate::sorter::Sorter;
     use crate::tuner::Algorithm;
-    use crate::tuners::StandardTuner;
     use crate::utils::get_counts;
     use crate::utils::test_utils::{
         sort_comparison_suite, sort_single_algorithm, validate_u32_patterns, NumericTest,
+        SingleAlgoTuner,
     };
     use crate::RadixKey;
 
@@ -155,16 +155,24 @@ mod tests {
     where
         T: NumericTest<T>,
     {
-        let sorter = Sorter::new(true, &StandardTuner);
+        let tuner = SingleAlgoTuner {
+            algo: Algorithm::Lsb,
+        };
+
+        let tuner_lr = SingleAlgoTuner {
+            algo: Algorithm::LrLsb,
+        };
 
         sort_comparison_suite(shift, |inputs| {
             let (counts, _) = get_counts(inputs, T::LEVELS - 1);
+            let sorter = Sorter::new(true, &tuner);
 
             sorter.lsb_sort_adapter(false, inputs, &counts, 0, T::LEVELS - 1)
         });
 
         sort_comparison_suite(shift, |inputs| {
             let (counts, _) = get_counts(inputs, T::LEVELS - 1);
+            let sorter = Sorter::new(true, &tuner_lr);
 
             sorter.lsb_sort_adapter(true, inputs, &counts, 0, T::LEVELS - 1);
         });
@@ -213,7 +221,11 @@ mod tests {
     #[test]
     pub fn test_u32_patterns() {
         validate_u32_patterns(|inputs| {
-            let sorter = Sorter::new(true, &StandardTuner);
+            let tuner = SingleAlgoTuner {
+                algo: Algorithm::Lsb,
+            };
+
+            let sorter = Sorter::new(true, &tuner);
             let (counts, _) = get_counts(inputs, u32::LEVELS - 1);
 
             sorter.lsb_sort_adapter(true, inputs, &counts, 0, u32::LEVELS - 1);
