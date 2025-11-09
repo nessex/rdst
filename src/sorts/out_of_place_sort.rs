@@ -43,8 +43,8 @@
 //!  * single-threaded
 //!  * lsb-first
 
-use crate::utils::*;
 use crate::radix_key::RadixKeyChecked;
+use crate::utils::*;
 
 #[inline]
 pub fn out_of_place_sort<T>(

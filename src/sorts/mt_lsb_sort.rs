@@ -28,9 +28,9 @@
 //!
 //! This variant uses the same algorithm as `mt_lsb_sort` but uses it in msb-first order.
 
+use crate::radix_key::RadixKeyChecked;
 use crate::sorter::Sorter;
 use crate::utils::*;
-use crate::radix_key::RadixKeyChecked;
 use arbitrary_chunks::ArbitraryChunks;
 use rayon::prelude::*;
 

@@ -20,9 +20,9 @@
 //! This is generally slower than `lsb_sort` for smaller types T or smaller input arrays. For larger
 //! types or inputs, the memory efficiency of this algorithm can make it faster than `lsb_sort`.
 
+use crate::radix_key::RadixKeyChecked;
 use crate::sorter::Sorter;
 use crate::utils::*;
-use crate::radix_key::RadixKeyChecked;
 use partition::partition_index;
 
 pub fn ska_sort<T>(

@@ -38,10 +38,10 @@
 //! This may not be entirely the same as the algorithm described by the research paper. Some steps
 //! did not seem to provide any value, and have been omitted for performance reasons.
 
+use crate::radix_key::RadixKeyChecked;
 use crate::sorter::Sorter;
 use crate::sorts::ska_sort::ska_sort;
 use crate::utils::*;
-use crate::radix_key::RadixKeyChecked;
 use partition::partition_index;
 use rayon::current_num_threads;
 use rayon::prelude::*;

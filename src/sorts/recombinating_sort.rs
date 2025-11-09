@@ -22,10 +22,10 @@
 //! constraints. As this is an out-of-place algorithm, you need 2n memory relative to the input for
 //! this sort, and eventually the extra allocation and freeing required eats away at the performance.
 
+use crate::radix_key::RadixKeyChecked;
 use crate::sorter::Sorter;
 use crate::sorts::out_of_place_sort::out_of_place_sort;
 use crate::utils::*;
-use crate::radix_key::RadixKeyChecked;
 use arbitrary_chunks::ArbitraryChunks;
 use rayon::prelude::*;
 

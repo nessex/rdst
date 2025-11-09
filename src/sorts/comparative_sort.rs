@@ -21,9 +21,9 @@
 //! small inputs. However for those very small inputs it provides a significant speed-up due to
 //! having essentially no overhead (from count arrays, buffers etc.) compared to a radix sort.
 
+use crate::radix_key::RadixKeyChecked;
 use crate::sorter::Sorter;
 use std::cmp::Ordering;
-use crate::radix_key::RadixKeyChecked;
 
 impl<'a> Sorter<'a> {
     pub(crate) fn comparative_sort<T>(&self, bucket: &mut [T], start_level: usize)

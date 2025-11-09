@@ -33,9 +33,9 @@
 //! overhead of the thread-local stores and mutexes prevents it from being fast for smaller inputs
 //! however, so it should not be used in all situations.
 
+use crate::radix_key::RadixKeyChecked;
 use crate::sorter::Sorter;
 use crate::utils::*;
-use crate::radix_key::RadixKeyChecked;
 use arbitrary_chunks::ArbitraryChunks;
 use partition::partition_index;
 use rayon::current_num_threads;
