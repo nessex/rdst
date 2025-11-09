@@ -28,13 +28,13 @@
 //! level to provide a small but significant performance boost. This is not a huge win as it removes
 //! some caching benefits etc., but has been benchmarked at roughly 5-15% speedup.
 
+use crate::radix_key::RadixKeyChecked;
 use crate::sorter::Sorter;
 use crate::sorts::out_of_place_sort::{
     lr_out_of_place_sort, lr_out_of_place_sort_with_counts, out_of_place_sort,
     out_of_place_sort_with_counts,
 };
 use crate::utils::*;
-use crate::RadixKey;
 
 impl<'a> Sorter<'a> {
     pub(crate) fn lsb_sort_adapter<T>(
@@ -45,7 +45,7 @@ impl<'a> Sorter<'a> {
         start_level: usize,
         end_level: usize,
     ) where
-        T: RadixKey + Sized + Send + Copy + Sync,
+        T: RadixKeyChecked + Sized + Send + Copy + Sync,
     {
         if bucket.len() < 2 {
             return;

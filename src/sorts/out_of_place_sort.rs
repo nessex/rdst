@@ -44,7 +44,7 @@
 //!  * lsb-first
 
 use crate::utils::*;
-use crate::RadixKey;
+use crate::radix_key::RadixKeyChecked;
 
 #[inline]
 pub fn out_of_place_sort<T>(
@@ -53,7 +53,7 @@ pub fn out_of_place_sort<T>(
     counts: &[usize; 256],
     level: usize,
 ) where
-    T: RadixKey + Sized + Send + Copy + Sync,
+    T: RadixKeyChecked + Sized + Send + Copy + Sync,
 {
     if src_bucket.len() < 2 {
         dst_bucket.copy_from_slice(src_bucket);
@@ -66,14 +66,14 @@ pub fn out_of_place_sort<T>(
     let rem = chunks.remainder();
 
     chunks.into_iter().for_each(|chunk| {
-        let a = chunk[0].get_level(level) as usize;
-        let b = chunk[1].get_level(level) as usize;
-        let c = chunk[2].get_level(level) as usize;
-        let d = chunk[3].get_level(level) as usize;
-        let e = chunk[4].get_level(level) as usize;
-        let f = chunk[5].get_level(level) as usize;
-        let g = chunk[6].get_level(level) as usize;
-        let h = chunk[7].get_level(level) as usize;
+        let a = chunk[0].get_level_checked(level) as usize;
+        let b = chunk[1].get_level_checked(level) as usize;
+        let c = chunk[2].get_level_checked(level) as usize;
+        let d = chunk[3].get_level_checked(level) as usize;
+        let e = chunk[4].get_level_checked(level) as usize;
+        let f = chunk[5].get_level_checked(level) as usize;
+        let g = chunk[6].get_level_checked(level) as usize;
+        let h = chunk[7].get_level_checked(level) as usize;
 
         dst_bucket[prefix_sums[a]] = chunk[0];
         prefix_sums[a] += 1;
@@ -94,7 +94,7 @@ pub fn out_of_place_sort<T>(
     });
 
     rem.iter().for_each(|val| {
-        let b = val.get_level(level) as usize;
+        let b = val.get_level_checked(level) as usize;
         dst_bucket[prefix_sums[b]] = *val;
         prefix_sums[b] += 1;
     });
@@ -108,14 +108,14 @@ pub fn out_of_place_sort_with_counts<T>(
     level: usize,
 ) -> [usize; 256]
 where
-    T: RadixKey + Sized + Send + Copy + Sync,
+    T: RadixKeyChecked + Sized + Send + Copy + Sync,
 {
     if src_bucket.is_empty() {
         return [0usize; 256];
     } else if src_bucket.len() == 1 {
         let mut counts = [0usize; 256];
         dst_bucket.copy_from_slice(src_bucket);
-        counts[src_bucket[0].get_level(level) as usize] = 1;
+        counts[src_bucket[0].get_level_checked(level) as usize] = 1;
         return counts;
     }
 
@@ -128,22 +128,22 @@ where
     let rem = chunks.remainder();
 
     chunks.into_iter().for_each(|chunk| {
-        let b0 = chunk[0].get_level(level) as usize;
-        let bn0 = chunk[0].get_level(next_level) as usize;
-        let b1 = chunk[1].get_level(level) as usize;
-        let bn1 = chunk[1].get_level(next_level) as usize;
-        let b2 = chunk[2].get_level(level) as usize;
-        let bn2 = chunk[2].get_level(next_level) as usize;
-        let b3 = chunk[3].get_level(level) as usize;
-        let bn3 = chunk[3].get_level(next_level) as usize;
-        let b4 = chunk[4].get_level(level) as usize;
-        let bn4 = chunk[4].get_level(next_level) as usize;
-        let b5 = chunk[5].get_level(level) as usize;
-        let bn5 = chunk[5].get_level(next_level) as usize;
-        let b6 = chunk[6].get_level(level) as usize;
-        let bn6 = chunk[6].get_level(next_level) as usize;
-        let b7 = chunk[7].get_level(level) as usize;
-        let bn7 = chunk[7].get_level(next_level) as usize;
+        let b0 = chunk[0].get_level_checked(level) as usize;
+        let bn0 = chunk[0].get_level_checked(next_level) as usize;
+        let b1 = chunk[1].get_level_checked(level) as usize;
+        let bn1 = chunk[1].get_level_checked(next_level) as usize;
+        let b2 = chunk[2].get_level_checked(level) as usize;
+        let bn2 = chunk[2].get_level_checked(next_level) as usize;
+        let b3 = chunk[3].get_level_checked(level) as usize;
+        let bn3 = chunk[3].get_level_checked(next_level) as usize;
+        let b4 = chunk[4].get_level_checked(level) as usize;
+        let bn4 = chunk[4].get_level_checked(next_level) as usize;
+        let b5 = chunk[5].get_level_checked(level) as usize;
+        let bn5 = chunk[5].get_level_checked(next_level) as usize;
+        let b6 = chunk[6].get_level_checked(level) as usize;
+        let bn6 = chunk[6].get_level_checked(next_level) as usize;
+        let b7 = chunk[7].get_level_checked(level) as usize;
+        let bn7 = chunk[7].get_level_checked(next_level) as usize;
 
         dst_bucket[prefix_sums[b0]] = chunk[0];
         prefix_sums[b0] += 1;
@@ -172,8 +172,8 @@ where
     });
 
     rem.iter().for_each(|val| {
-        let b = val.get_level(level) as usize;
-        let bn = val.get_level(next_level) as usize;
+        let b = val.get_level_checked(level) as usize;
+        let bn = val.get_level_checked(next_level) as usize;
         dst_bucket[prefix_sums[b]] = *val;
         prefix_sums[b] += 1;
         next_counts_0[bn] += 1;
@@ -193,7 +193,7 @@ pub fn lr_out_of_place_sort<T>(
     counts: &[usize; 256],
     level: usize,
 ) where
-    T: RadixKey + Sized + Send + Copy + Sync,
+    T: RadixKeyChecked + Sized + Send + Copy + Sync,
 {
     if src_bucket.len() < 2 {
         dst_bucket.copy_from_slice(src_bucket);
@@ -212,7 +212,7 @@ pub fn lr_out_of_place_sort<T>(
     let pre = src_bucket.len() % 8;
 
     for _ in 0..pre {
-        let b = src_bucket[right].get_level(level) as usize;
+        let b = src_bucket[right].get_level_checked(level) as usize;
 
         dst_bucket[ends[b]] = src_bucket[right];
         ends[b] = ends[b].saturating_sub(1);
@@ -226,14 +226,14 @@ pub fn lr_out_of_place_sort<T>(
     let end = (src_bucket.len() - pre) / 2;
 
     while left < end {
-        let bl_0 = src_bucket[left].get_level(level) as usize;
-        let bl_1 = src_bucket[left + 1].get_level(level) as usize;
-        let bl_2 = src_bucket[left + 2].get_level(level) as usize;
-        let bl_3 = src_bucket[left + 3].get_level(level) as usize;
-        let br_0 = src_bucket[right].get_level(level) as usize;
-        let br_1 = src_bucket[right - 1].get_level(level) as usize;
-        let br_2 = src_bucket[right - 2].get_level(level) as usize;
-        let br_3 = src_bucket[right - 3].get_level(level) as usize;
+        let bl_0 = src_bucket[left].get_level_checked(level) as usize;
+        let bl_1 = src_bucket[left + 1].get_level_checked(level) as usize;
+        let bl_2 = src_bucket[left + 2].get_level_checked(level) as usize;
+        let bl_3 = src_bucket[left + 3].get_level_checked(level) as usize;
+        let br_0 = src_bucket[right].get_level_checked(level) as usize;
+        let br_1 = src_bucket[right - 1].get_level_checked(level) as usize;
+        let br_2 = src_bucket[right - 2].get_level_checked(level) as usize;
+        let br_3 = src_bucket[right - 3].get_level_checked(level) as usize;
 
         dst_bucket[offsets[bl_0]] = src_bucket[left];
         offsets[bl_0] = offsets[bl_0].wrapping_add(1);
@@ -265,14 +265,14 @@ pub fn lr_out_of_place_sort_with_counts<T>(
     level: usize,
 ) -> [usize; 256]
 where
-    T: RadixKey + Sized + Send + Copy + Sync,
+    T: RadixKeyChecked + Sized + Send + Copy + Sync,
 {
     if src_bucket.is_empty() {
         return [0usize; 256];
     } else if src_bucket.len() == 1 {
         let mut counts = [0usize; 256];
         dst_bucket.copy_from_slice(src_bucket);
-        counts[src_bucket[0].get_level(level) as usize] = 1;
+        counts[src_bucket[0].get_level_checked(level) as usize] = 1;
         return counts;
     }
 
@@ -292,8 +292,8 @@ where
     let pre = src_bucket.len() % 8;
 
     for _ in 0..pre {
-        let b = src_bucket[right].get_level(level) as usize;
-        let bn = src_bucket[right].get_level(next_level) as usize;
+        let b = src_bucket[right].get_level_checked(level) as usize;
+        let bn = src_bucket[right].get_level_checked(next_level) as usize;
 
         dst_bucket[ends[b]] = src_bucket[right];
         ends[b] = ends[b].wrapping_sub(1);
@@ -308,14 +308,14 @@ where
     let end = (src_bucket.len() - pre) / 2;
 
     while left < end {
-        let bl_0 = src_bucket[left].get_level(level) as usize;
-        let bl_1 = src_bucket[left + 1].get_level(level) as usize;
-        let bl_2 = src_bucket[left + 2].get_level(level) as usize;
-        let bl_3 = src_bucket[left + 3].get_level(level) as usize;
-        let br_0 = src_bucket[right].get_level(level) as usize;
-        let br_1 = src_bucket[right - 1].get_level(level) as usize;
-        let br_2 = src_bucket[right - 2].get_level(level) as usize;
-        let br_3 = src_bucket[right - 3].get_level(level) as usize;
+        let bl_0 = src_bucket[left].get_level_checked(level) as usize;
+        let bl_1 = src_bucket[left + 1].get_level_checked(level) as usize;
+        let bl_2 = src_bucket[left + 2].get_level_checked(level) as usize;
+        let bl_3 = src_bucket[left + 3].get_level_checked(level) as usize;
+        let br_0 = src_bucket[right].get_level_checked(level) as usize;
+        let br_1 = src_bucket[right - 1].get_level_checked(level) as usize;
+        let br_2 = src_bucket[right - 2].get_level_checked(level) as usize;
+        let br_3 = src_bucket[right - 3].get_level_checked(level) as usize;
 
         dst_bucket[offsets[bl_0]] = src_bucket[left];
         dst_bucket[ends[br_0]] = src_bucket[right];
@@ -337,14 +337,14 @@ where
         ends[br_3] = ends[br_3].wrapping_sub(1);
         offsets[bl_3] = offsets[bl_3].wrapping_add(1);
 
-        let bnl_0 = src_bucket[left].get_level(next_level) as usize;
-        let bnl_1 = src_bucket[left + 1].get_level(next_level) as usize;
-        let bnl_2 = src_bucket[left + 2].get_level(next_level) as usize;
-        let bnl_3 = src_bucket[left + 3].get_level(next_level) as usize;
-        let bnr_0 = src_bucket[right].get_level(next_level) as usize;
-        let bnr_1 = src_bucket[right - 1].get_level(next_level) as usize;
-        let bnr_2 = src_bucket[right - 2].get_level(next_level) as usize;
-        let bnr_3 = src_bucket[right - 3].get_level(next_level) as usize;
+        let bnl_0 = src_bucket[left].get_level_checked(next_level) as usize;
+        let bnl_1 = src_bucket[left + 1].get_level_checked(next_level) as usize;
+        let bnl_2 = src_bucket[left + 2].get_level_checked(next_level) as usize;
+        let bnl_3 = src_bucket[left + 3].get_level_checked(next_level) as usize;
+        let bnr_0 = src_bucket[right].get_level_checked(next_level) as usize;
+        let bnr_1 = src_bucket[right - 1].get_level_checked(next_level) as usize;
+        let bnr_2 = src_bucket[right - 2].get_level_checked(next_level) as usize;
+        let bnr_3 = src_bucket[right - 3].get_level_checked(next_level) as usize;
 
         next_counts_0[bnl_0] += 1;
         next_counts_1[bnr_0] += 1;

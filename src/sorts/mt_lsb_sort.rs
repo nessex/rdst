@@ -30,7 +30,7 @@
 
 use crate::sorter::Sorter;
 use crate::utils::*;
-use crate::RadixKey;
+use crate::radix_key::RadixKeyChecked;
 use arbitrary_chunks::ArbitraryChunks;
 use rayon::prelude::*;
 
@@ -41,7 +41,7 @@ pub fn mt_lsb_sort<T>(
     tile_size: usize,
     level: usize,
 ) where
-    T: RadixKey + Sized + Send + Copy + Sync,
+    T: RadixKeyChecked + Sized + Send + Copy + Sync,
 {
     let tiles = tile_counts.len();
     let mut minor_counts = Vec::with_capacity(256 * tiles);
@@ -88,7 +88,7 @@ pub fn mt_lsb_sort<T>(
             let pre = bucket.len() % 8;
 
             for _ in 0..pre {
-                let b = bucket[right].get_level(level) as usize;
+                let b = bucket[right].get_level_checked(level) as usize;
 
                 buckets[b][ends[b]] = bucket[right];
                 ends[b] = ends[b].wrapping_sub(1);
@@ -102,14 +102,14 @@ pub fn mt_lsb_sort<T>(
             let end = (bucket.len() - pre) / 2;
 
             while left < end {
-                let bl_0 = bucket[left].get_level(level) as usize;
-                let bl_1 = bucket[left + 1].get_level(level) as usize;
-                let bl_2 = bucket[left + 2].get_level(level) as usize;
-                let bl_3 = bucket[left + 3].get_level(level) as usize;
-                let br_0 = bucket[right].get_level(level) as usize;
-                let br_1 = bucket[right - 1].get_level(level) as usize;
-                let br_2 = bucket[right - 2].get_level(level) as usize;
-                let br_3 = bucket[right - 3].get_level(level) as usize;
+                let bl_0 = bucket[left].get_level_checked(level) as usize;
+                let bl_1 = bucket[left + 1].get_level_checked(level) as usize;
+                let bl_2 = bucket[left + 2].get_level_checked(level) as usize;
+                let bl_3 = bucket[left + 3].get_level_checked(level) as usize;
+                let br_0 = bucket[right].get_level_checked(level) as usize;
+                let br_1 = bucket[right - 1].get_level_checked(level) as usize;
+                let br_2 = bucket[right - 2].get_level_checked(level) as usize;
+                let br_3 = bucket[right - 3].get_level_checked(level) as usize;
 
                 buckets[bl_0][offsets[bl_0]] = bucket[left];
                 offsets[bl_0] += 1;
@@ -142,7 +142,7 @@ impl<'a> Sorter<'a> {
         end_level: usize,
         tile_size: usize,
     ) where
-        T: RadixKey + Sized + Send + Copy + Sync,
+        T: RadixKeyChecked + Sized + Send + Copy + Sync,
     {
         if bucket.len() < 2 {
             return;
@@ -190,7 +190,7 @@ impl<'a> Sorter<'a> {
         tile_counts: &[[usize; 256]],
         tile_size: usize,
     ) where
-        T: RadixKey + Sized + Send + Copy + Sync,
+        T: RadixKeyChecked + Sized + Send + Copy + Sync,
     {
         if bucket.len() <= 1 {
             return;

@@ -1,4 +1,4 @@
-use crate::RadixKey;
+use crate::radix_key::RadixKeyChecked;
 #[cfg(feature = "multi-threaded")]
 use rayon::prelude::*;
 #[cfg(feature = "multi-threaded")]
@@ -31,7 +31,7 @@ pub fn get_end_offsets(counts: &[usize; 256], prefix_sums: &[usize; 256]) -> [us
 #[cfg(test)]
 pub fn par_get_counts<T>(bucket: &[T], level: usize) -> ([usize; 256], bool)
 where
-    T: RadixKey + Sized + Send + Sync,
+    T: RadixKeyChecked + Sized + Send + Sync,
 {
     if bucket.len() == 0 {
         return ([0usize; 256], true);
@@ -45,7 +45,7 @@ where
 #[cfg(feature = "multi-threaded")]
 pub fn par_get_counts_with_ends<T>(bucket: &[T], level: usize) -> ([usize; 256], bool, u8, u8)
 where
-    T: RadixKey + Sized + Send + Sync,
+    T: RadixKeyChecked + Sized + Send + Sync,
 {
     #[cfg(feature = "work_profiles")]
     println!("({}) PAR_COUNT", level);
@@ -108,7 +108,7 @@ where
 #[inline]
 pub fn get_counts_with_ends<T>(bucket: &[T], level: usize) -> ([usize; 256], bool, u8, u8)
 where
-    T: RadixKey,
+    T: RadixKeyChecked,
 {
     #[cfg(feature = "work_profiles")]
     println!("({}) COUNT", level);
@@ -119,7 +119,7 @@ where
     let mut last = 0usize;
 
     for (i, item) in bucket.iter().enumerate() {
-        let b = item.get_level(level) as usize;
+        let b = item.get_level_checked(level) as usize;
         counts_1[b] += 1;
 
         if b < last {
@@ -135,7 +135,7 @@ where
         return (
             counts_1,
             already_sorted,
-            bucket[0].get_level(level),
+            bucket[0].get_level_checked(level),
             last as u8,
         );
     }
@@ -147,10 +147,10 @@ where
     let rem = chunks.remainder();
 
     chunks.into_iter().for_each(|chunk| {
-        let a = chunk[0].get_level(level) as usize;
-        let b = chunk[1].get_level(level) as usize;
-        let c = chunk[2].get_level(level) as usize;
-        let d = chunk[3].get_level(level) as usize;
+        let a = chunk[0].get_level_checked(level) as usize;
+        let b = chunk[1].get_level_checked(level) as usize;
+        let c = chunk[2].get_level_checked(level) as usize;
+        let d = chunk[3].get_level_checked(level) as usize;
 
         counts_1[a] += 1;
         counts_2[b] += 1;
@@ -159,7 +159,7 @@ where
     });
 
     rem.iter().for_each(|v| {
-        let b = v.get_level(level) as usize;
+        let b = v.get_level_checked(level) as usize;
         counts_1[b] += 1;
     });
 
@@ -169,8 +169,8 @@ where
         counts_1[i] += counts_4[i];
     }
 
-    let b_first = bucket.first().unwrap().get_level(level);
-    let b_last = bucket.last().unwrap().get_level(level);
+    let b_first = bucket.first().unwrap().get_level_checked(level);
+    let b_last = bucket.last().unwrap().get_level_checked(level);
 
     (counts_1, already_sorted, b_first, b_last)
 }
@@ -178,7 +178,7 @@ where
 #[inline]
 pub fn get_counts<T>(bucket: &[T], level: usize) -> ([usize; 256], bool)
 where
-    T: RadixKey,
+    T: RadixKeyChecked,
 {
     if bucket.is_empty() {
         return ([0usize; 256], true);
@@ -212,7 +212,7 @@ pub const fn cdiv(a: usize, b: usize) -> usize {
 #[inline]
 pub fn get_tile_counts<T>(bucket: &[T], tile_size: usize, level: usize) -> (Vec<[usize; 256]>, bool)
 where
-    T: RadixKey + Copy + Sized + Send + Sync,
+    T: RadixKeyChecked + Copy + Sized + Send + Sync,
 {
     #[cfg(feature = "work_profiles")]
     println!("({}) TILE_COUNT", level);

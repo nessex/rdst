@@ -22,13 +22,13 @@
 //! having essentially no overhead (from count arrays, buffers etc.) compared to a radix sort.
 
 use crate::sorter::Sorter;
-use crate::RadixKey;
 use std::cmp::Ordering;
+use crate::radix_key::RadixKeyChecked;
 
 impl<'a> Sorter<'a> {
     pub(crate) fn comparative_sort<T>(&self, bucket: &mut [T], start_level: usize)
     where
-        T: RadixKey + Sized + Send + Copy + Sync,
+        T: RadixKeyChecked + Sized + Send + Copy + Sync,
     {
         if bucket.len() < 2 {
             return;
@@ -37,7 +37,7 @@ impl<'a> Sorter<'a> {
         bucket.sort_unstable_by(|a, b| -> Ordering {
             let mut level = start_level;
             loop {
-                let cmp = a.get_level(level).cmp(&b.get_level(level));
+                let cmp = a.get_level_checked(level).cmp(&b.get_level_checked(level));
 
                 if level != 0 && cmp == Ordering::Equal {
                     level -= 1;

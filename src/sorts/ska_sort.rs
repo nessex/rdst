@@ -22,7 +22,7 @@
 
 use crate::sorter::Sorter;
 use crate::utils::*;
-use crate::RadixKey;
+use crate::radix_key::RadixKeyChecked;
 use partition::partition_index;
 
 pub fn ska_sort<T>(
@@ -31,7 +31,7 @@ pub fn ska_sort<T>(
     end_offsets: &[usize; 256],
     level: usize,
 ) where
-    T: RadixKey + Sized + Send + Copy + Sync,
+    T: RadixKeyChecked + Sized + Send + Copy + Sync,
 {
     let mut finished = 0;
     let mut finished_map = [false; 256];
@@ -59,7 +59,7 @@ pub fn ska_sort<T>(
         let li = largest_index as u8;
         let offs = partition_index(
             &mut bucket[prefix_sums[largest_index]..end_offsets[largest_index]],
-            |v| v.get_level(level) == li,
+            |v| v.get_level_checked(level) == li,
         );
 
         prefix_sums[largest_index] += offs;
@@ -80,7 +80,7 @@ pub fn ska_sort<T>(
             }
 
             for i in prefix_sums[b]..end_offsets[b] {
-                let new_b = bucket[i].get_level(level) as usize;
+                let new_b = bucket[i].get_level_checked(level) as usize;
                 bucket.swap(prefix_sums[new_b], i);
                 prefix_sums[new_b] += 1;
             }
@@ -91,7 +91,7 @@ pub fn ska_sort<T>(
 impl<'a> Sorter<'a> {
     pub(crate) fn ska_sort_adapter<T>(&self, bucket: &mut [T], counts: &[usize; 256], level: usize)
     where
-        T: RadixKey + Sized + Send + Copy + Sync,
+        T: RadixKeyChecked + Sized + Send + Copy + Sync,
     {
         if bucket.len() < 2 {
             return;

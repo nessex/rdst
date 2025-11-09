@@ -1,6 +1,6 @@
 use crate::tuner::{Algorithm, Tuner, TuningParams};
 use crate::utils::*;
-use crate::RadixKey;
+use crate::radix_key::RadixKeyChecked;
 use arbitrary_chunks::ArbitraryChunks;
 #[cfg(feature = "multi-threaded")]
 use rayon::current_num_threads;
@@ -31,7 +31,7 @@ impl<'a> Sorter<'a> {
         #[allow(unused)] tile_size: usize,
         algorithm: Algorithm,
     ) where
-        T: RadixKey + Copy + Sized + Send + Sync,
+        T: RadixKeyChecked + Copy + Sized + Send + Sync,
     {
         #[allow(unused)]
         if let Some(tile_counts) = tile_counts {
@@ -78,7 +78,7 @@ impl<'a> Sorter<'a> {
         parent_len: Option<usize>,
         threads: usize,
     ) where
-        T: RadixKey + Sized + Send + Copy + Sync,
+        T: RadixKeyChecked + Sized + Send + Copy + Sync,
     {
         if chunk.len() <= 1 {
             return;
@@ -151,7 +151,7 @@ impl<'a> Sorter<'a> {
     #[inline]
     pub fn top_level_director<T>(&self, bucket: &mut [T])
     where
-        T: RadixKey + Sized + Send + Copy + Sync,
+        T: RadixKeyChecked + Sized + Send + Copy + Sync,
     {
         #[cfg(feature = "multi-threaded")]
         let threads = current_num_threads();
@@ -168,7 +168,7 @@ impl<'a> Sorter<'a> {
     #[cfg(feature = "multi-threaded")]
     pub fn multi_threaded_director<T>(&self, bucket: &mut [T], counts: &[usize; 256], level: usize)
     where
-        T: RadixKey + Send + Copy + Sync,
+        T: RadixKeyChecked + Send + Copy + Sync,
     {
         let parent_len = Some(bucket.len());
         let threads = current_num_threads();
@@ -182,7 +182,7 @@ impl<'a> Sorter<'a> {
     #[inline]
     pub fn single_threaded_director<T>(&self, bucket: &mut [T], counts: &[usize; 256], level: usize)
     where
-        T: RadixKey + Send + Sync + Copy,
+        T: RadixKeyChecked + Send + Sync + Copy,
     {
         let parent_len = Some(bucket.len());
         let threads = 1;
@@ -195,7 +195,7 @@ impl<'a> Sorter<'a> {
     #[inline]
     pub fn director<T>(&self, bucket: &mut [T], counts: &[usize; 256], level: usize)
     where
-        T: RadixKey + Send + Sync + Copy,
+        T: RadixKeyChecked + Send + Sync + Copy,
     {
         if cfg!(feature = "multi-threaded") && self.multi_threaded {
             #[cfg(feature = "multi-threaded")]

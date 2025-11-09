@@ -25,7 +25,7 @@
 use crate::sorter::Sorter;
 use crate::sorts::out_of_place_sort::out_of_place_sort;
 use crate::utils::*;
-use crate::RadixKey;
+use crate::radix_key::RadixKeyChecked;
 use arbitrary_chunks::ArbitraryChunks;
 use rayon::prelude::*;
 
@@ -36,7 +36,7 @@ pub fn recombinating_sort<T>(
     tile_size: usize,
     level: usize,
 ) where
-    T: RadixKey + Sized + Send + Copy + Sync,
+    T: RadixKeyChecked + Sized + Send + Copy + Sync,
 {
     let bucket_len = bucket.len();
     let mut tmp_bucket = get_tmp_bucket::<T>(bucket_len);
@@ -85,7 +85,7 @@ impl<'a> Sorter<'a> {
         tile_size: usize,
         level: usize,
     ) where
-        T: RadixKey + Sized + Send + Copy + Sync,
+        T: RadixKeyChecked + Sized + Send + Copy + Sync,
     {
         if bucket.len() < 2 {
             return;

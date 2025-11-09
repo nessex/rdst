@@ -35,7 +35,7 @@
 
 use crate::sorter::Sorter;
 use crate::utils::*;
-use crate::RadixKey;
+use crate::radix_key::RadixKeyChecked;
 use arbitrary_chunks::ArbitraryChunks;
 use partition::partition_index;
 use rayon::current_num_threads;
@@ -95,7 +95,7 @@ fn scanner_thread<T>(
     scanner_read_size: isize,
     uniform_threshold: usize,
 ) where
-    T: RadixKey + Copy,
+    T: RadixKeyChecked + Copy,
 {
     let mut stash: Vec<Vec<T>> = Vec::with_capacity(256);
     stash.resize(256, Vec::with_capacity(128));
@@ -121,7 +121,7 @@ fn scanner_thread<T>(
             guard.locally_partitioned = true;
 
             let index = m.index as u8;
-            let start = partition_index(guard.chunk, |v| v.get_level(level) == index);
+            let start = partition_index(guard.chunk, |v| v.get_level_checked(level) == index);
 
             guard.read_head = start;
             guard.write_head = start;
@@ -161,20 +161,20 @@ fn scanner_thread<T>(
                 let rem = chunks.remainder();
 
                 chunks.into_iter().for_each(|chunk| {
-                    let a = chunk[0].get_level(level) as usize;
-                    let b = chunk[1].get_level(level) as usize;
-                    let c = chunk[2].get_level(level) as usize;
-                    let d = chunk[3].get_level(level) as usize;
+                    let a = chunk[0].get_level_checked(level) as usize;
+                    let b = chunk[1].get_level_checked(level) as usize;
+                    let c = chunk[2].get_level_checked(level) as usize;
+                    let d = chunk[3].get_level_checked(level) as usize;
 
                     stash[a].push(chunk[0]);
                     stash[b].push(chunk[1]);
                     stash[c].push(chunk[2]);
                     stash[d].push(chunk[3]);
 
-                    let e = chunk[4].get_level(level) as usize;
-                    let f = chunk[5].get_level(level) as usize;
-                    let g = chunk[6].get_level(level) as usize;
-                    let h = chunk[7].get_level(level) as usize;
+                    let e = chunk[4].get_level_checked(level) as usize;
+                    let f = chunk[5].get_level_checked(level) as usize;
+                    let g = chunk[6].get_level_checked(level) as usize;
+                    let h = chunk[7].get_level_checked(level) as usize;
 
                     stash[e].push(chunk[4]);
                     stash[f].push(chunk[5]);
@@ -183,7 +183,7 @@ fn scanner_thread<T>(
                 });
 
                 rem.iter().for_each(|v| {
-                    let a = v.get_level(level) as usize;
+                    let a = v.get_level_checked(level) as usize;
                     stash[a].push(*v);
                 });
 
@@ -223,7 +223,7 @@ fn scanner_thread<T>(
 
 pub fn scanning_sort<T>(bucket: &mut [T], counts: &[usize; 256], level: usize)
 where
-    T: RadixKey + Sized + Send + Copy + Sync,
+    T: RadixKeyChecked + Sized + Send + Copy + Sync,
 {
     let len = bucket.len();
     let threads = current_num_threads();
@@ -254,7 +254,7 @@ impl<'a> Sorter<'a> {
         counts: &[usize; 256],
         level: usize,
     ) where
-        T: RadixKey + Sized + Send + Copy + Sync,
+        T: RadixKeyChecked + Sized + Send + Copy + Sync,
     {
         if bucket.len() < 2 {
             return;

@@ -41,7 +41,7 @@
 use crate::sorter::Sorter;
 use crate::sorts::ska_sort::ska_sort;
 use crate::utils::*;
-use crate::RadixKey;
+use crate::radix_key::RadixKeyChecked;
 use partition::partition_index;
 use rayon::current_num_threads;
 use rayon::prelude::*;
@@ -210,7 +210,7 @@ pub fn regions_sort<T>(
     tile_size: usize,
     level: usize,
 ) where
-    T: RadixKey + Sized + Send + Copy + Sync,
+    T: RadixKeyChecked + Sized + Send + Copy + Sync,
 {
     let threads = current_num_threads();
     bucket
@@ -270,7 +270,7 @@ impl<'a> Sorter<'a> {
         tile_size: usize,
         level: usize,
     ) where
-        T: RadixKey + Sized + Send + Copy + Sync,
+        T: RadixKeyChecked + Sized + Send + Copy + Sync,
     {
         if bucket.len() < 2 {
             return;
