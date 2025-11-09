@@ -15,8 +15,6 @@ documentation = "https://docs.rs/rdst/"
 default = ["multi-threaded"]
 multi-threaded = ["rayon"]
 work_profiles = []
-profiling = ["multi-threaded"]
-timings = ["multi-threaded"]
 
 [dependencies]
 rayon = { version = "1.8", optional = true }
