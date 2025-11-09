@@ -1,6 +1,6 @@
 [package]
 name = "rdst"
-description = "A flexible parallel unstable radix sort that supports sorting by any arbitrarily defined sequence of bytes."
+description = "A flexible, parallel, unstable radix sort. Sort arbitrary types in whatever byte order you wish... or just sort numbers very fast!"
 version = "0.20.14"
 authors = ["Nathan Essex <nathan@essex.id.au>"]
 edition = "2018"
