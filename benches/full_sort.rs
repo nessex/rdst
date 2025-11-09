@@ -2,12 +2,11 @@ mod bench_utils;
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use rdst::RadixSort;
-use voracious_radix_sort::{RadixKey as VorKey, RadixSort as Vor, Radixable};
 use bench_utils::{bench_common, bench_medley, NumericTest};
 
 fn full_sort_common<T>(c: &mut Criterion, shift: T, name_suffix: &str)
 where
-    T: NumericTest<T> + Radixable<T> + VorKey,
+    T: NumericTest<T>,
 {
     let tests: Vec<(&str, Box<dyn Fn(Vec<_>)>)> = vec![
         (
@@ -24,13 +23,6 @@ where
                 black_box(input);
             }),
         ),
-        (
-            "voracious",
-            Box::new(|mut input| {
-                input.voracious_mt_sort(std::thread::available_parallelism().unwrap().get());
-                black_box(input);
-            }),
-        ),
     ];
 
     bench_common(c, shift, &("full_sort_".to_owned() + name_suffix), tests);
@@ -38,7 +30,7 @@ where
 
 fn full_sort_medley_set<T>(c: &mut Criterion, suffix: &str, shift: T)
 where
-    T: NumericTest<T> + Radixable<T> + VorKey,
+    T: NumericTest<T>,
 {
     let tests: Vec<(&str, Box<dyn Fn(Vec<T>)>)> = vec![
         (
@@ -52,13 +44,6 @@ where
             "rdst_low_mem",
             Box::new(|mut input| {
                 input.radix_sort_builder().with_low_mem_tuner().sort();
-                black_box(input);
-            }),
-        ),
-        (
-            "voracious",
-            Box::new(|mut input| {
-                input.voracious_mt_sort(std::thread::available_parallelism().unwrap().get());
                 black_box(input);
             }),
         ),
