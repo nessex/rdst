@@ -2,8 +2,9 @@ mod bench_utils;
 
 use bench_utils::bench_single;
 use bench_utils::NumericTest;
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{criterion_group, criterion_main, Criterion};
 use rdst::RadixSort;
+use std::hint::black_box;
 
 fn basic_sort_set<T>(c: &mut Criterion, suffix: &str, shift: T, count: usize)
 where

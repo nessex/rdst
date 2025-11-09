@@ -1,10 +1,11 @@
 use block_pseudorand::block_rand;
 use criterion::{
-    black_box, criterion_group, criterion_main, AxisScale, BatchSize, BenchmarkId, Criterion,
+    criterion_group, criterion_main, AxisScale, BatchSize, BenchmarkId, Criterion,
     PlotConfiguration, Throughput,
 };
 use rdst::{RadixKey, RadixSort};
 use std::cmp::Ordering;
+use std::hint::black_box;
 use std::time::Duration;
 
 #[derive(Debug, Clone, Copy)]
