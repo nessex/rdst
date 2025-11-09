@@ -28,7 +28,7 @@ use std::cmp::Ordering;
 impl<'a> Sorter<'a> {
     pub(crate) fn comparative_sort<T>(&self, bucket: &mut [T], start_level: usize)
     where
-        T: RadixKeyChecked + Sized + Send + Copy + Sync,
+        T: RadixKeyChecked + Sized + Send + Copy + Sync + 'a,
     {
         if bucket.len() < 2 {
             return;
@@ -52,13 +52,13 @@ impl<'a> Sorter<'a> {
 
 #[cfg(test)]
 mod tests {
+    use crate::radix_key::RadixKey;
     use crate::sorter::Sorter;
-    use crate::tuner::Algorithm;
-    use crate::utils::test_utils::{
+    use crate::test_utils::{
         sort_comparison_suite, sort_single_algorithm, validate_u32_patterns, NumericTest,
         SingleAlgoTuner,
     };
-    use crate::RadixKey;
+    use crate::tuner::Algorithm;
 
     fn test_comparative_sort_adapter<T>(shift: T)
     where

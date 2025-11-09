@@ -138,6 +138,7 @@
 //! ```
 //! use rdst::RadixSort;
 //! use rdst::tuner::{Algorithm, Tuner, TuningParams};
+//! use rdst::counts::Counts;
 //!
 //! struct MyTuner;
 //!
@@ -177,10 +178,12 @@ mod radix_sort;
 mod radix_sort_builder;
 mod sorter;
 mod sorts;
+#[cfg(test)]
+mod test_utils;
 mod tuners;
 mod utils;
 
-// Public modules
+pub mod counts;
 pub mod tuner;
 
 // Public exports

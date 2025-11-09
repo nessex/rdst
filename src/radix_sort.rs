@@ -46,8 +46,8 @@ where
 
 #[cfg(test)]
 mod tests {
+    use crate::test_utils::{sort_comparison_suite, NumericTest, SingleAlgoTuner};
     use crate::tuner::{Algorithm, Tuner, TuningParams};
-    use crate::utils::test_utils::{sort_comparison_suite, NumericTest, SingleAlgoTuner};
     use crate::RadixSort;
     use block_pseudorand::block_rand;
     use std::cmp::Ordering;

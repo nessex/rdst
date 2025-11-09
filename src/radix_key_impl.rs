@@ -14,7 +14,15 @@ impl RadixKey for u16 {
 
     #[inline(always)]
     fn get_level(&self, level: usize) -> u8 {
-        (self >> (level * 8)) as u8
+        if cfg!(target_endian = "little") {
+            unsafe {
+                (self as *const Self as *const u8)
+                    .wrapping_add(level)
+                    .read()
+            }
+        } else {
+            (self >> (level * 8)) as u8
+        }
     }
 }
 
@@ -23,7 +31,15 @@ impl RadixKey for u32 {
 
     #[inline(always)]
     fn get_level(&self, level: usize) -> u8 {
-        (self >> (level * 8)) as u8
+        if cfg!(target_endian = "little") {
+            unsafe {
+                (self as *const Self as *const u8)
+                    .wrapping_add(level)
+                    .read()
+            }
+        } else {
+            (self >> (level * 8)) as u8
+        }
     }
 }
 
@@ -32,7 +48,15 @@ impl RadixKey for u64 {
 
     #[inline(always)]
     fn get_level(&self, level: usize) -> u8 {
-        (self >> (level * 8)) as u8
+        if cfg!(target_endian = "little") {
+            unsafe {
+                (self as *const Self as *const u8)
+                    .wrapping_add(level)
+                    .read()
+            }
+        } else {
+            (self >> (level * 8)) as u8
+        }
     }
 }
 
@@ -41,7 +65,15 @@ impl RadixKey for u128 {
 
     #[inline(always)]
     fn get_level(&self, level: usize) -> u8 {
-        (self >> (level * 8)) as u8
+        if cfg!(target_endian = "little") {
+            unsafe {
+                (self as *const Self as *const u8)
+                    .wrapping_add(level)
+                    .read()
+            }
+        } else {
+            (self >> (level * 8)) as u8
+        }
     }
 }
 
@@ -51,7 +83,15 @@ impl RadixKey for usize {
 
     #[inline(always)]
     fn get_level(&self, level: usize) -> u8 {
-        (self >> (level * 8)) as u8
+        if cfg!(target_endian = "little") {
+            unsafe {
+                (self as *const Self as *const u8)
+                    .wrapping_add(level)
+                    .read()
+            }
+        } else {
+            (self >> (level * 8)) as u8
+        }
     }
 }
 
@@ -61,7 +101,15 @@ impl RadixKey for usize {
 
     #[inline(always)]
     fn get_level(&self, level: usize) -> u8 {
-        (self >> (level * 8)) as u8
+        if cfg!(target_endian = "little") {
+            unsafe {
+                (self as *const Self as *const u8)
+                    .wrapping_add(level)
+                    .read()
+            }
+        } else {
+            (self >> (level * 8)) as u8
+        }
     }
 }
 
@@ -71,7 +119,15 @@ impl RadixKey for usize {
 
     #[inline(always)]
     fn get_level(&self, level: usize) -> u8 {
-        (self >> (level * 8)) as u8
+        if cfg!(target_endian = "little") {
+            unsafe {
+                (self as *const Self as *const u8)
+                    .wrapping_add(level)
+                    .read()
+            }
+        } else {
+            (self >> (level * 8)) as u8
+        }
     }
 }
 
