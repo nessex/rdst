@@ -2,7 +2,16 @@
 name = "fixture"
 description = "Used to check that the library still works even when included externally"
 version = "0.1.0"
-edition = "2021"
+# This fixture explicitly uses the latest version of Rust, edition and resolver
+# so it can act as a canary for broken forward compatibility with:
+# - Rust
+# - Cargo + packaging ecosystem
+# - Deps (rayon, etc)
+#
+# Minimum versions specified in the main `../Cargo.toml` ensure backward compatibility.
+edition = "2024"
+rust-version = "1.91"
+resolver = "2"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
