@@ -129,7 +129,6 @@ where
             inputs_clone[i - 5..i + 5].to_vec()
         );
     }
-
     assert_eq!(inputs, inputs_clone);
 }
 

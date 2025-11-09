@@ -20,15 +20,17 @@
 //! This is generally slower than `lsb_sort` for smaller types T or smaller input arrays. For larger
 //! types or inputs, the memory efficiency of this algorithm can make it faster than `lsb_sort`.
 
+use crate::counts::{Counts, EndOffsets, PrefixSums};
 use crate::radix_key::RadixKeyChecked;
 use crate::sorter::Sorter;
-use crate::utils::*;
 use partition::partition_index;
+use std::cell::RefCell;
+use std::rc::Rc;
 
 pub fn ska_sort<T>(
     bucket: &mut [T],
-    prefix_sums: &mut [usize; 256],
-    end_offsets: &[usize; 256],
+    prefix_sums: &mut PrefixSums,
+    end_offsets: &EndOffsets,
     level: usize,
 ) where
     T: RadixKeyChecked + Sized + Send + Copy + Sync,
@@ -89,18 +91,30 @@ pub fn ska_sort<T>(
 }
 
 impl<'a> Sorter<'a> {
-    pub(crate) fn ska_sort_adapter<T>(&self, bucket: &mut [T], counts: &[usize; 256], level: usize)
-    where
-        T: RadixKeyChecked + Sized + Send + Copy + Sync,
+    pub(crate) fn ska_sort_adapter<T>(
+        &self,
+        bucket: &mut [T],
+        counts: Rc<RefCell<Counts>>,
+        level: usize,
+    ) where
+        T: RadixKeyChecked + Sized + Send + Copy + Sync + 'a,
     {
         if bucket.len() < 2 {
             return;
         }
 
-        let mut prefix_sums = get_prefix_sums(counts);
-        let end_offsets = get_end_offsets(counts, &prefix_sums);
+        let prefix_sums = self.cm.prefix_sums(&counts.borrow());
+        let end_offsets = self.cm.end_offsets(&counts.borrow(), &prefix_sums.borrow());
 
-        ska_sort(bucket, &mut prefix_sums, &end_offsets, level);
+        ska_sort(
+            bucket,
+            &mut prefix_sums.borrow_mut(),
+            &end_offsets.borrow(),
+            level,
+        );
+
+        self.cm.return_counts(prefix_sums);
+        self.cm.return_counts(end_offsets);
 
         if level == 0 {
             return;
@@ -113,12 +127,11 @@ impl<'a> Sorter<'a> {
 #[cfg(test)]
 mod tests {
     use crate::sorter::Sorter;
-    use crate::tuner::Algorithm;
-    use crate::utils::get_counts;
-    use crate::utils::test_utils::{
+    use crate::test_utils::{
         sort_comparison_suite, sort_single_algorithm, validate_u32_patterns, NumericTest,
         SingleAlgoTuner,
     };
+    use crate::tuner::Algorithm;
     use crate::RadixKey;
 
     fn test_ska_sort_adapter<T>(shift: T)
@@ -130,10 +143,10 @@ mod tests {
         };
 
         sort_comparison_suite(shift, |inputs| {
-            let (counts, _) = get_counts(inputs, T::LEVELS - 1);
             let sorter = Sorter::new(true, &tuner);
+            let (counts, _) = sorter.cm.counts(inputs, T::LEVELS - 1);
 
-            sorter.ska_sort_adapter(inputs, &counts, T::LEVELS - 1);
+            sorter.ska_sort_adapter(inputs, counts, T::LEVELS - 1);
         });
     }
 
@@ -179,10 +192,10 @@ mod tests {
         };
 
         validate_u32_patterns(|inputs| {
-            let (counts, _) = get_counts(inputs, u32::LEVELS - 1);
             let sorter = Sorter::new(true, &tuner);
+            let (counts, _) = sorter.cm.counts(inputs, u32::LEVELS - 1);
 
-            sorter.ska_sort_adapter(inputs, &counts, u32::LEVELS - 1);
+            sorter.ska_sort_adapter(inputs, counts, u32::LEVELS - 1);
         });
     }
 }
