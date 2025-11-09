@@ -1,4 +1,4 @@
-#[cfg(all(feature = "multi-threaded", any(test, bench, tuning)))]
+#[cfg(all(feature = "multi-threaded", test))]
 pub mod test_utils;
 
 mod sort_utils;

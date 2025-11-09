@@ -25,30 +25,31 @@ partition = "0.1.2"
 
 [dev-dependencies]
 rayon = "1.8"
-criterion = "0.5.1"
-block-pseudorand = "0.1.2"
-
-# Workaround for reducing compile time when not tuning or benchmarking
-# Suggestions for a better alternative very welcome...
-[target.'cfg(any(bench, tuning))'.dependencies]
-criterion = "0.5.1"
+criterion = { version = "0.5.1", default-features=false, features = ["rayon", "cargo_bench_support"] }
 block-pseudorand = "0.1.2"
 
 [profile.release]
 codegen-units = 1
 opt-level = 3
 
+[profile.test]
+opt-level = 2
+debug = true
+
 [[bench]]
 name = "basic_sort"
 harness = false
 required-features = ["multi-threaded"]
+test = false
 
 [[bench]]
 name = "full_sort"
 harness = false
 required-features = ["multi-threaded"]
+test = false
 
 [[bench]]
 name = "struct_sort"
 harness = false
 required-features = ["multi-threaded"]
+test = false
