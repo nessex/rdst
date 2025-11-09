@@ -10,15 +10,15 @@
 //! 2. Compute counts for each bucket and sort each bucket in-place
 //! 3. Generate global counts
 //! 4. Generate Graph & Sort
-//!     4.1 List outbound regions for each country
-//!     4.2 For each country (C):
-//!         4.2.1: List the inbounds for C (filter outbounds for each other country by destination: C)
-//!         4.2.2: For each thread:
-//!             4.2.2.1: Pop an item off the inbound (country: I) & outbound (country: O) queues for C
-//!             4.2.2.2/a: If they are the same size, continue
-//!             4.2.2.2/b: If I is bigger than O, keep the remainder of I in the queue and continue
-//!             4.2.2.2/c: If O is bigger than I, keep the remainder of O in the queue and continue
-//!             4.2.2.3: Swap items in C heading to O, with items in I destined for C (items in C may or may not be destined for O ultimately)
+//!    4.1 List outbound regions for each country
+//!    4.2 For each country (C):
+//!    4.2.1: List the inbounds for C (filter outbounds for each other country by destination: C)
+//!    4.2.2: For each thread:
+//!    4.2.2.1: Pop an item off the inbound (country: I) & outbound (country: O) queues for C
+//!    4.2.2.2/a: If they are the same size, continue
+//!    4.2.2.2/b: If I is bigger than O, keep the remainder of I in the queue and continue
+//!    4.2.2.2/c: If O is bigger than I, keep the remainder of O in the queue and continue
+//!    4.2.2.3: Swap items in C heading to O, with items in I destined for C (items in C may or may not be destined for O ultimately)
 //!
 //! ## Characteristics
 //!

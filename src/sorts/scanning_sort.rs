@@ -6,11 +6,11 @@
 //!  2. Create a worker for each rayon global thread pool thread (roughly, one per core)
 //!  2. Create a temporary thread-local buffer for each worker (one vec for each radix)
 //!  3. Each thread:
-//!  3.1. Iterates over the buckets, trying to gain a mutex lock on one
-//!  3.2. On first lock of the bucket, it partitions the bucket into [correct data | incorrect data] in-place
-//!  3.3. Scan over the contents of the bucket, picking up data that shouldn't be there and putting it in the thread-local buffer
-//!  3.4. Writes any buffered contents that _should_ be in this bucket, into the bucket
-//!  3.5. Repeats 3 until all buckets are completely filled with the correct data
+//!     3.1. Iterates over the buckets, trying to gain a mutex lock on one
+//!     3.2. On first lock of the bucket, it partitions the bucket into [correct data | incorrect data] in-place
+//!     3.3. Scan over the contents of the bucket, picking up data that shouldn't be there and putting it in the thread-local buffer
+//!     3.4. Writes any buffered contents that _should_ be in this bucket, into the bucket
+//!     3.5. Repeats 3 until all buckets are completely filled with the correct data
 //!
 //! Along the way, each output bucket has a read head and a write head, which is a pointer to the latest content read and written respectively.
 //! When the read head reaches the end of the bucket, there is no more content to be buffered by any worker.
