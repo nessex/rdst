@@ -1,6 +1,3 @@
 target/
-Cargo.lock
-monte-carlo.tsv
-experiments.csv
 .idea
-fixture/Cargo.lock
+.jj/
