@@ -3,7 +3,7 @@ name = "rdst"
 description = "A flexible, parallel, unstable radix sort. Sort arbitrary types in whatever byte order you wish... or just sort numbers very fast!"
 version = "0.20.14"
 authors = ["Nathan Essex <nathan@essex.id.au>"]
-rust-version = "1.63"
+rust-version = "1.85"
 edition = "2018"
 license = "Apache-2.0 OR MIT"
 repository = "https://github.com/nessex/rdst"
@@ -18,12 +18,12 @@ multi-threaded = ["rayon"]
 work_profiles = []
 
 [dependencies]
-rayon = { version = "1.8", optional = true }
+rayon = { version = "1.11", optional = true }
 arbitrary-chunks = "0.4.1"
 partition = "0.1.2"
 
 [dev-dependencies]
-rayon = "1.8"
+rayon = "1.11"
 criterion = { version = "0.7.0", default-features=false, features = ["rayon", "cargo_bench_support"] }
 block-pseudorand = "0.1.2"
 
