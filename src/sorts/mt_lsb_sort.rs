@@ -52,15 +52,13 @@ pub fn mt_lsb_sort<T>(
         }
     }
 
-    let mut chunks: Vec<&mut [T]> = dst_bucket.arbitrary_chunks_mut(&minor_counts).collect();
-    chunks.reverse();
-
     let mut collated_chunks: Vec<Vec<&mut [T]>> = Vec::with_capacity(tiles);
-    collated_chunks.resize_with(tiles, Vec::new);
+    collated_chunks.resize_with(tiles, || Vec::with_capacity(256));
 
+    let mut chunks = dst_bucket.arbitrary_chunks_mut(&minor_counts);
     for _ in 0..256 {
-        for coll_chunk in collated_chunks.iter_mut().take(tiles) {
-            coll_chunk.push(chunks.pop().unwrap());
+        for coll_chunk in collated_chunks.iter_mut() {
+            coll_chunk.push(chunks.next().unwrap());
         }
     }
 
