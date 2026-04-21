@@ -1,4 +1,4 @@
-#!/usr/bin/env -S cargo +nightly -Zscript
+#!/usr/bin/env -S cargo +nightly -Zscript run --release --manifest-path
 ---
 [package]
 edition = "2024"
@@ -8,10 +8,11 @@ block-pseudorand = "0.1.2"
 rayon = "1.8"
 rdst = { path = "../" }
 
-[profile.dev]
+[profile.release]
 codegen-units = 1
 opt-level = 3
 debug = false
+lto = "fat"
 ---
 
 //! # timings
@@ -34,31 +35,15 @@ debug = false
 
 #![feature(string_remove_matches)]
 
+use block_pseudorand::block_rand;
 use rayon::prelude::*;
+use rdst::{RadixKey, RadixSort};
 use std::fmt::Debug;
 use std::ops::{Shl, ShlAssign, Shr, ShrAssign};
-use rdst::{RadixKey, RadixSort};
 use std::time::Instant;
-use block_pseudorand::block_rand;
 
 pub trait NumericTest<T>:
-RadixKey
-+ Sized
-+ Copy
-+ Debug
-+ PartialEq
-+ Ord
-+ Send
-+ Sync
-+ Shl<Output = T>
-+ Shr<Output = T>
-+ ShrAssign
-+ ShlAssign
-{
-}
-
-impl<T> NumericTest<T> for T where
-    T: RadixKey
+    RadixKey
     + Sized
     + Copy
     + Debug
@@ -70,6 +55,22 @@ impl<T> NumericTest<T> for T where
     + Shr<Output = T>
     + ShrAssign
     + ShlAssign
+{
+}
+
+impl<T> NumericTest<T> for T where
+    T: RadixKey
+        + Sized
+        + Copy
+        + Debug
+        + PartialEq
+        + Ord
+        + Send
+        + Sync
+        + Shl<Output = T>
+        + Shr<Output = T>
+        + ShrAssign
+        + ShlAssign
 {
 }
 

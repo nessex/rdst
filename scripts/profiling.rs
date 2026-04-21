@@ -1,5 +1,5 @@
-#!/usr/bin/env -S cargo +nightly -Zscript
----
+#!/usr/bin/env -S cargo +nightly -Zscript run --release --manifest-path
+---cargo
 [package]
 edition = "2024"
 
@@ -8,39 +8,24 @@ block-pseudorand = "0.1.2"
 rayon = "1.8"
 rdst = { path = "../" }
 
-[profile.dev]
+[profile.release]
 codegen-units = 1
 opt-level = 3
 debug = false
+lto = "fat"
 ---
 
+use block_pseudorand::block_rand;
 use rayon::prelude::*;
-use std::fmt::Debug;
-use std::ops::{Shl, ShlAssign, Shr, ShrAssign};
 use rdst::tuner::{Algorithm, Tuner, TuningParams};
 use rdst::{RadixKey, RadixSort};
+use std::fmt::Debug;
+use std::ops::{Shl, ShlAssign, Shr, ShrAssign};
 use std::thread::sleep;
 use std::time::{Duration, Instant};
-use block_pseudorand::block_rand;
 
 pub trait NumericTest<T>:
-RadixKey
-+ Sized
-+ Copy
-+ Debug
-+ PartialEq
-+ Ord
-+ Send
-+ Sync
-+ Shl<Output = T>
-+ Shr<Output = T>
-+ ShrAssign
-+ ShlAssign
-{
-}
-
-impl<T> NumericTest<T> for T where
-    T: RadixKey
+    RadixKey
     + Sized
     + Copy
     + Debug
@@ -52,6 +37,22 @@ impl<T> NumericTest<T> for T where
     + Shr<Output = T>
     + ShrAssign
     + ShlAssign
+{
+}
+
+impl<T> NumericTest<T> for T where
+    T: RadixKey
+        + Sized
+        + Copy
+        + Debug
+        + PartialEq
+        + Ord
+        + Send
+        + Sync
+        + Shl<Output = T>
+        + Shr<Output = T>
+        + ShrAssign
+        + ShlAssign
 {
 }
 
@@ -93,16 +94,12 @@ fn main() {
     // sorting algorithm, depending on the profiler. This makes it more obvious.
     sleep(Duration::from_millis(300));
 
-    inputs.radix_sort_builder()
-        .with_tuner(&MyTuner {})
-        .sort();
+    inputs.radix_sort_builder().with_tuner(&MyTuner {}).sort();
 
     // A second run, for comparison
     sleep(Duration::from_millis(300));
     let time = Instant::now();
-    inputs_2.radix_sort_builder()
-        .with_tuner(&MyTuner {})
-        .sort();
+    inputs_2.radix_sort_builder().with_tuner(&MyTuner {}).sort();
 
     let e = time.elapsed().as_millis();
     println!("Elapsed: {}ms", e);
