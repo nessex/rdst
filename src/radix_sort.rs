@@ -47,7 +47,9 @@ where
 #[cfg(test)]
 mod tests {
     use crate::tuner::{Algorithm, Tuner, TuningParams};
-    use crate::utils::test_utils::{sort_comparison_suite, NumericTest, SingleAlgoTuner};
+    #[cfg(feature = "multi-threaded")]
+    use crate::utils::test_utils::SingleAlgoTuner;
+    use crate::utils::test_utils::{sort_comparison_suite, NumericTest};
     use crate::RadixSort;
     use block_pseudorand::block_rand;
     use std::cmp::Ordering;
@@ -60,6 +62,7 @@ mod tests {
         sort_comparison_suite(shift, |inputs| inputs.radix_sort_unstable());
     }
 
+    #[cfg(feature = "multi-threaded")]
     fn test_low_mem_full_sort<T>(shift: T)
     where
         T: NumericTest<T>,
@@ -215,66 +218,79 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "multi-threaded")]
     pub fn test_low_mem_u8() {
         test_low_mem_full_sort(0u8);
     }
 
     #[test]
+    #[cfg(feature = "multi-threaded")]
     pub fn test_low_mem_u16() {
         test_low_mem_full_sort(8u16);
     }
 
     #[test]
+    #[cfg(feature = "multi-threaded")]
     pub fn test_low_mem_u32() {
         test_low_mem_full_sort(16u32);
     }
 
     #[test]
+    #[cfg(feature = "multi-threaded")]
     pub fn test_low_mem_u64() {
         test_low_mem_full_sort(32u64);
     }
 
     #[test]
+    #[cfg(feature = "multi-threaded")]
     pub fn test_low_mem_u128() {
         test_low_mem_full_sort(64u128);
     }
 
     #[test]
+    #[cfg(feature = "multi-threaded")]
     pub fn test_low_mem_usize() {
         test_low_mem_full_sort(32usize);
     }
 
     #[test]
+    #[cfg(feature = "multi-threaded")]
     pub fn test_low_mem_i8() {
         test_low_mem_full_sort(0i8);
     }
 
     #[test]
+    #[cfg(feature = "multi-threaded")]
     pub fn test_low_mem_i16() {
         test_low_mem_full_sort(8i16);
     }
 
     #[test]
+    #[cfg(feature = "multi-threaded")]
     pub fn test_low_mem_i32() {
         test_low_mem_full_sort(16i32);
     }
 
     #[test]
+    #[cfg(feature = "multi-threaded")]
     pub fn test_low_mem_i64() {
         test_low_mem_full_sort(32i64);
     }
 
     #[test]
+    #[cfg(feature = "multi-threaded")]
     pub fn test_low_mem_i128() {
         test_low_mem_full_sort(64i128);
     }
 
     #[test]
+    #[cfg(feature = "multi-threaded")]
     pub fn test_low_mem_isize() {
         test_low_mem_full_sort(32isize);
     }
 
     #[test]
+    #[cfg(feature = "multi-threaded")]
     pub fn test_low_mem_f32() {
         test_fp::<f32>(1_000, 10, |inputs| {
             inputs.radix_sort_builder().with_low_mem_tuner().sort();
@@ -282,6 +298,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "multi-threaded")]
     pub fn test_low_mem_f64() {
         test_fp::<f64>(1_000, 10, |inputs| {
             inputs.radix_sort_builder().with_low_mem_tuner().sort();
@@ -299,6 +316,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "multi-threaded")]
     pub fn test_f64_parallel_false_only() {
         let mut data = block_rand::<f64>(10_000_000);
 

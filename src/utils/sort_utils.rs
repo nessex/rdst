@@ -28,20 +28,6 @@ pub fn get_end_offsets(counts: &[usize; 256], prefix_sums: &[usize; 256]) -> [us
 }
 
 #[inline]
-#[cfg(test)]
-pub fn par_get_counts<T>(bucket: &[T], level: usize) -> ([usize; 256], bool)
-where
-    T: RadixKeyChecked + Sized + Send + Sync,
-{
-    if bucket.len() == 0 {
-        return ([0usize; 256], true);
-    }
-
-    let (counts, sorted, _, _) = par_get_counts_with_ends(bucket, level);
-    (counts, sorted)
-}
-
-#[inline]
 #[cfg(feature = "multi-threaded")]
 pub fn par_get_counts_with_ends<T>(bucket: &[T], level: usize) -> ([usize; 256], bool, u8, u8)
 where
