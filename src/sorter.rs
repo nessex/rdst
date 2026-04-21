@@ -27,7 +27,7 @@ impl<'a> Sorter<'a> {
         level: usize,
         bucket: &mut [T],
         counts: &[usize; 256],
-        tile_counts: Option<Vec<[usize; 256]>>,
+        tile_counts: Option<&[[usize; 256]]>,
         #[allow(unused)] tile_size: usize,
         algorithm: Algorithm,
     ) where
@@ -131,21 +131,14 @@ impl<'a> Sorter<'a> {
         let algorithm = self.tuner.pick_algorithm(&tp, &counts);
 
         // Ensure tile_counts is always set when it is required
-        if tile_counts.is_none() {
-            tile_counts = match algorithm {
-                #[cfg(feature = "multi-threaded")]
-                Algorithm::MtOop
-                | Algorithm::MtLsb
-                | Algorithm::Recombinating
-                | Algorithm::Regions => Some(vec![counts]),
-                _ => None,
-            };
-        }
-
         #[cfg(feature = "work_profiles")]
         println!("({}) PAR: {:?}", level, algorithm);
 
-        self.run_sort(level, chunk, &counts, tile_counts, tile_size, algorithm);
+        let tile_counts_ref = tile_counts
+            .as_deref()
+            .or_else(|| Some(std::slice::from_ref(&counts)));
+
+        self.run_sort(level, chunk, &counts, tile_counts_ref, tile_size, algorithm);
     }
 
     #[inline]
