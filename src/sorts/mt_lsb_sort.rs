@@ -149,10 +149,9 @@ impl<'a> Sorter<'a> {
         }
 
         let mut tmp_bucket = get_tmp_bucket(bucket.len());
-        let levels: Vec<usize> = (start_level..=end_level).collect();
         let mut invert = false;
 
-        for level in levels {
+        for level in start_level..=end_level {
             let (tile_counts, already_sorted) = if invert {
                 get_tile_counts(&tmp_bucket, tile_size, level)
             } else {
