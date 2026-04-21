@@ -52,11 +52,10 @@ impl<'a> Sorter<'a> {
         }
 
         let mut tmp_bucket = get_tmp_bucket(bucket.len());
-        let levels: Vec<usize> = (start_level..=end_level).collect();
         let mut invert = false;
         let mut next_counts = None;
 
-        'outer: for level in levels {
+        'outer: for level in start_level..=end_level {
             let counts = if level == end_level {
                 *last_counts
             } else if let Some(next_counts) = next_counts {
