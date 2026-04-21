@@ -55,7 +55,18 @@ where
 
     let mut msb_counts = [0usize; 256];
     let mut already_sorted = true;
-    let mut boundaries = vec![(0u8, 0u8); len];
+
+    const BOUNDARIES_STACK_LEN: usize = 128;
+    let mut boundaries_heap: Vec<(u8, u8)>;
+    let mut boundaries_stack: [(u8, u8); BOUNDARIES_STACK_LEN];
+
+    let boundaries = if len <= BOUNDARIES_STACK_LEN {
+        boundaries_stack = [(0u8, 0u8); BOUNDARIES_STACK_LEN];
+        boundaries_stack.as_mut_slice()
+    } else {
+        boundaries_heap = Vec::with_capacity(len);
+        boundaries_heap.as_mut_slice()
+    };
 
     for _ in 0..len {
         let (i, counts, chunk_sorted, start, end) = rx.recv().unwrap();
@@ -204,33 +215,36 @@ where
     println!("({}) TILE_COUNT", level);
 
     #[cfg(feature = "multi-threaded")]
-    let tiles: Vec<([usize; 256], bool, u8, u8)> = bucket
+    let (tile_counts, tile_meta): (Vec<[usize; 256]>, Vec<(bool, u8, u8)>) = bucket
         .par_chunks(tile_size)
-        .map(|chunk| par_get_counts_with_ends(chunk, level))
-        .collect();
+        .map(|chunk| {
+            let (c, s, start, end) = par_get_counts_with_ends(chunk, level);
+            (c, (s, start, end))
+        })
+        .unzip();
 
     #[cfg(not(feature = "multi-threaded"))]
-    let tiles: Vec<([usize; 256], bool, u8, u8)> = bucket
+    let (tile_counts, tile_meta): (Vec<[usize; 256]>, Vec<(bool, u8, u8)>) = bucket
         .chunks(tile_size)
-        .map(|chunk| get_counts_with_ends(chunk, level))
-        .collect();
-
+        .map(|chunk| {
+            let (c, s, start, end) = get_counts_with_ends(chunk, level);
+            (c, (s, start, end))
+        })
+        .unzip();
     let mut all_sorted = true;
 
-    if tiles.len() == 1 {
-        // If there is only one tile, we already have a flag for if it is sorted
-        all_sorted = tiles[0].1;
+    if tile_meta.len() == 1 {
+        all_sorted = tile_meta[0].0;
     } else {
-        // Check if any of the tiles, or any of the tile boundaries are unsorted
-        for tile in tiles.windows(2) {
-            if !tile[0].1 || !tile[1].1 || tile[1].2 < tile[0].3 {
+        for m in tile_meta.windows(2) {
+            if !m[0].0 || !m[1].0 || m[1].1 < m[0].2 {
                 all_sorted = false;
                 break;
             }
         }
     }
 
-    (tiles.into_iter().map(|v| v.0).collect(), all_sorted)
+    (tile_counts, all_sorted)
 }
 
 #[inline]
