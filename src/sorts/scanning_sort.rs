@@ -33,6 +33,7 @@
 //! overhead of the thread-local stores and mutexes prevents it from being fast for smaller inputs
 //! however, so it should not be used in all situations.
 
+use crate::radix_array::RadixArray;
 use crate::radix_key::RadixKeyChecked;
 use crate::sort_utils::*;
 use crate::sorter::Sorter;
@@ -58,16 +59,16 @@ struct ScannerBucket<'a, T> {
 
 #[inline]
 fn get_scanner_buckets<'a, T>(
-    counts: &[usize; 256],
-    prefix_sums: &[usize; 256],
+    counts: &RadixArray<usize>,
+    prefix_sums: &RadixArray<usize>,
     bucket: &'a mut [T],
 ) -> Vec<ScannerBucket<'a, T>> {
     let mut running_count = 0;
     let mut out: Vec<_> = bucket
-        .arbitrary_chunks_mut(counts)
+        .arbitrary_chunks_mut(counts.inner())
         .enumerate()
         .map(|(index, chunk)| {
-            let head = prefix_sums[index] - running_count;
+            let head = prefix_sums.get(index as u8) - running_count;
             running_count += chunk.len();
 
             ScannerBucket {
@@ -220,7 +221,7 @@ fn scanner_thread<T>(
     }
 }
 
-pub fn scanning_sort<T>(bucket: &mut [T], counts: &[usize; 256], level: usize)
+pub fn scanning_sort<T>(bucket: &mut [T], counts: &RadixArray<usize>, level: usize)
 where
     T: RadixKeyChecked + Sized + Send + Copy + Sync,
 {
@@ -250,7 +251,7 @@ impl<'a> Sorter<'a> {
     pub(crate) fn scanning_sort_adapter<T>(
         &self,
         bucket: &mut [T],
-        counts: &[usize; 256],
+        counts: &RadixArray<usize>,
         level: usize,
     ) where
         T: RadixKeyChecked + Sized + Send + Copy + Sync,

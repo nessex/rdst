@@ -28,6 +28,7 @@
 //! level to provide a small but significant performance boost. This is not a huge win as it removes
 //! some caching benefits etc., but has been benchmarked at roughly 5-15% speedup.
 
+use crate::radix_array::RadixArray;
 use crate::radix_key::RadixKeyChecked;
 use crate::sort_utils::*;
 use crate::sorter::Sorter;
@@ -42,7 +43,7 @@ impl<'a> Sorter<'a> {
         &self,
         lr: bool,
         bucket: &mut [T],
-        last_counts: &[usize; 256],
+        last_counts: &RadixArray<usize>,
         start_level: usize,
         end_level: usize,
     ) where
@@ -77,8 +78,8 @@ impl<'a> Sorter<'a> {
                 (bucket.as_ref(), &mut tmp_bucket)
             };
             let counts = if level == end_level {
-                *last_counts
-            } else if let Some(next_counts) = next_counts {
+                last_counts.clone()
+            } else if let Some(next_counts) = next_counts.clone() {
                 next_counts
             } else {
                 let (counts, already_sorted) = get_counts(src_bucket, level);
@@ -92,10 +93,10 @@ impl<'a> Sorter<'a> {
             };
 
             for c in counts.iter() {
-                if *c == src_bucket.len() {
+                if c == src_bucket.len() {
                     next_counts = None;
                     continue 'outer;
-                } else if *c > 0 {
+                } else if c > 0 {
                     break;
                 }
             }

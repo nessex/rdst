@@ -28,6 +28,7 @@
 //!
 //! This variant uses the same algorithm as `mt_lsb_sort` but uses it in msb-first order.
 
+use crate::radix_array::RadixArray;
 use crate::radix_key::RadixKeyChecked;
 use crate::sort_utils::*;
 use crate::sorter::Sorter;
@@ -39,7 +40,7 @@ use std::mem::MaybeUninit;
 pub fn mt_lsb_sort<T>(
     src_bucket: &[T],
     dst_bucket: &mut [MaybeUninit<T>],
-    tile_counts: &[[usize; 256]],
+    tile_counts: &[RadixArray<usize>],
     tile_size: usize,
     level: usize,
 ) where
@@ -48,9 +49,9 @@ pub fn mt_lsb_sort<T>(
     let tiles = tile_counts.len();
     let mut minor_counts: Box<[MaybeUninit<usize>]> = Box::new_uninit_slice(256 * tiles);
 
-    for b in 0..256 {
+    for b in 0..=255u8 {
         for (i, tile) in tile_counts.iter().enumerate() {
-            minor_counts[b * tiles + i] = MaybeUninit::new(tile[b]);
+            minor_counts[b as usize * tiles + i] = MaybeUninit::new(tile.get(b));
         }
     }
 
@@ -248,8 +249,8 @@ impl<'a> Sorter<'a> {
         &self,
         bucket: &mut [T],
         level: usize,
-        counts: &[usize; 256],
-        tile_counts: &[[usize; 256]],
+        counts: &RadixArray<usize>,
+        tile_counts: &[RadixArray<usize>],
         tile_size: usize,
     ) where
         T: RadixKeyChecked + Sized + Send + Copy + Sync,

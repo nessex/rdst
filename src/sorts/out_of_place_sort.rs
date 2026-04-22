@@ -43,6 +43,7 @@
 //!  * single-threaded
 //!  * lsb-first
 
+use crate::radix_array::RadixArray;
 use crate::radix_key::RadixKeyChecked;
 use crate::sort_utils::*;
 use std::mem::MaybeUninit;
@@ -56,7 +57,7 @@ pub fn out_of_place_sort<T>(
     // to maintain that invariant for all callers
     // that expect this behaviour.
     dst_bucket: &mut [MaybeUninit<T>],
-    counts: &[usize; 256],
+    counts: &RadixArray<usize>,
     level: usize,
 ) where
     T: RadixKeyChecked + Sized + Send + Copy + Sync,
@@ -80,37 +81,37 @@ pub fn out_of_place_sort<T>(
     let rem = chunks.remainder();
 
     chunks.into_iter().for_each(|chunk| {
-        let a = chunk[0].get_level_checked(level) as usize;
-        let b = chunk[1].get_level_checked(level) as usize;
-        let c = chunk[2].get_level_checked(level) as usize;
-        let d = chunk[3].get_level_checked(level) as usize;
-        let e = chunk[4].get_level_checked(level) as usize;
-        let f = chunk[5].get_level_checked(level) as usize;
-        let g = chunk[6].get_level_checked(level) as usize;
-        let h = chunk[7].get_level_checked(level) as usize;
+        let a = chunk[0].get_level_checked(level);
+        let b = chunk[1].get_level_checked(level);
+        let c = chunk[2].get_level_checked(level);
+        let d = chunk[3].get_level_checked(level);
+        let e = chunk[4].get_level_checked(level);
+        let f = chunk[5].get_level_checked(level);
+        let g = chunk[6].get_level_checked(level);
+        let h = chunk[7].get_level_checked(level);
 
-        dst_bucket[prefix_sums[a]] = MaybeUninit::new(chunk[0]);
-        prefix_sums[a] += 1;
-        dst_bucket[prefix_sums[b]] = MaybeUninit::new(chunk[1]);
-        prefix_sums[b] += 1;
-        dst_bucket[prefix_sums[c]] = MaybeUninit::new(chunk[2]);
-        prefix_sums[c] += 1;
-        dst_bucket[prefix_sums[d]] = MaybeUninit::new(chunk[3]);
-        prefix_sums[d] += 1;
-        dst_bucket[prefix_sums[e]] = MaybeUninit::new(chunk[4]);
-        prefix_sums[e] += 1;
-        dst_bucket[prefix_sums[f]] = MaybeUninit::new(chunk[5]);
-        prefix_sums[f] += 1;
-        dst_bucket[prefix_sums[g]] = MaybeUninit::new(chunk[6]);
-        prefix_sums[g] += 1;
-        dst_bucket[prefix_sums[h]] = MaybeUninit::new(chunk[7]);
-        prefix_sums[h] += 1;
+        dst_bucket[prefix_sums.get(a)] = MaybeUninit::new(chunk[0]);
+        *prefix_sums.get_mut(a) += 1;
+        dst_bucket[prefix_sums.get(b)] = MaybeUninit::new(chunk[1]);
+        *prefix_sums.get_mut(b) += 1;
+        dst_bucket[prefix_sums.get(c)] = MaybeUninit::new(chunk[2]);
+        *prefix_sums.get_mut(c) += 1;
+        dst_bucket[prefix_sums.get(d)] = MaybeUninit::new(chunk[3]);
+        *prefix_sums.get_mut(d) += 1;
+        dst_bucket[prefix_sums.get(e)] = MaybeUninit::new(chunk[4]);
+        *prefix_sums.get_mut(e) += 1;
+        dst_bucket[prefix_sums.get(f)] = MaybeUninit::new(chunk[5]);
+        *prefix_sums.get_mut(f) += 1;
+        dst_bucket[prefix_sums.get(g)] = MaybeUninit::new(chunk[6]);
+        *prefix_sums.get_mut(g) += 1;
+        dst_bucket[prefix_sums.get(h)] = MaybeUninit::new(chunk[7]);
+        *prefix_sums.get_mut(h) += 1;
     });
 
     rem.iter().for_each(|val| {
-        let b = val.get_level_checked(level) as usize;
-        dst_bucket[prefix_sums[b]] = MaybeUninit::new(*val);
-        prefix_sums[b] += 1;
+        let b = val.get_level_checked(level);
+        dst_bucket[prefix_sums.get(b)] = MaybeUninit::new(*val);
+        *prefix_sums.get_mut(b) += 1;
     });
 }
 
@@ -123,83 +124,83 @@ pub fn out_of_place_sort_with_counts<T>(
     // to maintain that invariant for all callers
     // that expect this behaviour.
     dst_bucket: &mut [MaybeUninit<T>],
-    counts: &[usize; 256],
+    counts: &RadixArray<usize>,
     level: usize,
-) -> [usize; 256]
+) -> RadixArray<usize>
 where
     T: RadixKeyChecked + Sized + Send + Copy + Sync,
 {
     if src_bucket.is_empty() {
-        return [0usize; 256];
+        return RadixArray::new(0);
     } else if src_bucket.len() == 1 {
-        let mut counts = [0usize; 256];
+        let mut counts = RadixArray::new(0);
         dst_bucket[0] = MaybeUninit::new(src_bucket[0]);
-        counts[src_bucket[0].get_level_checked(level) as usize] = 1;
+        *counts.get_mut(src_bucket[0].get_level_checked(level)) = 1;
         return counts;
     }
 
     let next_level = level + 1;
     let mut prefix_sums = get_prefix_sums(counts);
-    let mut next_counts_0 = [0usize; 256];
-    let mut next_counts_1 = [0usize; 256];
+    let mut next_counts_0 = RadixArray::new(0);
+    let mut next_counts_1 = RadixArray::new(0);
 
     let chunks = src_bucket.chunks_exact(8);
     let rem = chunks.remainder();
 
     chunks.into_iter().for_each(|chunk| {
-        let b0 = chunk[0].get_level_checked(level) as usize;
-        let bn0 = chunk[0].get_level_checked(next_level) as usize;
-        let b1 = chunk[1].get_level_checked(level) as usize;
-        let bn1 = chunk[1].get_level_checked(next_level) as usize;
-        let b2 = chunk[2].get_level_checked(level) as usize;
-        let bn2 = chunk[2].get_level_checked(next_level) as usize;
-        let b3 = chunk[3].get_level_checked(level) as usize;
-        let bn3 = chunk[3].get_level_checked(next_level) as usize;
-        let b4 = chunk[4].get_level_checked(level) as usize;
-        let bn4 = chunk[4].get_level_checked(next_level) as usize;
-        let b5 = chunk[5].get_level_checked(level) as usize;
-        let bn5 = chunk[5].get_level_checked(next_level) as usize;
-        let b6 = chunk[6].get_level_checked(level) as usize;
-        let bn6 = chunk[6].get_level_checked(next_level) as usize;
-        let b7 = chunk[7].get_level_checked(level) as usize;
-        let bn7 = chunk[7].get_level_checked(next_level) as usize;
+        let b0 = chunk[0].get_level_checked(level);
+        let bn0 = chunk[0].get_level_checked(next_level);
+        let b1 = chunk[1].get_level_checked(level);
+        let bn1 = chunk[1].get_level_checked(next_level);
+        let b2 = chunk[2].get_level_checked(level);
+        let bn2 = chunk[2].get_level_checked(next_level);
+        let b3 = chunk[3].get_level_checked(level);
+        let bn3 = chunk[3].get_level_checked(next_level);
+        let b4 = chunk[4].get_level_checked(level);
+        let bn4 = chunk[4].get_level_checked(next_level);
+        let b5 = chunk[5].get_level_checked(level);
+        let bn5 = chunk[5].get_level_checked(next_level);
+        let b6 = chunk[6].get_level_checked(level);
+        let bn6 = chunk[6].get_level_checked(next_level);
+        let b7 = chunk[7].get_level_checked(level);
+        let bn7 = chunk[7].get_level_checked(next_level);
 
-        dst_bucket[prefix_sums[b0]] = MaybeUninit::new(chunk[0]);
-        prefix_sums[b0] += 1;
-        next_counts_0[bn0] += 1;
-        dst_bucket[prefix_sums[b1]] = MaybeUninit::new(chunk[1]);
-        prefix_sums[b1] += 1;
-        next_counts_1[bn1] += 1;
-        dst_bucket[prefix_sums[b2]] = MaybeUninit::new(chunk[2]);
-        prefix_sums[b2] += 1;
-        next_counts_0[bn2] += 1;
-        dst_bucket[prefix_sums[b3]] = MaybeUninit::new(chunk[3]);
-        prefix_sums[b3] += 1;
-        next_counts_1[bn3] += 1;
-        dst_bucket[prefix_sums[b4]] = MaybeUninit::new(chunk[4]);
-        prefix_sums[b4] += 1;
-        next_counts_0[bn4] += 1;
-        dst_bucket[prefix_sums[b5]] = MaybeUninit::new(chunk[5]);
-        prefix_sums[b5] += 1;
-        next_counts_1[bn5] += 1;
-        dst_bucket[prefix_sums[b6]] = MaybeUninit::new(chunk[6]);
-        prefix_sums[b6] += 1;
-        next_counts_0[bn6] += 1;
-        dst_bucket[prefix_sums[b7]] = MaybeUninit::new(chunk[7]);
-        prefix_sums[b7] += 1;
-        next_counts_1[bn7] += 1;
+        dst_bucket[prefix_sums.get(b0)] = MaybeUninit::new(chunk[0]);
+        *prefix_sums.get_mut(b0) += 1;
+        *next_counts_0.get_mut(bn0) += 1;
+        dst_bucket[prefix_sums.get(b1)] = MaybeUninit::new(chunk[1]);
+        *prefix_sums.get_mut(b1) += 1;
+        *next_counts_1.get_mut(bn1) += 1;
+        dst_bucket[prefix_sums.get(b2)] = MaybeUninit::new(chunk[2]);
+        *prefix_sums.get_mut(b2) += 1;
+        *next_counts_0.get_mut(bn2) += 1;
+        dst_bucket[prefix_sums.get(b3)] = MaybeUninit::new(chunk[3]);
+        *prefix_sums.get_mut(b3) += 1;
+        *next_counts_1.get_mut(bn3) += 1;
+        dst_bucket[prefix_sums.get(b4)] = MaybeUninit::new(chunk[4]);
+        *prefix_sums.get_mut(b4) += 1;
+        *next_counts_0.get_mut(bn4) += 1;
+        dst_bucket[prefix_sums.get(b5)] = MaybeUninit::new(chunk[5]);
+        *prefix_sums.get_mut(b5) += 1;
+        *next_counts_1.get_mut(bn5) += 1;
+        dst_bucket[prefix_sums.get(b6)] = MaybeUninit::new(chunk[6]);
+        *prefix_sums.get_mut(b6) += 1;
+        *next_counts_0.get_mut(bn6) += 1;
+        dst_bucket[prefix_sums.get(b7)] = MaybeUninit::new(chunk[7]);
+        *prefix_sums.get_mut(b7) += 1;
+        *next_counts_1.get_mut(bn7) += 1;
     });
 
     rem.iter().for_each(|val| {
-        let b = val.get_level_checked(level) as usize;
-        let bn = val.get_level_checked(next_level) as usize;
-        dst_bucket[prefix_sums[b]] = MaybeUninit::new(*val);
-        prefix_sums[b] += 1;
-        next_counts_0[bn] += 1;
+        let b = val.get_level_checked(level);
+        let bn = val.get_level_checked(next_level);
+        dst_bucket[prefix_sums.get(b)] = MaybeUninit::new(*val);
+        *prefix_sums.get_mut(b) += 1;
+        *next_counts_0.get_mut(bn) += 1;
     });
 
-    for i in 0..256 {
-        next_counts_0[i] += next_counts_1[i];
+    for i in 0..=255 {
+        *next_counts_0.get_mut(i) += next_counts_1.get(i);
     }
 
     next_counts_0
@@ -214,7 +215,7 @@ pub fn lr_out_of_place_sort<T>(
     // to maintain that invariant for all callers
     // that expect this behaviour.
     dst_bucket: &mut [MaybeUninit<T>],
-    counts: &[usize; 256],
+    counts: &RadixArray<usize>,
     level: usize,
 ) where
     T: RadixKeyChecked + Sized + Send + Copy + Sync,
@@ -233,10 +234,10 @@ pub fn lr_out_of_place_sort<T>(
     }
 
     let mut offsets = get_prefix_sums(counts);
-    let mut ends = [0usize; 256];
+    let mut ends = RadixArray::new(0);
 
     for (i, b) in offsets.iter().enumerate() {
-        ends[i] = b + counts[i].saturating_sub(1);
+        *ends.get_mut(i) = b + counts.get(i).saturating_sub(1);
     }
 
     let mut left = 0;
@@ -244,10 +245,10 @@ pub fn lr_out_of_place_sort<T>(
     let pre = src_bucket.len() % 8;
 
     for _ in 0..pre {
-        let b = src_bucket[right].get_level_checked(level) as usize;
+        let b = src_bucket[right].get_level_checked(level);
 
-        dst_bucket[ends[b]] = MaybeUninit::new(src_bucket[right]);
-        ends[b] = ends[b].saturating_sub(1);
+        dst_bucket[ends.get(b)] = MaybeUninit::new(src_bucket[right]);
+        *ends.get_mut(b) = ends.get(b).saturating_sub(1);
         right = right.saturating_sub(1);
     }
 
@@ -258,31 +259,31 @@ pub fn lr_out_of_place_sort<T>(
     let end = (src_bucket.len() - pre) / 2;
 
     while left < end {
-        let bl_0 = src_bucket[left].get_level_checked(level) as usize;
-        let bl_1 = src_bucket[left + 1].get_level_checked(level) as usize;
-        let bl_2 = src_bucket[left + 2].get_level_checked(level) as usize;
-        let bl_3 = src_bucket[left + 3].get_level_checked(level) as usize;
-        let br_0 = src_bucket[right].get_level_checked(level) as usize;
-        let br_1 = src_bucket[right - 1].get_level_checked(level) as usize;
-        let br_2 = src_bucket[right - 2].get_level_checked(level) as usize;
-        let br_3 = src_bucket[right - 3].get_level_checked(level) as usize;
+        let bl_0 = src_bucket[left].get_level_checked(level);
+        let bl_1 = src_bucket[left + 1].get_level_checked(level);
+        let bl_2 = src_bucket[left + 2].get_level_checked(level);
+        let bl_3 = src_bucket[left + 3].get_level_checked(level);
+        let br_0 = src_bucket[right].get_level_checked(level);
+        let br_1 = src_bucket[right - 1].get_level_checked(level);
+        let br_2 = src_bucket[right - 2].get_level_checked(level);
+        let br_3 = src_bucket[right - 3].get_level_checked(level);
 
-        dst_bucket[offsets[bl_0]] = MaybeUninit::new(src_bucket[left]);
-        offsets[bl_0] = offsets[bl_0].wrapping_add(1);
-        dst_bucket[ends[br_0]] = MaybeUninit::new(src_bucket[right]);
-        ends[br_0] = ends[br_0].wrapping_sub(1);
-        dst_bucket[offsets[bl_1]] = MaybeUninit::new(src_bucket[left + 1]);
-        offsets[bl_1] = offsets[bl_1].wrapping_add(1);
-        dst_bucket[ends[br_1]] = MaybeUninit::new(src_bucket[right - 1]);
-        ends[br_1] = ends[br_1].wrapping_sub(1);
-        dst_bucket[offsets[bl_2]] = MaybeUninit::new(src_bucket[left + 2]);
-        offsets[bl_2] = offsets[bl_2].wrapping_add(1);
-        dst_bucket[ends[br_2]] = MaybeUninit::new(src_bucket[right - 2]);
-        ends[br_2] = ends[br_2].wrapping_sub(1);
-        dst_bucket[offsets[bl_3]] = MaybeUninit::new(src_bucket[left + 3]);
-        offsets[bl_3] = offsets[bl_3].wrapping_add(1);
-        dst_bucket[ends[br_3]] = MaybeUninit::new(src_bucket[right - 3]);
-        ends[br_3] = ends[br_3].wrapping_sub(1);
+        dst_bucket[offsets.get(bl_0)] = MaybeUninit::new(src_bucket[left]);
+        *offsets.get_mut(bl_0) = offsets.get(bl_0).wrapping_add(1);
+        dst_bucket[ends.get(br_0)] = MaybeUninit::new(src_bucket[right]);
+        *ends.get_mut(br_0) = ends.get(br_0).wrapping_sub(1);
+        dst_bucket[offsets.get(bl_1)] = MaybeUninit::new(src_bucket[left + 1]);
+        *offsets.get_mut(bl_1) = offsets.get(bl_1).wrapping_add(1);
+        dst_bucket[ends.get(br_1)] = MaybeUninit::new(src_bucket[right - 1]);
+        *ends.get_mut(br_1) = ends.get(br_1).wrapping_sub(1);
+        dst_bucket[offsets.get(bl_2)] = MaybeUninit::new(src_bucket[left + 2]);
+        *offsets.get_mut(bl_2) = offsets.get(bl_2).wrapping_add(1);
+        dst_bucket[ends.get(br_2)] = MaybeUninit::new(src_bucket[right - 2]);
+        *ends.get_mut(br_2) = ends.get(br_2).wrapping_sub(1);
+        dst_bucket[offsets.get(bl_3)] = MaybeUninit::new(src_bucket[left + 3]);
+        *offsets.get_mut(bl_3) = offsets.get(bl_3).wrapping_add(1);
+        dst_bucket[ends.get(br_3)] = MaybeUninit::new(src_bucket[right - 3]);
+        *ends.get_mut(br_3) = ends.get(br_3).wrapping_sub(1);
 
         left += 4;
         right -= 4;
@@ -298,30 +299,30 @@ pub fn lr_out_of_place_sort_with_counts<T>(
     // to maintain that invariant for all callers
     // that expect this behaviour.
     dst_bucket: &mut [MaybeUninit<T>],
-    counts: &[usize; 256],
+    counts: &RadixArray<usize>,
     level: usize,
-) -> [usize; 256]
+) -> RadixArray<usize>
 where
     T: RadixKeyChecked + Sized + Send + Copy + Sync,
 {
     if src_bucket.is_empty() {
-        return [0usize; 256];
+        return RadixArray::new(0);
     } else if src_bucket.len() == 1 {
-        let mut counts = [0usize; 256];
+        let mut counts = RadixArray::new(0);
         dst_bucket[0] = MaybeUninit::new(src_bucket[0]);
-        counts[src_bucket[0].get_level_checked(level) as usize] = 1;
+        *counts.get_mut(src_bucket[0].get_level_checked(level)) = 1;
         return counts;
     }
 
     let next_level = level + 1;
-    let mut next_counts_0 = [0usize; 256];
-    let mut next_counts_1 = [0usize; 256];
+    let mut next_counts_0 = RadixArray::new(0);
+    let mut next_counts_1 = RadixArray::new(0);
 
     let mut offsets = get_prefix_sums(counts);
-    let mut ends = [0usize; 256];
+    let mut ends = RadixArray::new(0);
 
     for (i, b) in offsets.iter().enumerate() {
-        ends[i] = b + counts[i].saturating_sub(1);
+        *ends.get_mut(i) = b + counts.get(i).saturating_sub(1);
     }
 
     let mut left = 0;
@@ -329,13 +330,13 @@ where
     let pre = src_bucket.len() % 8;
 
     for _ in 0..pre {
-        let b = src_bucket[right].get_level_checked(level) as usize;
-        let bn = src_bucket[right].get_level_checked(next_level) as usize;
+        let b = src_bucket[right].get_level_checked(level);
+        let bn = src_bucket[right].get_level_checked(next_level);
 
-        dst_bucket[ends[b]] = MaybeUninit::new(src_bucket[right]);
-        ends[b] = ends[b].wrapping_sub(1);
+        dst_bucket[ends.get(b)] = MaybeUninit::new(src_bucket[right]);
+        *ends.get_mut(b) = ends.get(b).wrapping_sub(1);
         right = right.wrapping_sub(1);
-        next_counts_0[bn] += 1;
+        *next_counts_0.get_mut(bn) += 1;
     }
 
     if pre == src_bucket.len() {
@@ -345,59 +346,59 @@ where
     let end = (src_bucket.len() - pre) / 2;
 
     while left < end {
-        let bl_0 = src_bucket[left].get_level_checked(level) as usize;
-        let bl_1 = src_bucket[left + 1].get_level_checked(level) as usize;
-        let bl_2 = src_bucket[left + 2].get_level_checked(level) as usize;
-        let bl_3 = src_bucket[left + 3].get_level_checked(level) as usize;
-        let br_0 = src_bucket[right].get_level_checked(level) as usize;
-        let br_1 = src_bucket[right - 1].get_level_checked(level) as usize;
-        let br_2 = src_bucket[right - 2].get_level_checked(level) as usize;
-        let br_3 = src_bucket[right - 3].get_level_checked(level) as usize;
+        let bl_0 = src_bucket[left].get_level_checked(level);
+        let bl_1 = src_bucket[left + 1].get_level_checked(level);
+        let bl_2 = src_bucket[left + 2].get_level_checked(level);
+        let bl_3 = src_bucket[left + 3].get_level_checked(level);
+        let br_0 = src_bucket[right].get_level_checked(level);
+        let br_1 = src_bucket[right - 1].get_level_checked(level);
+        let br_2 = src_bucket[right - 2].get_level_checked(level);
+        let br_3 = src_bucket[right - 3].get_level_checked(level);
 
-        dst_bucket[offsets[bl_0]] = MaybeUninit::new(src_bucket[left]);
-        dst_bucket[ends[br_0]] = MaybeUninit::new(src_bucket[right]);
-        ends[br_0] = ends[br_0].wrapping_sub(1);
-        offsets[bl_0] = offsets[bl_0].wrapping_add(1);
+        dst_bucket[offsets.get(bl_0)] = MaybeUninit::new(src_bucket[left]);
+        dst_bucket[ends.get(br_0)] = MaybeUninit::new(src_bucket[right]);
+        *ends.get_mut(br_0) = ends.get(br_0).wrapping_sub(1);
+        *offsets.get_mut(bl_0) = offsets.get(bl_0).wrapping_add(1);
 
-        dst_bucket[offsets[bl_1]] = MaybeUninit::new(src_bucket[left + 1]);
-        dst_bucket[ends[br_1]] = MaybeUninit::new(src_bucket[right - 1]);
-        ends[br_1] = ends[br_1].wrapping_sub(1);
-        offsets[bl_1] = offsets[bl_1].wrapping_add(1);
+        dst_bucket[offsets.get(bl_1)] = MaybeUninit::new(src_bucket[left + 1]);
+        dst_bucket[ends.get(br_1)] = MaybeUninit::new(src_bucket[right - 1]);
+        *ends.get_mut(br_1) = ends.get(br_1).wrapping_sub(1);
+        *offsets.get_mut(bl_1) = offsets.get(bl_1).wrapping_add(1);
 
-        dst_bucket[offsets[bl_2]] = MaybeUninit::new(src_bucket[left + 2]);
-        dst_bucket[ends[br_2]] = MaybeUninit::new(src_bucket[right - 2]);
-        ends[br_2] = ends[br_2].wrapping_sub(1);
-        offsets[bl_2] = offsets[bl_2].wrapping_add(1);
+        dst_bucket[offsets.get(bl_2)] = MaybeUninit::new(src_bucket[left + 2]);
+        dst_bucket[ends.get(br_2)] = MaybeUninit::new(src_bucket[right - 2]);
+        *ends.get_mut(br_2) = ends.get(br_2).wrapping_sub(1);
+        *offsets.get_mut(bl_2) = offsets.get(bl_2).wrapping_add(1);
 
-        dst_bucket[offsets[bl_3]] = MaybeUninit::new(src_bucket[left + 3]);
-        dst_bucket[ends[br_3]] = MaybeUninit::new(src_bucket[right - 3]);
-        ends[br_3] = ends[br_3].wrapping_sub(1);
-        offsets[bl_3] = offsets[bl_3].wrapping_add(1);
+        dst_bucket[offsets.get(bl_3)] = MaybeUninit::new(src_bucket[left + 3]);
+        dst_bucket[ends.get(br_3)] = MaybeUninit::new(src_bucket[right - 3]);
+        *ends.get_mut(br_3) = ends.get(br_3).wrapping_sub(1);
+        *offsets.get_mut(bl_3) = offsets.get(bl_3).wrapping_add(1);
 
-        let bnl_0 = src_bucket[left].get_level_checked(next_level) as usize;
-        let bnl_1 = src_bucket[left + 1].get_level_checked(next_level) as usize;
-        let bnl_2 = src_bucket[left + 2].get_level_checked(next_level) as usize;
-        let bnl_3 = src_bucket[left + 3].get_level_checked(next_level) as usize;
-        let bnr_0 = src_bucket[right].get_level_checked(next_level) as usize;
-        let bnr_1 = src_bucket[right - 1].get_level_checked(next_level) as usize;
-        let bnr_2 = src_bucket[right - 2].get_level_checked(next_level) as usize;
-        let bnr_3 = src_bucket[right - 3].get_level_checked(next_level) as usize;
+        let bnl_0 = src_bucket[left].get_level_checked(next_level);
+        let bnl_1 = src_bucket[left + 1].get_level_checked(next_level);
+        let bnl_2 = src_bucket[left + 2].get_level_checked(next_level);
+        let bnl_3 = src_bucket[left + 3].get_level_checked(next_level);
+        let bnr_0 = src_bucket[right].get_level_checked(next_level);
+        let bnr_1 = src_bucket[right - 1].get_level_checked(next_level);
+        let bnr_2 = src_bucket[right - 2].get_level_checked(next_level);
+        let bnr_3 = src_bucket[right - 3].get_level_checked(next_level);
 
-        next_counts_0[bnl_0] += 1;
-        next_counts_1[bnr_0] += 1;
-        next_counts_0[bnl_1] += 1;
-        next_counts_1[bnr_1] += 1;
-        next_counts_0[bnl_2] += 1;
-        next_counts_1[bnr_2] += 1;
-        next_counts_0[bnl_3] += 1;
-        next_counts_1[bnr_3] += 1;
+        *next_counts_0.get_mut(bnl_0) += 1;
+        *next_counts_1.get_mut(bnr_0) += 1;
+        *next_counts_0.get_mut(bnl_1) += 1;
+        *next_counts_1.get_mut(bnr_1) += 1;
+        *next_counts_0.get_mut(bnl_2) += 1;
+        *next_counts_1.get_mut(bnr_2) += 1;
+        *next_counts_0.get_mut(bnl_3) += 1;
+        *next_counts_1.get_mut(bnr_3) += 1;
 
         left += 4;
         right -= 4;
     }
 
-    for i in 0..256 {
-        next_counts_0[i] += next_counts_1[i];
+    for i in 0..=255 {
+        *next_counts_0.get_mut(i) += next_counts_1.get(i);
     }
 
     next_counts_0

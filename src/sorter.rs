@@ -1,3 +1,4 @@
+use crate::radix_array::RadixArray;
 use crate::radix_key::RadixKeyChecked;
 use crate::sort_utils::*;
 use crate::tuner::{Algorithm, Tuner, TuningParams};
@@ -26,8 +27,8 @@ impl<'a> Sorter<'a> {
         &self,
         level: usize,
         bucket: &mut [T],
-        counts: &[usize; 256],
-        tile_counts: Option<&[[usize; 256]]>,
+        counts: &RadixArray<usize>,
+        tile_counts: Option<&[RadixArray<usize>]>,
         #[allow(unused)] tile_size: usize,
         algorithm: Algorithm,
     ) where
@@ -102,7 +103,7 @@ impl<'a> Sorter<'a> {
             parent_len,
         };
 
-        let mut tile_counts: Option<Vec<[usize; 256]>> = None;
+        let mut tile_counts: Option<Vec<RadixArray<usize>>> = None;
         let mut already_sorted = false;
 
         if use_tiles {
@@ -128,7 +129,7 @@ impl<'a> Sorter<'a> {
             return;
         }
 
-        let algorithm = self.tuner.pick_algorithm(&tp, &counts);
+        let algorithm = self.tuner.pick_algorithm(&tp, counts.inner());
 
         // Ensure tile_counts is always set when it is required
         #[cfg(feature = "work_profiles")]
@@ -159,34 +160,42 @@ impl<'a> Sorter<'a> {
 
     #[inline]
     #[cfg(feature = "multi-threaded")]
-    pub fn multi_threaded_director<T>(&self, bucket: &mut [T], counts: &[usize; 256], level: usize)
-    where
+    pub fn multi_threaded_director<T>(
+        &self,
+        bucket: &mut [T],
+        counts: &RadixArray<usize>,
+        level: usize,
+    ) where
         T: RadixKeyChecked + Send + Copy + Sync,
     {
         let parent_len = Some(bucket.len());
         let threads = current_num_threads();
 
         bucket
-            .arbitrary_chunks_mut(counts)
+            .arbitrary_chunks_mut(counts.inner())
             .par_bridge()
             .for_each(|chunk| self.handle_chunk(chunk, level, parent_len, threads));
     }
 
     #[inline]
-    pub fn single_threaded_director<T>(&self, bucket: &mut [T], counts: &[usize; 256], level: usize)
-    where
+    pub fn single_threaded_director<T>(
+        &self,
+        bucket: &mut [T],
+        counts: &RadixArray<usize>,
+        level: usize,
+    ) where
         T: RadixKeyChecked + Send + Sync + Copy,
     {
         let parent_len = Some(bucket.len());
         let threads = 1;
 
         bucket
-            .arbitrary_chunks_mut(counts)
+            .arbitrary_chunks_mut(counts.inner())
             .for_each(|chunk| self.handle_chunk(chunk, level, parent_len, threads));
     }
 
     #[inline]
-    pub fn director<T>(&self, bucket: &mut [T], counts: &[usize; 256], level: usize)
+    pub fn director<T>(&self, bucket: &mut [T], counts: &RadixArray<usize>, level: usize)
     where
         T: RadixKeyChecked + Send + Sync + Copy,
     {

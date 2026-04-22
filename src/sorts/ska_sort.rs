@@ -20,6 +20,7 @@
 //! This is generally slower than `lsb_sort` for smaller types T or smaller input arrays. For larger
 //! types or inputs, the memory efficiency of this algorithm can make it faster than `lsb_sort`.
 
+use crate::radix_array::RadixArray;
 use crate::radix_key::RadixKeyChecked;
 use crate::sort_utils::*;
 use crate::sorter::Sorter;
@@ -27,21 +28,21 @@ use partition::partition_index;
 
 pub fn ska_sort<T>(
     bucket: &mut [T],
-    prefix_sums: &mut [usize; 256],
-    end_offsets: &[usize; 256],
+    prefix_sums: &mut RadixArray<usize>,
+    end_offsets: &RadixArray<usize>,
     level: usize,
 ) where
     T: RadixKeyChecked + Sized + Send + Copy + Sync,
 {
-    let mut finished = 0;
-    let mut finished_map = [false; 256];
-    let mut largest = 0;
-    let mut largest_index = 0;
+    let mut finished = 0usize;
+    let mut finished_map = RadixArray::new(false);
+    let mut largest = 0usize;
+    let mut largest_index: u8 = 0;
 
-    for i in 0..256 {
-        let rem = end_offsets[i] - prefix_sums[i];
+    for i in 0..=255 {
+        let rem = end_offsets.get(i) - prefix_sums.get(i);
         if rem == 0 {
-            finished_map[i] = true;
+            *finished_map.get_mut(i) = true;
             finished += 1;
         } else if rem > largest {
             largest = rem;
@@ -56,41 +57,44 @@ pub fn ska_sort<T>(
         // Partition in-place the largest chunk so we don't spend all our time
         // swapping things in and out that are already in the correct place.
 
-        let li = largest_index as u8;
         let offs = partition_index(
-            &mut bucket[prefix_sums[largest_index]..end_offsets[largest_index]],
-            |v| v.get_level_checked(level) == li,
+            &mut bucket[prefix_sums.get(largest_index)..end_offsets.get(largest_index)],
+            |v| v.get_level_checked(level) == largest_index,
         );
 
-        prefix_sums[largest_index] += offs;
+        *prefix_sums.get_mut(largest_index) += offs;
     }
 
-    if !finished_map[largest_index] {
-        finished_map[largest_index] = true;
+    if !finished_map.get(largest_index) {
+        *finished_map.get_mut(largest_index) = true;
         finished += 1;
     }
 
     while finished != 256 {
-        for b in 0..256 {
-            if finished_map[b] {
+        for b in 0..=255 {
+            if finished_map.get(b) {
                 continue;
-            } else if prefix_sums[b] >= end_offsets[b] {
-                finished_map[b] = true;
+            } else if prefix_sums.get(b) >= end_offsets.get(b) {
+                *finished_map.get_mut(b) = true;
                 finished += 1;
             }
 
-            for i in prefix_sums[b]..end_offsets[b] {
-                let new_b = bucket[i].get_level_checked(level) as usize;
-                bucket.swap(prefix_sums[new_b], i);
-                prefix_sums[new_b] += 1;
+            for i in prefix_sums.get(b)..end_offsets.get(b) {
+                let new_b = bucket[i].get_level_checked(level);
+                bucket.swap(prefix_sums.get(new_b), i);
+                *prefix_sums.get_mut(new_b) += 1;
             }
         }
     }
 }
 
 impl<'a> Sorter<'a> {
-    pub(crate) fn ska_sort_adapter<T>(&self, bucket: &mut [T], counts: &[usize; 256], level: usize)
-    where
+    pub(crate) fn ska_sort_adapter<T>(
+        &self,
+        bucket: &mut [T],
+        counts: &RadixArray<usize>,
+        level: usize,
+    ) where
         T: RadixKeyChecked + Sized + Send + Copy + Sync,
     {
         if bucket.len() < 2 {

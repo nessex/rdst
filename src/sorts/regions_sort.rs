@@ -38,6 +38,7 @@
 //! This may not be entirely the same as the algorithm described by the research paper. Some steps
 //! did not seem to provide any value, and have been omitted for performance reasons.
 
+use crate::radix_array::RadixArray;
 use crate::radix_key::RadixKeyChecked;
 use crate::sort_utils::*;
 use crate::sorter::Sorter;
@@ -55,9 +56,9 @@ struct Operation<'bucket, T>(Edge<'bucket, T>, Edge<'bucket, T>);
 /// byte value in the final array.
 struct Edge<'bucket, T> {
     /// dst is the destination country index
-    dst: usize,
+    dst: u8,
     /// init is the initial country index
-    init: usize,
+    init: u8,
     slice: &'bucket mut [T],
 }
 
@@ -65,16 +66,16 @@ struct Edge<'bucket, T> {
 /// for that country.
 fn generate_outbounds<'bucket, T>(
     bucket: &'bucket mut [T],
-    local_counts: &[[usize; 256]],
-    global_counts: &[usize; 256],
+    local_counts: &[RadixArray<usize>],
+    global_counts: &RadixArray<usize>,
 ) -> Vec<Edge<'bucket, T>> {
     let mut outbounds: Vec<Edge<T>> = Vec::new();
     let mut rem_bucket = bucket;
     let mut local_bucket = 0;
     let mut local_country = 0;
-    let mut global_country = 0;
-    let mut target_global_dist = global_counts[0];
-    let mut target_local_dist = local_counts[0][0];
+    let mut global_country = 0u8;
+    let mut target_global_dist = global_counts.get(0);
+    let mut target_local_dist = local_counts[0].get(0);
 
     while !(global_country == 255 && local_country == 255 && local_bucket == local_counts.len() - 1)
     {
@@ -97,7 +98,7 @@ fn generate_outbounds<'bucket, T>(
         // 2. Update target_global_dist
         if step == target_global_dist && global_country < 255 {
             global_country += 1;
-            target_global_dist = global_counts[global_country];
+            target_global_dist = global_counts.get(global_country);
         } else {
             target_global_dist -= step;
         }
@@ -113,7 +114,7 @@ fn generate_outbounds<'bucket, T>(
                 local_country = 0;
             }
 
-            target_local_dist = local_counts[local_bucket][local_country];
+            target_local_dist = local_counts[local_bucket].get(local_country);
         } else {
             target_local_dist -= step;
         }
@@ -124,7 +125,7 @@ fn generate_outbounds<'bucket, T>(
 
 /// list_operations takes the lists of outbounds and turns it into a list of swaps to perform
 fn list_operations<T>(
-    country: usize,
+    country: u8,
     mut outbounds: Vec<Edge<T>>,
 ) -> (Vec<Edge<T>>, Vec<Operation<T>>) {
     // 1. Extract current country outbounds from full outbounds list
@@ -205,8 +206,8 @@ fn list_operations<T>(
 
 pub fn regions_sort<T>(
     bucket: &mut [T],
-    counts: &[usize; 256],
-    tile_counts: &[[usize; 256]],
+    counts: &RadixArray<usize>,
+    tile_counts: &[RadixArray<usize>],
     tile_size: usize,
     level: usize,
 ) where
@@ -232,7 +233,7 @@ pub fn regions_sort<T>(
         }
 
         // List out all the operations that need to be executed in this pass
-        for country in 0..256 {
+        for country in 0..=255 {
             let (new_outbounds, mut new_ops) = list_operations(country, outbounds);
             outbounds = new_outbounds;
             operations.append(&mut new_ops);
@@ -265,8 +266,8 @@ impl<'a> Sorter<'a> {
     pub(crate) fn regions_sort_adapter<T>(
         &self,
         bucket: &mut [T],
-        counts: &[usize; 256],
-        tile_counts: &[[usize; 256]],
+        counts: &RadixArray<usize>,
+        tile_counts: &[RadixArray<usize>],
         tile_size: usize,
         level: usize,
     ) where

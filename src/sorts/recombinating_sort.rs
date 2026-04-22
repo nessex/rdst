@@ -22,6 +22,7 @@
 //! constraints. As this is an out-of-place algorithm, you need 2n memory relative to the input for
 //! this sort, and eventually the extra allocation and freeing required eats away at the performance.
 
+use crate::radix_array::RadixArray;
 use crate::radix_key::RadixKeyChecked;
 use crate::sort_utils::*;
 use crate::sorter::Sorter;
@@ -31,8 +32,8 @@ use rayon::prelude::*;
 
 pub fn recombinating_sort<T>(
     bucket: &mut [T],
-    counts: &[usize; 256],
-    tile_counts: &[[usize; 256]],
+    counts: &RadixArray<usize>,
+    tile_counts: &[RadixArray<usize>],
     tile_size: usize,
     level: usize,
 ) where
@@ -41,7 +42,7 @@ pub fn recombinating_sort<T>(
     let bucket_len = bucket.len();
     let mut tmp_bucket = Box::new_uninit_slice(bucket_len);
 
-    let locals: Vec<([usize; 256], [usize; 256])> = bucket
+    let locals: Vec<(RadixArray<usize>, RadixArray<usize>)> = bucket
         .par_chunks(tile_size)
         .zip(tmp_bucket.par_chunks_mut(tile_size))
         .zip(tile_counts.into_par_iter())
@@ -50,7 +51,7 @@ pub fn recombinating_sort<T>(
 
             let sums = get_prefix_sums(counts);
 
-            (*counts, sums)
+            (counts.clone(), sums)
         })
         .collect();
 
@@ -66,7 +67,7 @@ pub fn recombinating_sort<T>(
     };
 
     bucket
-        .arbitrary_chunks_mut(counts)
+        .arbitrary_chunks_mut(counts.inner())
         .enumerate()
         .par_bridge()
         .for_each(|(index, global_chunk)| {
@@ -74,8 +75,8 @@ pub fn recombinating_sort<T>(
             let mut write_offset = 0;
 
             for (counts, sums) in locals.iter() {
-                let read_start = read_offset + sums[index];
-                let read_end = read_start + counts[index];
+                let read_start = read_offset + sums.get(index as u8);
+                let read_end = read_start + counts.get(index as u8);
                 let read_slice = &tmp_bucket[read_start..read_end];
                 let write_end = write_offset + read_slice.len();
 
@@ -91,8 +92,8 @@ impl<'a> Sorter<'a> {
     pub(crate) fn recombinating_sort_adapter<T>(
         &self,
         bucket: &mut [T],
-        counts: &[usize; 256],
-        tile_counts: &[[usize; 256]],
+        counts: &RadixArray<usize>,
+        tile_counts: &[RadixArray<usize>],
         tile_size: usize,
         level: usize,
     ) where
