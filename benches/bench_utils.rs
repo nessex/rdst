@@ -179,8 +179,8 @@ pub fn bench_single<T>(
 
     let mut group = c.benchmark_group(group);
     group.sample_size(10);
-    group.measurement_time(Duration::from_secs(30));
-    group.warm_up_time(Duration::from_secs(5));
+    group.measurement_time(Duration::from_secs(5));
+    group.warm_up_time(Duration::from_secs(2));
     group.throughput(Throughput::Elements(input.len() as u64));
 
     for t in tests.iter() {
