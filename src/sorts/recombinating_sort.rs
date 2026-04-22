@@ -39,7 +39,7 @@ pub fn recombinating_sort<T>(
     T: RadixKeyChecked + Sized + Send + Copy + Sync,
 {
     let bucket_len = bucket.len();
-    let mut tmp_bucket = get_tmp_bucket::<T>(bucket_len);
+    let mut tmp_bucket = Box::new_uninit_slice(bucket_len);
 
     let locals: Vec<([usize; 256], [usize; 256])> = bucket
         .par_chunks(tile_size)
@@ -53,6 +53,17 @@ pub fn recombinating_sort<T>(
             (*counts, sums)
         })
         .collect();
+
+    let tmp_bucket = unsafe {
+        // SAFETY: The logic above ensures
+        // every value of tmp_bucket is written
+        // prior to this point.
+        //
+        // Specifically, it's a guarantee made
+        // by out_of_place_sort(), which has been
+        // called for all data in tmp_bucket.
+        tmp_bucket.assume_init()
+    };
 
     bucket
         .arbitrary_chunks_mut(counts)

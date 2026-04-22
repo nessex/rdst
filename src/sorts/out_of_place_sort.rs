@@ -45,18 +45,32 @@
 
 use crate::radix_key::RadixKeyChecked;
 use crate::utils::*;
+use std::mem::MaybeUninit;
 
 #[inline]
 pub fn out_of_place_sort<T>(
     src_bucket: &[T],
-    dst_bucket: &mut [T],
+    // XXX: After calling this function, all
+    // values in dst_bucket _must_ be considered
+    // initialized. It's up to this function
+    // to maintain that invariant for all callers
+    // that expect this behaviour.
+    dst_bucket: &mut [MaybeUninit<T>],
     counts: &[usize; 256],
     level: usize,
 ) where
     T: RadixKeyChecked + Sized + Send + Copy + Sync,
 {
     if src_bucket.len() < 2 {
-        dst_bucket.copy_from_slice(src_bucket);
+        unsafe {
+            // SAFETY: We are writing all values
+            // of dst_bucket with an initialized
+            // array src_bucket.
+            // After the copy_from_slice, dst_bucket becomes
+            // entirely initialized.
+            dst_bucket.assume_init_mut()
+        }
+        .copy_from_slice(src_bucket);
         return;
     }
 
@@ -75,27 +89,27 @@ pub fn out_of_place_sort<T>(
         let g = chunk[6].get_level_checked(level) as usize;
         let h = chunk[7].get_level_checked(level) as usize;
 
-        dst_bucket[prefix_sums[a]] = chunk[0];
+        dst_bucket[prefix_sums[a]] = MaybeUninit::new(chunk[0]);
         prefix_sums[a] += 1;
-        dst_bucket[prefix_sums[b]] = chunk[1];
+        dst_bucket[prefix_sums[b]] = MaybeUninit::new(chunk[1]);
         prefix_sums[b] += 1;
-        dst_bucket[prefix_sums[c]] = chunk[2];
+        dst_bucket[prefix_sums[c]] = MaybeUninit::new(chunk[2]);
         prefix_sums[c] += 1;
-        dst_bucket[prefix_sums[d]] = chunk[3];
+        dst_bucket[prefix_sums[d]] = MaybeUninit::new(chunk[3]);
         prefix_sums[d] += 1;
-        dst_bucket[prefix_sums[e]] = chunk[4];
+        dst_bucket[prefix_sums[e]] = MaybeUninit::new(chunk[4]);
         prefix_sums[e] += 1;
-        dst_bucket[prefix_sums[f]] = chunk[5];
+        dst_bucket[prefix_sums[f]] = MaybeUninit::new(chunk[5]);
         prefix_sums[f] += 1;
-        dst_bucket[prefix_sums[g]] = chunk[6];
+        dst_bucket[prefix_sums[g]] = MaybeUninit::new(chunk[6]);
         prefix_sums[g] += 1;
-        dst_bucket[prefix_sums[h]] = chunk[7];
+        dst_bucket[prefix_sums[h]] = MaybeUninit::new(chunk[7]);
         prefix_sums[h] += 1;
     });
 
     rem.iter().for_each(|val| {
         let b = val.get_level_checked(level) as usize;
-        dst_bucket[prefix_sums[b]] = *val;
+        dst_bucket[prefix_sums[b]] = MaybeUninit::new(*val);
         prefix_sums[b] += 1;
     });
 }
@@ -103,7 +117,12 @@ pub fn out_of_place_sort<T>(
 #[inline]
 pub fn out_of_place_sort_with_counts<T>(
     src_bucket: &[T],
-    dst_bucket: &mut [T],
+    // XXX: After calling this function, all
+    // values in dst_bucket _must_ be considered
+    // initialized. It's up to this function
+    // to maintain that invariant for all callers
+    // that expect this behaviour.
+    dst_bucket: &mut [MaybeUninit<T>],
     counts: &[usize; 256],
     level: usize,
 ) -> [usize; 256]
@@ -114,7 +133,7 @@ where
         return [0usize; 256];
     } else if src_bucket.len() == 1 {
         let mut counts = [0usize; 256];
-        dst_bucket.copy_from_slice(src_bucket);
+        dst_bucket[0] = MaybeUninit::new(src_bucket[0]);
         counts[src_bucket[0].get_level_checked(level) as usize] = 1;
         return counts;
     }
@@ -145,28 +164,28 @@ where
         let b7 = chunk[7].get_level_checked(level) as usize;
         let bn7 = chunk[7].get_level_checked(next_level) as usize;
 
-        dst_bucket[prefix_sums[b0]] = chunk[0];
+        dst_bucket[prefix_sums[b0]] = MaybeUninit::new(chunk[0]);
         prefix_sums[b0] += 1;
         next_counts_0[bn0] += 1;
-        dst_bucket[prefix_sums[b1]] = chunk[1];
+        dst_bucket[prefix_sums[b1]] = MaybeUninit::new(chunk[1]);
         prefix_sums[b1] += 1;
         next_counts_1[bn1] += 1;
-        dst_bucket[prefix_sums[b2]] = chunk[2];
+        dst_bucket[prefix_sums[b2]] = MaybeUninit::new(chunk[2]);
         prefix_sums[b2] += 1;
         next_counts_0[bn2] += 1;
-        dst_bucket[prefix_sums[b3]] = chunk[3];
+        dst_bucket[prefix_sums[b3]] = MaybeUninit::new(chunk[3]);
         prefix_sums[b3] += 1;
         next_counts_1[bn3] += 1;
-        dst_bucket[prefix_sums[b4]] = chunk[4];
+        dst_bucket[prefix_sums[b4]] = MaybeUninit::new(chunk[4]);
         prefix_sums[b4] += 1;
         next_counts_0[bn4] += 1;
-        dst_bucket[prefix_sums[b5]] = chunk[5];
+        dst_bucket[prefix_sums[b5]] = MaybeUninit::new(chunk[5]);
         prefix_sums[b5] += 1;
         next_counts_1[bn5] += 1;
-        dst_bucket[prefix_sums[b6]] = chunk[6];
+        dst_bucket[prefix_sums[b6]] = MaybeUninit::new(chunk[6]);
         prefix_sums[b6] += 1;
         next_counts_0[bn6] += 1;
-        dst_bucket[prefix_sums[b7]] = chunk[7];
+        dst_bucket[prefix_sums[b7]] = MaybeUninit::new(chunk[7]);
         prefix_sums[b7] += 1;
         next_counts_1[bn7] += 1;
     });
@@ -174,7 +193,7 @@ where
     rem.iter().for_each(|val| {
         let b = val.get_level_checked(level) as usize;
         let bn = val.get_level_checked(next_level) as usize;
-        dst_bucket[prefix_sums[b]] = *val;
+        dst_bucket[prefix_sums[b]] = MaybeUninit::new(*val);
         prefix_sums[b] += 1;
         next_counts_0[bn] += 1;
     });
@@ -189,14 +208,27 @@ where
 #[inline]
 pub fn lr_out_of_place_sort<T>(
     src_bucket: &[T],
-    dst_bucket: &mut [T],
+    // XXX: After calling this function, all
+    // values in dst_bucket _must_ be considered
+    // initialized. It's up to this function
+    // to maintain that invariant for all callers
+    // that expect this behaviour.
+    dst_bucket: &mut [MaybeUninit<T>],
     counts: &[usize; 256],
     level: usize,
 ) where
     T: RadixKeyChecked + Sized + Send + Copy + Sync,
 {
     if src_bucket.len() < 2 {
-        dst_bucket.copy_from_slice(src_bucket);
+        unsafe {
+            // SAFETY: We are writing all values
+            // of dst_bucket with an initialized
+            // array src_bucket.
+            // After the copy_from_slice, dst_bucket becomes
+            // entirely initialized.
+            dst_bucket.assume_init_mut()
+        }
+        .copy_from_slice(src_bucket);
         return;
     }
 
@@ -214,7 +246,7 @@ pub fn lr_out_of_place_sort<T>(
     for _ in 0..pre {
         let b = src_bucket[right].get_level_checked(level) as usize;
 
-        dst_bucket[ends[b]] = src_bucket[right];
+        dst_bucket[ends[b]] = MaybeUninit::new(src_bucket[right]);
         ends[b] = ends[b].saturating_sub(1);
         right = right.saturating_sub(1);
     }
@@ -235,21 +267,21 @@ pub fn lr_out_of_place_sort<T>(
         let br_2 = src_bucket[right - 2].get_level_checked(level) as usize;
         let br_3 = src_bucket[right - 3].get_level_checked(level) as usize;
 
-        dst_bucket[offsets[bl_0]] = src_bucket[left];
+        dst_bucket[offsets[bl_0]] = MaybeUninit::new(src_bucket[left]);
         offsets[bl_0] = offsets[bl_0].wrapping_add(1);
-        dst_bucket[ends[br_0]] = src_bucket[right];
+        dst_bucket[ends[br_0]] = MaybeUninit::new(src_bucket[right]);
         ends[br_0] = ends[br_0].wrapping_sub(1);
-        dst_bucket[offsets[bl_1]] = src_bucket[left + 1];
+        dst_bucket[offsets[bl_1]] = MaybeUninit::new(src_bucket[left + 1]);
         offsets[bl_1] = offsets[bl_1].wrapping_add(1);
-        dst_bucket[ends[br_1]] = src_bucket[right - 1];
+        dst_bucket[ends[br_1]] = MaybeUninit::new(src_bucket[right - 1]);
         ends[br_1] = ends[br_1].wrapping_sub(1);
-        dst_bucket[offsets[bl_2]] = src_bucket[left + 2];
+        dst_bucket[offsets[bl_2]] = MaybeUninit::new(src_bucket[left + 2]);
         offsets[bl_2] = offsets[bl_2].wrapping_add(1);
-        dst_bucket[ends[br_2]] = src_bucket[right - 2];
+        dst_bucket[ends[br_2]] = MaybeUninit::new(src_bucket[right - 2]);
         ends[br_2] = ends[br_2].wrapping_sub(1);
-        dst_bucket[offsets[bl_3]] = src_bucket[left + 3];
+        dst_bucket[offsets[bl_3]] = MaybeUninit::new(src_bucket[left + 3]);
         offsets[bl_3] = offsets[bl_3].wrapping_add(1);
-        dst_bucket[ends[br_3]] = src_bucket[right - 3];
+        dst_bucket[ends[br_3]] = MaybeUninit::new(src_bucket[right - 3]);
         ends[br_3] = ends[br_3].wrapping_sub(1);
 
         left += 4;
@@ -260,7 +292,12 @@ pub fn lr_out_of_place_sort<T>(
 #[inline]
 pub fn lr_out_of_place_sort_with_counts<T>(
     src_bucket: &[T],
-    dst_bucket: &mut [T],
+    // XXX: After calling this function, all
+    // values in dst_bucket _must_ be considered
+    // initialized. It's up to this function
+    // to maintain that invariant for all callers
+    // that expect this behaviour.
+    dst_bucket: &mut [MaybeUninit<T>],
     counts: &[usize; 256],
     level: usize,
 ) -> [usize; 256]
@@ -271,7 +308,7 @@ where
         return [0usize; 256];
     } else if src_bucket.len() == 1 {
         let mut counts = [0usize; 256];
-        dst_bucket.copy_from_slice(src_bucket);
+        dst_bucket[0] = MaybeUninit::new(src_bucket[0]);
         counts[src_bucket[0].get_level_checked(level) as usize] = 1;
         return counts;
     }
@@ -295,7 +332,7 @@ where
         let b = src_bucket[right].get_level_checked(level) as usize;
         let bn = src_bucket[right].get_level_checked(next_level) as usize;
 
-        dst_bucket[ends[b]] = src_bucket[right];
+        dst_bucket[ends[b]] = MaybeUninit::new(src_bucket[right]);
         ends[b] = ends[b].wrapping_sub(1);
         right = right.wrapping_sub(1);
         next_counts_0[bn] += 1;
@@ -317,23 +354,23 @@ where
         let br_2 = src_bucket[right - 2].get_level_checked(level) as usize;
         let br_3 = src_bucket[right - 3].get_level_checked(level) as usize;
 
-        dst_bucket[offsets[bl_0]] = src_bucket[left];
-        dst_bucket[ends[br_0]] = src_bucket[right];
+        dst_bucket[offsets[bl_0]] = MaybeUninit::new(src_bucket[left]);
+        dst_bucket[ends[br_0]] = MaybeUninit::new(src_bucket[right]);
         ends[br_0] = ends[br_0].wrapping_sub(1);
         offsets[bl_0] = offsets[bl_0].wrapping_add(1);
 
-        dst_bucket[offsets[bl_1]] = src_bucket[left + 1];
-        dst_bucket[ends[br_1]] = src_bucket[right - 1];
+        dst_bucket[offsets[bl_1]] = MaybeUninit::new(src_bucket[left + 1]);
+        dst_bucket[ends[br_1]] = MaybeUninit::new(src_bucket[right - 1]);
         ends[br_1] = ends[br_1].wrapping_sub(1);
         offsets[bl_1] = offsets[bl_1].wrapping_add(1);
 
-        dst_bucket[offsets[bl_2]] = src_bucket[left + 2];
-        dst_bucket[ends[br_2]] = src_bucket[right - 2];
+        dst_bucket[offsets[bl_2]] = MaybeUninit::new(src_bucket[left + 2]);
+        dst_bucket[ends[br_2]] = MaybeUninit::new(src_bucket[right - 2]);
         ends[br_2] = ends[br_2].wrapping_sub(1);
         offsets[bl_2] = offsets[bl_2].wrapping_add(1);
 
-        dst_bucket[offsets[bl_3]] = src_bucket[left + 3];
-        dst_bucket[ends[br_3]] = src_bucket[right - 3];
+        dst_bucket[offsets[bl_3]] = MaybeUninit::new(src_bucket[left + 3]);
+        dst_bucket[ends[br_3]] = MaybeUninit::new(src_bucket[right - 3]);
         ends[br_3] = ends[br_3].wrapping_sub(1);
         offsets[bl_3] = offsets[bl_3].wrapping_add(1);
 

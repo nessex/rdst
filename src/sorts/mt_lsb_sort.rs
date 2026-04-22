@@ -33,10 +33,12 @@ use crate::sorter::Sorter;
 use crate::utils::*;
 use arbitrary_chunks::ArbitraryChunks;
 use rayon::prelude::*;
+use std::mem::transmute;
+use std::mem::MaybeUninit;
 
 pub fn mt_lsb_sort<T>(
-    src_bucket: &mut [T],
-    dst_bucket: &mut [T],
+    src_bucket: &[T],
+    dst_bucket: &mut [MaybeUninit<T>],
     tile_counts: &[[usize; 256]],
     tile_size: usize,
     level: usize,
@@ -44,28 +46,74 @@ pub fn mt_lsb_sort<T>(
     T: RadixKeyChecked + Sized + Send + Copy + Sync,
 {
     let tiles = tile_counts.len();
-    let mut minor_counts = Vec::with_capacity(256 * tiles);
+    let mut minor_counts: Box<[MaybeUninit<usize>]> = Box::new_uninit_slice(256 * tiles);
 
     for b in 0..256 {
-        for tile in tile_counts.iter() {
-            minor_counts.push(tile[b]);
+        for (i, tile) in tile_counts.iter().enumerate() {
+            minor_counts[b * tiles + i] = MaybeUninit::new(tile[b]);
         }
     }
 
-    let mut collated_chunks: Vec<Vec<&mut [T]>> = Vec::with_capacity(tiles);
-    collated_chunks.resize_with(tiles, || Vec::with_capacity(256));
+    let minor_counts = unsafe {
+        debug_assert!({
+            // XXX: This must exactly mirror the logic above
+            // The purpose of this assertion in debug mode is to verify
+            // that minor_counts is _entirely_ written before we
+            // call assume_init().
+            let mut mirror: Vec<bool> = vec![false; 256 * tiles];
+            for b in 0..256 {
+                for (i, _) in tile_counts.iter().enumerate() {
+                    mirror[b * tiles + i] = true;
+                }
+            }
+
+            let mut all_true = true;
+            for v in mirror {
+                if v == false {
+                    all_true = false;
+                }
+            }
+            all_true
+        });
+
+        minor_counts.assume_init()
+    };
+
+    let mut collated_chunks: Box<[MaybeUninit<[MaybeUninit<&mut [MaybeUninit<T>]>; 256]>]> =
+        Box::new_uninit_slice(tiles);
+
+    for chunk in collated_chunks.iter_mut() {
+        let arr: [MaybeUninit<&mut [MaybeUninit<T>]>; 256] = MaybeUninit::uninit().into();
+        *chunk = MaybeUninit::new(arr);
+    }
+
+    let mut collated_chunks: Box<[[MaybeUninit<&mut [MaybeUninit<T>]>; 256]]> = unsafe {
+        // SAFETY: All chunk arrays have been written
+        // directly above.
+        collated_chunks.assume_init()
+    };
 
     let mut chunks = dst_bucket.arbitrary_chunks_mut(&minor_counts);
-    for _ in 0..256 {
+    for b in 0..256 {
         for coll_chunk in collated_chunks.iter_mut() {
-            coll_chunk.push(chunks.next().unwrap());
+            unsafe {
+                // SAFETY:
+                // We are initializing values here without reading.
+                *coll_chunk[b].assume_init_mut() = chunks.next().unwrap();
+            }
         }
     }
+
+    let collated_chunks: Box<[[&mut [T]; 256]]> = unsafe {
+        // SAFETY: Box<[[MaybeUninit<&mut [MaybeUninit<T>]>; 256]]> and Box<[[&mut [T]; 256]]>
+        // have the same layout. Every value has been written above.
+        transmute(collated_chunks)
+    };
 
     collated_chunks
         .into_par_iter()
         .zip(src_bucket.par_chunks(tile_size))
-        .for_each(|(mut buckets, bucket)| {
+        .for_each(|(buckets, bucket)| {
             if bucket.is_empty() {
                 return;
             }
@@ -146,30 +194,47 @@ impl<'a> Sorter<'a> {
             return;
         }
 
-        let mut tmp_bucket = get_tmp_bucket(bucket.len());
+        let mut tmp_bucket = Box::new_uninit_slice(bucket.len());
         let mut invert = false;
 
         for level in start_level..=end_level {
-            let (tile_counts, already_sorted) = if invert {
-                get_tile_counts(&tmp_bucket, tile_size, level)
+            let (src_bucket, dst_bucket): (&[T], &mut [MaybeUninit<T>]) = if invert {
+                (
+                    unsafe {
+                        // SAFETY: Invert is only `true`
+                        // after the first pass when tmp_bucket
+                        // is entirely written
+                        tmp_bucket.assume_init_ref()
+                    },
+                    unsafe {
+                        // SAFETY: We are converting from
+                        // &mut [T] to &mut [MaybeUninit<T>]
+                        // [T] and [MaybeUninit<T>] have the same
+                        // layout.
+                        transmute(bucket.as_mut())
+                    },
+                )
             } else {
-                get_tile_counts(bucket, tile_size, level)
+                (bucket.as_ref(), &mut tmp_bucket)
             };
+            let (tile_counts, already_sorted) = get_tile_counts(src_bucket, tile_size, level);
 
             if already_sorted {
                 continue;
             }
 
-            if invert {
-                mt_lsb_sort(&mut tmp_bucket, bucket, &tile_counts, tile_size, level)
-            } else {
-                mt_lsb_sort(bucket, &mut tmp_bucket, &tile_counts, tile_size, level)
-            };
+            mt_lsb_sort(src_bucket, dst_bucket, &tile_counts, tile_size, level);
 
             invert = !invert;
         }
 
         if invert {
+            let tmp_bucket = unsafe {
+                // SAFETY: tmp_bucket is guaranteed to have
+                // been written if invert is true.
+                tmp_bucket.assume_init()
+            };
+
             bucket
                 .par_chunks_mut(tile_size)
                 .zip(tmp_bucket.par_chunks(tile_size))
@@ -193,8 +258,15 @@ impl<'a> Sorter<'a> {
             return;
         }
 
-        let mut tmp_bucket = get_tmp_bucket(bucket.len());
+        let mut tmp_bucket = Box::new_uninit_slice(bucket.len());
         mt_lsb_sort(bucket, &mut tmp_bucket, tile_counts, tile_size, level);
+
+        let tmp_bucket = unsafe {
+            // SAFETY: mt_lsb_sort
+            // guarantees tmp_bucket is written
+            // at least once.
+            tmp_bucket.assume_init()
+        };
 
         bucket
             .par_chunks_mut(tile_size)

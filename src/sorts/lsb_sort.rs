@@ -35,6 +35,7 @@ use crate::sorts::out_of_place_sort::{
     out_of_place_sort_with_counts,
 };
 use crate::utils::*;
+use std::mem::{transmute, MaybeUninit};
 
 impl<'a> Sorter<'a> {
     pub(crate) fn lsb_sort_adapter<T>(
@@ -51,21 +52,36 @@ impl<'a> Sorter<'a> {
             return;
         }
 
-        let mut tmp_bucket = get_tmp_bucket(bucket.len());
+        let mut tmp_bucket = Box::new_uninit_slice(bucket.len());
         let mut invert = false;
         let mut next_counts = None;
 
         'outer: for level in start_level..=end_level {
+            let (src_bucket, dst_bucket): (&[T], &mut [MaybeUninit<T>]) = if invert {
+                (
+                    unsafe {
+                        // SAFETY: Invert is only `true`
+                        // after the first pass when tmp_bucket
+                        // is entirely written
+                        tmp_bucket.assume_init_ref()
+                    },
+                    unsafe {
+                        // SAFETY: We are converting from
+                        // &mut [T] to &mut [MaybeUninit<T>]
+                        // [T] and [MaybeUninit<T>] have the same
+                        // layout.
+                        transmute(bucket.as_mut())
+                    },
+                )
+            } else {
+                (bucket.as_ref(), &mut tmp_bucket)
+            };
             let counts = if level == end_level {
                 *last_counts
             } else if let Some(next_counts) = next_counts {
                 next_counts
             } else {
-                let (counts, already_sorted) = if invert {
-                    get_counts(&tmp_bucket, level)
-                } else {
-                    get_counts(bucket, level)
-                };
+                let (counts, already_sorted) = get_counts(src_bucket, level);
 
                 if already_sorted {
                     next_counts = None;
@@ -76,7 +92,7 @@ impl<'a> Sorter<'a> {
             };
 
             for c in counts.iter() {
-                if *c == bucket.len() {
+                if *c == src_bucket.len() {
                     next_counts = None;
                     continue 'outer;
                 } else if *c > 0 {
@@ -89,52 +105,37 @@ impl<'a> Sorter<'a> {
                 next_counts = None;
             }
 
-            match (lr, invert, should_count) {
-                (true, true, true) => {
+            match (lr, should_count) {
+                (true, true) => {
                     next_counts = Some(lr_out_of_place_sort_with_counts(
-                        &tmp_bucket,
-                        bucket,
+                        &src_bucket,
+                        dst_bucket,
                         &counts,
                         level,
                     ))
                 }
-                (true, true, false) => lr_out_of_place_sort(&tmp_bucket, bucket, &counts, level),
-                (true, false, true) => {
-                    next_counts = Some(lr_out_of_place_sort_with_counts(
-                        bucket,
-                        &mut tmp_bucket,
-                        &counts,
-                        level,
-                    ))
-                }
-                (true, false, false) => {
-                    lr_out_of_place_sort(bucket, &mut tmp_bucket, &counts, level)
-                }
-                (false, true, true) => {
+                (true, false) => lr_out_of_place_sort(&src_bucket, dst_bucket, &counts, level),
+                (false, true) => {
                     next_counts = Some(out_of_place_sort_with_counts(
-                        &tmp_bucket,
-                        bucket,
+                        &src_bucket,
+                        dst_bucket,
                         &counts,
                         level,
                     ))
                 }
-                (false, true, false) => out_of_place_sort(&tmp_bucket, bucket, &counts, level),
-                (false, false, true) => {
-                    next_counts = Some(out_of_place_sort_with_counts(
-                        bucket,
-                        &mut tmp_bucket,
-                        &counts,
-                        level,
-                    ))
-                }
-                (false, false, false) => out_of_place_sort(bucket, &mut tmp_bucket, &counts, level),
+                (false, false) => out_of_place_sort(&src_bucket, dst_bucket, &counts, level),
             };
 
             invert = !invert;
         }
 
         if invert {
-            bucket.copy_from_slice(&tmp_bucket);
+            unsafe {
+                // SAFETY:
+                // All values of tmp_bucket were written in the first iteration
+                // of the loop above.
+                bucket.copy_from_slice(tmp_bucket.assume_init_ref());
+            }
         }
     }
 }

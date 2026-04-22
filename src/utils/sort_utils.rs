@@ -57,15 +57,19 @@ where
     let mut already_sorted = true;
 
     const BOUNDARIES_STACK_LEN: usize = 128;
-    let mut boundaries_heap: Vec<(u8, u8)>;
+    let mut boundaries_heap: Box<[(u8, u8)]>;
     let mut boundaries_stack: [(u8, u8); BOUNDARIES_STACK_LEN];
 
     let boundaries = if len <= BOUNDARIES_STACK_LEN {
         boundaries_stack = [(0u8, 0u8); BOUNDARIES_STACK_LEN];
         boundaries_stack.as_mut_slice()
     } else {
-        boundaries_heap = Vec::with_capacity(len);
-        boundaries_heap.as_mut_slice()
+        boundaries_heap = unsafe {
+            // SAFETY: [(0u8, 0u8)] and a zeroed slice are the same
+            // at the bit level.
+            Box::new_zeroed_slice(len).assume_init()
+        };
+        &mut boundaries_heap
     };
 
     for _ in 0..len {
@@ -184,21 +188,6 @@ where
     let (counts, sorted, _, _) = get_counts_with_ends(bucket, level);
 
     (counts, sorted)
-}
-
-#[allow(clippy::uninit_vec)]
-#[inline]
-pub fn get_tmp_bucket<T>(len: usize) -> Vec<T> {
-    let mut tmp_bucket = Vec::with_capacity(len);
-    unsafe {
-        // Safety: This will leave the vec with potentially uninitialized data
-        // however as we account for every value when placing things
-        // into tmp_bucket, this is "safe". This is used because it provides a
-        // very significant speed improvement over resize, to_vec etc.
-        tmp_bucket.set_len(len);
-    }
-
-    tmp_bucket
 }
 
 #[inline]
