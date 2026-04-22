@@ -21,8 +21,8 @@
 //! types or inputs, the memory efficiency of this algorithm can make it faster than `lsb_sort`.
 
 use crate::radix_key::RadixKeyChecked;
+use crate::sort_utils::*;
 use crate::sorter::Sorter;
-use crate::utils::*;
 use partition::partition_index;
 
 pub fn ska_sort<T>(
@@ -112,13 +112,13 @@ impl<'a> Sorter<'a> {
 
 #[cfg(test)]
 mod tests {
+    use crate::sort_utils::get_counts;
     use crate::sorter::Sorter;
-    use crate::tuner::Algorithm;
-    use crate::utils::get_counts;
-    use crate::utils::test_utils::{
+    use crate::test_utils::{
         sort_comparison_suite, sort_single_algorithm, validate_u32_patterns, NumericTest,
         SingleAlgoTuner,
     };
+    use crate::tuner::Algorithm;
     use crate::RadixKey;
 
     fn test_ska_sort_adapter<T>(shift: T)

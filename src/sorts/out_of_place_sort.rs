@@ -44,7 +44,7 @@
 //!  * lsb-first
 
 use crate::radix_key::RadixKeyChecked;
-use crate::utils::*;
+use crate::sort_utils::*;
 use std::mem::MaybeUninit;
 
 #[inline]

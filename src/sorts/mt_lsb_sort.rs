@@ -29,8 +29,8 @@
 //! This variant uses the same algorithm as `mt_lsb_sort` but uses it in msb-first order.
 
 use crate::radix_key::RadixKeyChecked;
+use crate::sort_utils::*;
 use crate::sorter::Sorter;
-use crate::utils::*;
 use arbitrary_chunks::ArbitraryChunks;
 use rayon::prelude::*;
 use std::mem::transmute;
@@ -287,13 +287,13 @@ impl<'a> Sorter<'a> {
 
 #[cfg(test)]
 mod tests {
+    use crate::sort_utils::{aggregate_tile_counts, cdiv, get_tile_counts};
     use crate::sorter::Sorter;
-    use crate::tuner::Algorithm;
-    use crate::utils::test_utils::{
+    use crate::test_utils::{
         sort_comparison_suite, sort_single_algorithm, validate_u32_patterns, NumericTest,
         SingleAlgoTuner,
     };
-    use crate::utils::{aggregate_tile_counts, cdiv, get_tile_counts};
+    use crate::tuner::Algorithm;
     use crate::RadixKey;
     use rayon::current_num_threads;
 

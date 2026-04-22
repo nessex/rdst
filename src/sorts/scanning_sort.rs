@@ -34,8 +34,8 @@
 //! however, so it should not be used in all situations.
 
 use crate::radix_key::RadixKeyChecked;
+use crate::sort_utils::*;
 use crate::sorter::Sorter;
-use crate::utils::*;
 use arbitrary_chunks::ArbitraryChunks;
 use partition::partition_index;
 use rayon::current_num_threads;
@@ -271,13 +271,13 @@ impl<'a> Sorter<'a> {
 
 #[cfg(test)]
 mod tests {
+    use crate::sort_utils::get_counts;
     use crate::sorter::Sorter;
-    use crate::tuner::Algorithm;
-    use crate::utils::get_counts;
-    use crate::utils::test_utils::{
+    use crate::test_utils::{
         sort_comparison_suite, sort_single_algorithm, validate_u32_patterns, NumericTest,
         SingleAlgoTuner,
     };
+    use crate::tuner::Algorithm;
     use crate::RadixKey;
 
     fn test_scanning_sort<T>(shift: T)

@@ -1,6 +1,6 @@
 use crate::radix_key::RadixKeyChecked;
+use crate::sort_utils::*;
 use crate::tuner::{Algorithm, Tuner, TuningParams};
-use crate::utils::*;
 use arbitrary_chunks::ArbitraryChunks;
 #[cfg(feature = "multi-threaded")]
 use rayon::current_num_threads;

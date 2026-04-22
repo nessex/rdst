@@ -175,10 +175,12 @@ mod radix_key;
 mod radix_key_impl;
 mod radix_sort;
 mod radix_sort_builder;
+mod sort_utils;
 mod sorter;
 mod sorts;
+#[cfg(test)]
+mod test_utils;
 mod tuners;
-mod utils;
 
 // Public modules
 pub mod tuner;

@@ -266,7 +266,7 @@ pub fn is_homogenous_bucket(counts: &[usize; 256]) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use crate::utils::get_tile_counts;
+    use crate::sort_utils::get_tile_counts;
 
     #[test]
     pub fn test_get_tile_counts_correctly_marks_already_sorted_single_tile() {

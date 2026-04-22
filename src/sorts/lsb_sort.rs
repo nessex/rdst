@@ -29,12 +29,12 @@
 //! some caching benefits etc., but has been benchmarked at roughly 5-15% speedup.
 
 use crate::radix_key::RadixKeyChecked;
+use crate::sort_utils::*;
 use crate::sorter::Sorter;
 use crate::sorts::out_of_place_sort::{
     lr_out_of_place_sort, lr_out_of_place_sort_with_counts, out_of_place_sort,
     out_of_place_sort_with_counts,
 };
-use crate::utils::*;
 use std::mem::{transmute, MaybeUninit};
 
 impl<'a> Sorter<'a> {
@@ -142,13 +142,13 @@ impl<'a> Sorter<'a> {
 
 #[cfg(test)]
 mod tests {
+    use crate::sort_utils::get_counts;
     use crate::sorter::Sorter;
-    use crate::tuner::Algorithm;
-    use crate::utils::get_counts;
-    use crate::utils::test_utils::{
+    use crate::test_utils::{
         sort_comparison_suite, sort_single_algorithm, validate_u32_patterns, NumericTest,
         SingleAlgoTuner,
     };
+    use crate::tuner::Algorithm;
     use crate::RadixKey;
 
     fn test_lsb_sort_adapter<T>(shift: T)

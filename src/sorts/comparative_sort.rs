@@ -120,11 +120,11 @@ impl<'a> Sorter<'a> {
 #[cfg(test)]
 mod tests {
     use crate::sorter::Sorter;
-    use crate::tuner::Algorithm;
-    use crate::utils::test_utils::{
+    use crate::test_utils::{
         sort_comparison_suite, sort_single_algorithm, validate_u32_patterns, NumericTest,
         SingleAlgoTuner,
     };
+    use crate::tuner::Algorithm;
     use crate::RadixKey;
 
     fn test_comparative_sort_adapter<T>(shift: T)

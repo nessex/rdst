@@ -46,10 +46,10 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::tuner::{Algorithm, Tuner, TuningParams};
     #[cfg(feature = "multi-threaded")]
-    use crate::utils::test_utils::SingleAlgoTuner;
-    use crate::utils::test_utils::{sort_comparison_suite, NumericTest};
+    use crate::test_utils::SingleAlgoTuner;
+    use crate::test_utils::{sort_comparison_suite, NumericTest};
+    use crate::tuner::{Algorithm, Tuner, TuningParams};
     use crate::RadixSort;
     use block_pseudorand::block_rand;
     use std::cmp::Ordering;
