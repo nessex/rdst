@@ -24,6 +24,30 @@
 use crate::radix_key::RadixKeyChecked;
 use crate::sorter::Sorter;
 use std::cmp::Ordering;
+use std::ops::{BitOrAssign, ShlAssign};
+
+#[inline(always)]
+fn cmp_packed<T, PackedRepr, const NUM_LEVELS: usize>(a: &T, b: &T) -> Ordering
+where
+    T: RadixKeyChecked + Sized + Send + Copy + Sync,
+    PackedRepr: Ord + ShlAssign + BitOrAssign + From<u8>,
+{
+    let mut acc_a: PackedRepr = 0u8.into();
+    let mut acc_b: PackedRepr = 0u8.into();
+
+    // This loop is designed to be trivial for the
+    // compiler to unroll for any given NumLevels.
+    let mut i = NUM_LEVELS;
+    while i > 0 {
+        i -= 1;
+        acc_a <<= 8.into();
+        acc_a |= a.get_level_checked(i).into();
+        acc_b <<= 8.into();
+        acc_b |= b.get_level_checked(i).into();
+    }
+
+    acc_a.cmp(&acc_b)
+}
 
 impl<'a> Sorter<'a> {
     pub(crate) fn comparative_sort<T>(&self, bucket: &mut [T], start_level: usize)
@@ -34,19 +58,62 @@ impl<'a> Sorter<'a> {
             return;
         }
 
-        bucket.sort_unstable_by(|a, b| -> Ordering {
-            let mut level = start_level;
-            loop {
-                let cmp = a.get_level_checked(level).cmp(&b.get_level_checked(level));
-
-                if level != 0 && cmp == Ordering::Equal {
-                    level -= 1;
-                    continue;
-                }
-
-                return cmp;
+        match start_level {
+            // The conditionals here are to help the compiler
+            // shake unnecessary match arms out of the end result.
+            // This is heavily inlined & unrolled so all these arms add bloat.
+            // But the speedup is substantial, on the order of 10x the naive loop version.
+            0 if T::LEVELS >= 1 => bucket.sort_unstable_by(|a, b| cmp_packed::<T, u8, 1>(a, b)),
+            1 if T::LEVELS >= 2 => bucket.sort_unstable_by(|a, b| cmp_packed::<T, u16, 2>(a, b)),
+            2 if T::LEVELS >= 3 => bucket.sort_unstable_by(|a, b| cmp_packed::<T, u32, 3>(a, b)),
+            3 if T::LEVELS >= 4 => bucket.sort_unstable_by(|a, b| cmp_packed::<T, u32, 4>(a, b)),
+            4 if T::LEVELS >= 5 => bucket.sort_unstable_by(|a, b| cmp_packed::<T, u64, 5>(a, b)),
+            5 if T::LEVELS >= 6 => bucket.sort_unstable_by(|a, b| cmp_packed::<T, u64, 6>(a, b)),
+            6 if T::LEVELS >= 7 => bucket.sort_unstable_by(|a, b| cmp_packed::<T, u64, 7>(a, b)),
+            7 if T::LEVELS >= 8 => bucket.sort_unstable_by(|a, b| cmp_packed::<T, u64, 8>(a, b)),
+            8 if T::LEVELS >= 9 => bucket.sort_unstable_by(|a, b| cmp_packed::<T, u128, 9>(a, b)),
+            9 if T::LEVELS >= 10 => bucket.sort_unstable_by(|a, b| cmp_packed::<T, u128, 10>(a, b)),
+            10 if T::LEVELS >= 11 => {
+                bucket.sort_unstable_by(|a, b| cmp_packed::<T, u128, 11>(a, b))
             }
-        });
+            11 if T::LEVELS >= 12 => {
+                bucket.sort_unstable_by(|a, b| cmp_packed::<T, u128, 12>(a, b))
+            }
+            12 if T::LEVELS >= 13 => {
+                bucket.sort_unstable_by(|a, b| cmp_packed::<T, u128, 13>(a, b))
+            }
+            13 if T::LEVELS >= 14 => {
+                bucket.sort_unstable_by(|a, b| cmp_packed::<T, u128, 14>(a, b))
+            }
+            14 if T::LEVELS >= 15 => {
+                bucket.sort_unstable_by(|a, b| cmp_packed::<T, u128, 15>(a, b))
+            }
+            15 if T::LEVELS >= 16 => {
+                bucket.sort_unstable_by(|a, b| cmp_packed::<T, u128, 16>(a, b))
+            }
+            _ if T::LEVELS >= 17 => bucket.sort_unstable_by(
+                #[inline]
+                |a, b| -> Ordering {
+                    let mut level = start_level;
+
+                    loop {
+                        let al = a.get_level_checked(level);
+                        let bl = b.get_level_checked(level);
+                        let c = al.cmp(&bl);
+                        if c != Ordering::Equal {
+                            return c;
+                        }
+
+                        if level == 0 {
+                            return Ordering::Equal;
+                        }
+
+                        level -= 1;
+                    }
+                },
+            ),
+            _ => unreachable!(),
+        };
     }
 }
 
