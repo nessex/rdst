@@ -37,6 +37,8 @@ use rayon::prelude::*;
 use std::mem::MaybeUninit;
 use std::mem::transmute;
 
+type MaybeUninitChunk<'a, T> = [MaybeUninit<&'a mut [MaybeUninit<T>]>; 256];
+
 pub fn mt_lsb_sort<T>(
     src_bucket: &[T],
     dst_bucket: &mut [MaybeUninit<T>],
@@ -80,15 +82,14 @@ pub fn mt_lsb_sort<T>(
         minor_counts.assume_init()
     };
 
-    let mut collated_chunks: Box<[MaybeUninit<[MaybeUninit<&mut [MaybeUninit<T>]>; 256]>]> =
-        Box::new_uninit_slice(tiles);
+    let mut collated_chunks: Box<[MaybeUninit<MaybeUninitChunk<T>>]> = Box::new_uninit_slice(tiles);
 
     for chunk in collated_chunks.iter_mut() {
-        let arr: [MaybeUninit<&mut [MaybeUninit<T>]>; 256] = MaybeUninit::uninit().into();
+        let arr: MaybeUninitChunk<T> = MaybeUninit::uninit().into();
         *chunk = MaybeUninit::new(arr);
     }
 
-    let mut collated_chunks: Box<[[MaybeUninit<&mut [MaybeUninit<T>]>; 256]]> = unsafe {
+    let mut collated_chunks: Box<[MaybeUninitChunk<T>]> = unsafe {
         // SAFETY: All chunk arrays have been written
         // directly above.
         collated_chunks.assume_init()
