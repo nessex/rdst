@@ -2,9 +2,9 @@ name: Rust
 
 on:
   push:
-    branches: [ master ]
+    branches: [master]
   pull_request:
-    branches: [ master ]
+    branches: [master]
 
 env:
   CARGO_TERM_COLOR: always
@@ -14,69 +14,59 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v4
-      - name: Install nightly toolchain with clippy available
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: nightly
-          override: true
-          components: rustfmt, clippy
+        uses: actions/checkout@v6
+      - name: Set rust to nightly
+        run: rustup override set nightly
       - name: Run cargo fmt
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check
-      - name: Run cargo clippy
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: -- -D warnings
+        run: cargo fmt --all -- --check
+      - name: Run cargo fmt
+        run: cargo clippy -- -D warnings
+
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Run tests
         run: cargo test --verbose --release
 
-  test-fixture:
+  test-min-supported:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Run fixture
-        working-directory: fixture
+      - uses: actions/checkout@v6
+      - name: Run min-supported
+        working-directory: fixtures/min-supported
+        run: cargo run --release
+
+  test-max-tested:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Run max-tested
+        working-directory: fixtures/max-tested
         run: cargo run --release
 
   test-profiling:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Install nightly toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: nightly
-          override: true
+      - uses: actions/checkout@v6
+      - name: Set rust to nightly
+        run: rustup override set nightly
       - name: Run profiling script
         run: ./scripts/profiling.rs
 
   test-timings:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Install nightly toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: nightly
-          override: true
+      - uses: actions/checkout@v6
+      - name: Set rust to nightly
+        run: rustup override set nightly
       - name: Run timings script
         run: ./scripts/timings.rs 1234 "Hello world"
 
   test-examples:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Run simple_usage
         run: cargo run --example simple_usage
       - name: Run single_threaded

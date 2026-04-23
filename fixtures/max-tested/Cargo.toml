@@ -1,5 +1,5 @@
 [package]
-name = "fixture"
+name = "max-tested"
 description = "Used to check that the library still works even when included externally"
 version = "0.1.0"
 # This fixture explicitly uses the latest version of Rust, edition and resolver
@@ -10,10 +10,13 @@ version = "0.1.0"
 #
 # Minimum versions specified in the main `../Cargo.toml` ensure backward compatibility.
 edition = "2024"
-rust-version = "1.91"
-resolver = "2"
+rust-version = "1.95"
+resolver = "3"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rdst = { path = "../" }
+rdst = { path = "../../" }
+rayon = "=1.12"
+arbitrary-chunks = "=0.4.1"
+partition = "=0.1.2"
