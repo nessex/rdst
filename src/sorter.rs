@@ -27,47 +27,33 @@ impl<'a> Sorter<'a> {
         level: usize,
         bucket: &mut [T],
         counts: &RadixArray<usize>,
-        tile_counts: Option<&[RadixArray<usize>]>,
+        #[allow(unused)] tile_counts: &[RadixArray<usize>],
         #[allow(unused)] tile_size: usize,
         algorithm: Algorithm,
     ) where
         T: RadixKeyChecked + Copy + Sized + Send + Sync,
     {
-        #[allow(unused)]
-        if let Some(tile_counts) = tile_counts {
-            match algorithm {
-                #[cfg(feature = "multi-threaded")]
-                Algorithm::Scanning => self.scanning_sort_adapter(bucket, counts, level),
-                #[cfg(feature = "multi-threaded")]
-                Algorithm::Recombinating => {
-                    self.recombinating_sort_adapter(bucket, counts, tile_counts, tile_size, level)
-                }
-                Algorithm::LrLsb => self.lsb_sort_adapter(true, bucket, counts, 0, level),
-                Algorithm::Lsb => self.lsb_sort_adapter(false, bucket, counts, 0, level),
-                Algorithm::Ska => self.ska_sort_adapter(bucket, counts, level),
-                Algorithm::Comparative => self.comparative_sort(bucket, level),
-                #[cfg(feature = "multi-threaded")]
-                Algorithm::Regions => {
-                    self.regions_sort_adapter(bucket, counts, tile_counts, tile_size, level)
-                }
-                #[cfg(feature = "multi-threaded")]
-                Algorithm::MtOop => {
-                    self.mt_oop_sort_adapter(bucket, level, counts, tile_counts, tile_size)
-                }
-                #[cfg(feature = "multi-threaded")]
-                Algorithm::MtLsb => self.mt_lsb_sort_adapter(bucket, 0, level, tile_size),
+        match algorithm {
+            #[cfg(feature = "multi-threaded")]
+            Algorithm::Scanning => self.scanning_sort_adapter(bucket, counts, level),
+            #[cfg(feature = "multi-threaded")]
+            Algorithm::Recombinating => {
+                self.recombinating_sort_adapter(bucket, counts, tile_counts, tile_size, level)
             }
-        } else {
-            match algorithm {
-                #[cfg(feature = "multi-threaded")]
-                Algorithm::Scanning => self.scanning_sort_adapter(bucket, counts, level),
-                Algorithm::LrLsb => self.lsb_sort_adapter(true, bucket, counts, 0, level),
-                Algorithm::Lsb => self.lsb_sort_adapter(false, bucket, counts, 0, level),
-                Algorithm::Ska => self.ska_sort_adapter(bucket, counts, level),
-                Algorithm::Comparative => self.comparative_sort(bucket, level),
-                #[cfg(feature = "multi-threaded")]
-                e => panic!("Bad algorithm: {:?} for len: {}", e, bucket.len()),
+            Algorithm::LrLsb => self.lsb_sort_adapter(true, bucket, counts, 0, level),
+            Algorithm::Lsb => self.lsb_sort_adapter(false, bucket, counts, 0, level),
+            Algorithm::Ska => self.ska_sort_adapter(bucket, counts, level),
+            Algorithm::Comparative => self.comparative_sort(bucket, level),
+            #[cfg(feature = "multi-threaded")]
+            Algorithm::Regions => {
+                self.regions_sort_adapter(bucket, counts, tile_counts, tile_size, level)
             }
+            #[cfg(feature = "multi-threaded")]
+            Algorithm::MtOop => {
+                self.mt_oop_sort_adapter(bucket, level, counts, tile_counts, tile_size)
+            }
+            #[cfg(feature = "multi-threaded")]
+            Algorithm::MtLsb => self.mt_lsb_sort_adapter(bucket, 0, level, tile_size),
         }
     }
 
@@ -87,8 +73,12 @@ impl<'a> Sorter<'a> {
             return;
         }
 
-        let use_tiles =
-            cfg!(feature = "multi-threaded") && self.multi_threaded && chunk.len() >= 260_000;
+        #[cfg(feature = "multi-threaded")]
+        let use_tiles = self.multi_threaded && chunk.len() >= 260_000;
+
+        #[cfg(not(feature = "multi-threaded"))]
+        let use_tiles = false;
+
         let tile_size = if use_tiles {
             max(30_000, chunk.len().div_ceil(threads))
         } else {
@@ -130,15 +120,15 @@ impl<'a> Sorter<'a> {
 
         let algorithm = self.tuner.pick_algorithm(&tp, counts.inner());
 
-        // Ensure tile_counts is always set when it is required
         #[cfg(feature = "work_profiles")]
         println!("({}) PAR: {:?}", level, algorithm);
 
-        let tile_counts_ref = tile_counts
+        // Ensure tile_counts is always set when it is required
+        let tile_counts = tile_counts
             .as_deref()
-            .or_else(|| Some(std::slice::from_ref(&counts)));
+            .unwrap_or_else(|| std::slice::from_ref(&counts));
 
-        self.run_sort(level, chunk, &counts, tile_counts_ref, tile_size, algorithm);
+        self.run_sort(level, chunk, &counts, tile_counts, tile_size, algorithm);
     }
 
     #[inline]
