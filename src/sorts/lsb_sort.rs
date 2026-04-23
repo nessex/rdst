@@ -36,7 +36,7 @@ use crate::sorts::out_of_place_sort::{
     lr_out_of_place_sort, lr_out_of_place_sort_with_counts, out_of_place_sort,
     out_of_place_sort_with_counts,
 };
-use std::mem::{transmute, MaybeUninit};
+use std::mem::{MaybeUninit, transmute};
 
 impl<'a> Sorter<'a> {
     pub(crate) fn lsb_sort_adapter<T>(
@@ -143,14 +143,14 @@ impl<'a> Sorter<'a> {
 
 #[cfg(test)]
 mod tests {
+    use crate::RadixKey;
     use crate::sort_utils::get_counts;
     use crate::sorter::Sorter;
     use crate::test_utils::{
-        sort_comparison_suite, sort_single_algorithm, validate_u32_patterns, NumericTest,
-        SingleAlgoTuner,
+        NumericTest, SingleAlgoTuner, sort_comparison_suite, sort_single_algorithm,
+        validate_u32_patterns,
     };
     use crate::tuner::Algorithm;
-    use crate::RadixKey;
 
     fn test_lsb_sort_adapter<T>(shift: T)
     where

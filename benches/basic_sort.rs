@@ -1,8 +1,8 @@
 mod bench_utils;
 
-use bench_utils::bench_single;
 use bench_utils::NumericTest;
-use criterion::{criterion_group, criterion_main, Criterion};
+use bench_utils::bench_single;
+use criterion::{Criterion, criterion_group, criterion_main};
 use rdst::RadixSort;
 use std::hint::black_box;
 

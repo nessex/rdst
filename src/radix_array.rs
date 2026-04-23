@@ -8,7 +8,7 @@ where
     T: Copy + Sized,
 {
     pub fn new(initial_value: T) -> Self {
-        Self([initial_value; _])
+        Self([initial_value; VALUES])
     }
 
     pub fn get(&self, index: u8) -> T {

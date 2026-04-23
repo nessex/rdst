@@ -46,7 +46,7 @@ use crate::sorts::ska_sort::ska_sort;
 use partition::partition_index;
 use rayon::current_num_threads;
 use rayon::prelude::*;
-use std::cmp::{min, Ordering};
+use std::cmp::{Ordering, min};
 
 /// Operation represents a pair of edges, which have content slices that need to be swapped.
 struct Operation<'bucket, T>(Edge<'bucket, T>, Edge<'bucket, T>);
@@ -289,14 +289,14 @@ impl<'a> Sorter<'a> {
 
 #[cfg(test)]
 mod tests {
+    use crate::RadixKey;
     use crate::sort_utils::{aggregate_tile_counts, cdiv, get_tile_counts};
     use crate::sorter::Sorter;
     use crate::test_utils::{
-        sort_comparison_suite, sort_single_algorithm, validate_u32_patterns, NumericTest,
-        SingleAlgoTuner,
+        NumericTest, SingleAlgoTuner, sort_comparison_suite, sort_single_algorithm,
+        validate_u32_patterns,
     };
     use crate::tuner::Algorithm;
-    use crate::RadixKey;
     use rayon::current_num_threads;
 
     fn test_regions_sort<T>(shift: T)

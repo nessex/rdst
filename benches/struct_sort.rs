@@ -1,7 +1,7 @@
 use block_pseudorand::block_rand;
 use criterion::{
-    criterion_group, criterion_main, AxisScale, BatchSize, BenchmarkId, Criterion,
-    PlotConfiguration, Throughput,
+    AxisScale, BatchSize, BenchmarkId, Criterion, PlotConfiguration, Throughput, criterion_group,
+    criterion_main,
 };
 use rdst::{RadixKey, RadixSort};
 use std::cmp::Ordering;
@@ -98,11 +98,7 @@ fn full_sort_struct(c: &mut Criterion) {
                 input.sort_unstable_by_key(|v| {
                     let s = v.sort_key.to_bits();
 
-                    if s >> 31 == 1 {
-                        !s
-                    } else {
-                        s ^ (1 << 31)
-                    }
+                    if s >> 31 == 1 { !s } else { s ^ (1 << 31) }
                 });
                 black_box(input);
             }),

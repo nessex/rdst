@@ -1,5 +1,5 @@
-use rdst::tuner::{Algorithm, Tuner, TuningParams};
 use rdst::RadixSort;
+use rdst::tuner::{Algorithm, Tuner, TuningParams};
 
 struct MyTuner;
 

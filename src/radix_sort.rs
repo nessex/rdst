@@ -1,5 +1,5 @@
-use crate::radix_sort_builder::RadixSortBuilder;
 use crate::RadixKey;
+use crate::radix_sort_builder::RadixSortBuilder;
 
 pub trait RadixSort<T> {
     /// radix_sort_unstable runs a radix sort based upon the `rdst::RadixKey` implementation
@@ -46,11 +46,11 @@ where
 
 #[cfg(test)]
 mod tests {
+    use crate::RadixSort;
     #[cfg(feature = "multi-threaded")]
     use crate::test_utils::SingleAlgoTuner;
-    use crate::test_utils::{sort_comparison_suite, NumericTest};
+    use crate::test_utils::{NumericTest, sort_comparison_suite};
     use crate::tuner::{Algorithm, Tuner, TuningParams};
-    use crate::RadixSort;
     use block_pseudorand::block_rand;
     use std::cmp::Ordering;
     use std::fmt::Debug;
