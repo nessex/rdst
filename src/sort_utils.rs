@@ -68,11 +68,7 @@ where
         boundaries_stack = [(0u8, 0u8); BOUNDARIES_STACK_LEN];
         boundaries_stack.as_mut_slice()
     } else {
-        boundaries_heap = unsafe {
-            // SAFETY: [(0u8, 0u8)] and a zeroed slice are the same
-            // at the bit level.
-            Box::new_zeroed_slice(len).assume_init()
-        };
+        boundaries_heap = (0..len).map(|_| (0u8, 0u8)).collect();
         &mut boundaries_heap
     };
 

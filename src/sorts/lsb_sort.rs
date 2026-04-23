@@ -53,7 +53,7 @@ impl<'a> Sorter<'a> {
             return;
         }
 
-        let mut tmp_bucket = Box::new_uninit_slice(bucket.len());
+        let mut tmp_bucket: Box<[MaybeUninit<T>]> = Box::new_uninit_slice(bucket.len());
         let mut invert = false;
         let mut next_counts = None;
 
