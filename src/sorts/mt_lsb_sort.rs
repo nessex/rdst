@@ -35,9 +35,8 @@ use crate::sorter::Sorter;
 use arbitrary_chunks::ArbitraryChunks;
 use rayon::prelude::*;
 use std::mem::MaybeUninit;
-use std::mem::transmute;
 
-type MaybeUninitChunk<'a, T> = [MaybeUninit<&'a mut [MaybeUninit<T>]>; 256];
+type MaybeUninitChunk<'a, T> = [&'a mut [MaybeUninit<T>]; 256];
 
 pub fn mt_lsb_sort<T>(
     src_bucket: &[T],
@@ -49,93 +48,52 @@ pub fn mt_lsb_sort<T>(
     T: RadixKeyChecked + Sized + Send + Copy + Sync,
 {
     let tiles = tile_counts.len();
-    let mut minor_counts: Box<[MaybeUninit<usize>]> = Box::new_uninit_slice(256 * tiles);
+    let minor_counts: Box<[usize]> = (0..=255u8)
+        .flat_map(|b| tile_counts.iter().map(move |tc| tc.get(b)))
+        .collect();
 
-    for b in 0..=255u8 {
-        for (i, tile) in tile_counts.iter().enumerate() {
-            minor_counts[b as usize * tiles + i] = MaybeUninit::new(tile.get(b));
-        }
-    }
+    let mut chunks: Box<[Option<&mut [MaybeUninit<T>]>]> = dst_bucket
+        .arbitrary_chunks_mut(&minor_counts)
+        .map(Some)
+        .collect();
 
-    let minor_counts = unsafe {
-        debug_assert!({
-            // XXX: This must exactly mirror the logic above
-            // The purpose of this assertion in debug mode is to verify
-            // that minor_counts is _entirely_ written before we
-            // call assume_init().
-            let mut mirror: Vec<bool> = vec![false; 256 * tiles];
-            for b in 0..256 {
-                for (i, _) in tile_counts.iter().enumerate() {
-                    mirror[b * tiles + i] = true;
-                }
-            }
-
-            let mut all_true = true;
-            for v in mirror {
-                if !v {
-                    all_true = false;
-                }
-            }
-            all_true
-        });
-
-        minor_counts.assume_init()
-    };
-
-    let mut collated_chunks: Box<[MaybeUninit<MaybeUninitChunk<T>>]> = Box::new_uninit_slice(tiles);
-
-    for chunk in collated_chunks.iter_mut() {
-        let arr: MaybeUninitChunk<T> = MaybeUninit::uninit().into();
-        *chunk = MaybeUninit::new(arr);
-    }
-
-    let mut collated_chunks: Box<[MaybeUninitChunk<T>]> = unsafe {
-        // SAFETY: All chunk arrays have been written
-        // directly above.
-        collated_chunks.assume_init()
-    };
-
-    let mut chunks = dst_bucket.arbitrary_chunks_mut(&minor_counts);
-    for b in 0..256 {
-        for coll_chunk in collated_chunks.iter_mut() {
-            coll_chunk[b] = MaybeUninit::new(chunks.next().unwrap());
-        }
-    }
-
-    let collated_chunks: Box<[[&mut [T]; 256]]> = unsafe {
-        // SAFETY: Box<[[MaybeUninit<&mut [MaybeUninit<T>]>; 256]]> and Box<[[&mut [T]; 256]]>
-        // have the same layout. Every value has been written above.
-        transmute(collated_chunks)
-    };
+    let collated_chunks: Box<[MaybeUninitChunk<T>]> = (0..tiles)
+        .map(|tile| {
+            std::array::from_fn(|bucket| {
+                let idx = bucket * tiles + tile;
+                chunks[idx].take().unwrap()
+            })
+        })
+        .collect();
 
     collated_chunks
         .into_par_iter()
         .zip(src_bucket.par_chunks(tile_size))
-        .for_each(|(buckets, bucket)| {
+        .for_each(|(buckets, bucket): (MaybeUninitChunk<T>, &[T])| {
             if bucket.is_empty() {
                 return;
             }
 
-            let mut offsets = [0usize; 256];
-            let mut ends = [0usize; 256];
+            let mut offsets: RadixArray<usize> = RadixArray::new(0);
+            let mut ends: RadixArray<usize> = RadixArray::new(0);
 
             for (i, b) in buckets.iter().enumerate() {
                 if b.is_empty() {
                     continue;
                 }
 
-                ends[i] = b.len() - 1;
+                *ends.get_mut(i as u8) = b.len() - 1;
             }
 
-            let mut left = 0;
+            let mut left = 0usize;
             let mut right = bucket.len() - 1;
             let pre = bucket.len() % 8;
 
             for _ in 0..pre {
-                let b = bucket[right].get_level_checked(level) as usize;
+                let b = bucket[right].get_level_checked(level);
 
-                buckets[b][ends[b]] = bucket[right];
-                ends[b] = ends[b].wrapping_sub(1);
+                buckets[b as usize][ends.get(b)] = MaybeUninit::new(bucket[right]);
+                *ends.get_mut(b) = ends.get(b).wrapping_sub(1);
                 right = right.saturating_sub(1);
             }
 
@@ -146,31 +104,31 @@ pub fn mt_lsb_sort<T>(
             let end = (bucket.len() - pre) / 2;
 
             while left < end {
-                let bl_0 = bucket[left].get_level_checked(level) as usize;
-                let bl_1 = bucket[left + 1].get_level_checked(level) as usize;
-                let bl_2 = bucket[left + 2].get_level_checked(level) as usize;
-                let bl_3 = bucket[left + 3].get_level_checked(level) as usize;
-                let br_0 = bucket[right].get_level_checked(level) as usize;
-                let br_1 = bucket[right - 1].get_level_checked(level) as usize;
-                let br_2 = bucket[right - 2].get_level_checked(level) as usize;
-                let br_3 = bucket[right - 3].get_level_checked(level) as usize;
+                let bl_0 = bucket[left].get_level_checked(level);
+                let bl_1 = bucket[left + 1].get_level_checked(level);
+                let bl_2 = bucket[left + 2].get_level_checked(level);
+                let bl_3 = bucket[left + 3].get_level_checked(level);
+                let br_0 = bucket[right].get_level_checked(level);
+                let br_1 = bucket[right - 1].get_level_checked(level);
+                let br_2 = bucket[right - 2].get_level_checked(level);
+                let br_3 = bucket[right - 3].get_level_checked(level);
 
-                buckets[bl_0][offsets[bl_0]] = bucket[left];
-                offsets[bl_0] += 1;
-                buckets[br_0][ends[br_0]] = bucket[right];
-                ends[br_0] = ends[br_0].wrapping_sub(1);
-                buckets[bl_1][offsets[bl_1]] = bucket[left + 1];
-                offsets[bl_1] += 1;
-                buckets[br_1][ends[br_1]] = bucket[right - 1];
-                ends[br_1] = ends[br_1].wrapping_sub(1);
-                buckets[bl_2][offsets[bl_2]] = bucket[left + 2];
-                offsets[bl_2] += 1;
-                buckets[br_2][ends[br_2]] = bucket[right - 2];
-                ends[br_2] = ends[br_2].wrapping_sub(1);
-                buckets[bl_3][offsets[bl_3]] = bucket[left + 3];
-                offsets[bl_3] += 1;
-                buckets[br_3][ends[br_3]] = bucket[right - 3];
-                ends[br_3] = ends[br_3].wrapping_sub(1);
+                buckets[bl_0 as usize][offsets.get(bl_0)] = MaybeUninit::new(bucket[left]);
+                *offsets.get_mut(bl_0) += 1;
+                buckets[br_0 as usize][ends.get(br_0)] = MaybeUninit::new(bucket[right]);
+                *ends.get_mut(br_0) = ends.get(br_0).wrapping_sub(1);
+                buckets[bl_1 as usize][offsets.get(bl_1)] = MaybeUninit::new(bucket[left + 1]);
+                *offsets.get_mut(bl_1) += 1;
+                buckets[br_1 as usize][ends.get(br_1)] = MaybeUninit::new(bucket[right - 1]);
+                *ends.get_mut(br_1) = ends.get(br_1).wrapping_sub(1);
+                buckets[bl_2 as usize][offsets.get(bl_2)] = MaybeUninit::new(bucket[left + 2]);
+                *offsets.get_mut(bl_2) += 1;
+                buckets[br_2 as usize][ends.get(br_2)] = MaybeUninit::new(bucket[right - 2]);
+                *ends.get_mut(br_2) = ends.get(br_2).wrapping_sub(1);
+                buckets[bl_3 as usize][offsets.get(bl_3)] = MaybeUninit::new(bucket[left + 3]);
+                *offsets.get_mut(bl_3) += 1;
+                buckets[br_3 as usize][ends.get(br_3)] = MaybeUninit::new(bucket[right - 3]);
+                *ends.get_mut(br_3) = ends.get(br_3).wrapping_sub(1);
 
                 left += 4;
                 right = right.wrapping_sub(4);
@@ -196,7 +154,10 @@ impl<'a> Sorter<'a> {
         let mut invert = false;
 
         for level in start_level..=end_level {
-            let (src_bucket, dst_bucket): (&[T], &mut [MaybeUninit<T>]) = if invert {
+            let src_bucket: &[T];
+            let dst_bucket: &mut [MaybeUninit<T>];
+
+            (src_bucket, dst_bucket) = if invert {
                 (
                     unsafe {
                         // SAFETY: Invert is only `true`
@@ -207,8 +168,9 @@ impl<'a> Sorter<'a> {
                     bucket_as_uninit_mut(bucket),
                 )
             } else {
-                (bucket, &mut tmp_bucket)
+                (&*bucket, tmp_bucket.as_mut())
             };
+
             let (tile_counts, already_sorted) = get_tile_counts(src_bucket, tile_size, level);
 
             if already_sorted {
