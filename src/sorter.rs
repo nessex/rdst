@@ -2,7 +2,6 @@ use crate::radix_array::RadixArray;
 use crate::radix_key::RadixKeyChecked;
 use crate::sort_utils::*;
 use crate::tuner::{Algorithm, Tuner, TuningParams};
-use arbitrary_chunks::ArbitraryChunks;
 #[cfg(feature = "multi-threaded")]
 use rayon::current_num_threads;
 #[cfg(feature = "multi-threaded")]
@@ -162,7 +161,7 @@ impl<'a> Sorter<'a> {
     #[cfg(feature = "multi-threaded")]
     pub fn multi_threaded_director<T>(
         &self,
-        bucket: &mut [T],
+        mut bucket: &mut [T],
         counts: &RadixArray<usize>,
         level: usize,
     ) where
@@ -171,8 +170,10 @@ impl<'a> Sorter<'a> {
         let parent_len = Some(bucket.len());
         let threads = current_num_threads();
 
-        bucket
-            .arbitrary_chunks_mut(counts.inner())
+        counts
+            .inner()
+            .into_iter()
+            .map(|c| bucket.split_off_mut(..*c).unwrap())
             .par_bridge()
             .for_each(|chunk| self.handle_chunk(chunk, level, parent_len, threads));
     }
@@ -180,7 +181,7 @@ impl<'a> Sorter<'a> {
     #[inline]
     pub fn single_threaded_director<T>(
         &self,
-        bucket: &mut [T],
+        mut bucket: &mut [T],
         counts: &RadixArray<usize>,
         level: usize,
     ) where
@@ -189,8 +190,10 @@ impl<'a> Sorter<'a> {
         let parent_len = Some(bucket.len());
         let threads = 1;
 
-        bucket
-            .arbitrary_chunks_mut(counts.inner())
+        counts
+            .inner()
+            .into_iter()
+            .map(|c| bucket.split_off_mut(..*c).unwrap())
             .for_each(|chunk| self.handle_chunk(chunk, level, parent_len, threads));
     }
 

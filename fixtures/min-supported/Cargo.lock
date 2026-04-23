@@ -3,12 +3,6 @@
 version = 4
 
 [[package]]
-name = "arbitrary-chunks"
-version = "0.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2ad8689a486416c401ea15715a4694de30054248ec627edbf31f49cb64ee4086"
-
-[[package]]
 name = "crossbeam-deque"
 version = "0.8.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -43,7 +37,6 @@ checksum = "48c757948c5ede0e46177b7add2e67155f70e33c07fea8284df6576da70b3719"
 name = "min-supported"
 version = "0.1.0"
 dependencies = [
- "arbitrary-chunks",
  "partition",
  "rayon",
  "rdst",
@@ -79,7 +72,6 @@ dependencies = [
 name = "rdst"
 version = "0.20.14"
 dependencies = [
- "arbitrary-chunks",
  "partition",
  "rayon",
 ]

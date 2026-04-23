@@ -13,10 +13,7 @@ edition = "2024"
 rust-version = "1.95"
 resolver = "3"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 rdst = { path = "../../" }
 rayon = "=1.12"
-arbitrary-chunks = "=0.4.1"
 partition = "=0.1.2"

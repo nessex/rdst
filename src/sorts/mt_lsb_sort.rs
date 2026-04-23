@@ -32,7 +32,6 @@ use crate::radix_array::RadixArray;
 use crate::radix_key::RadixKeyChecked;
 use crate::sort_utils::*;
 use crate::sorter::Sorter;
-use arbitrary_chunks::ArbitraryChunks;
 use rayon::prelude::*;
 use std::mem::MaybeUninit;
 
@@ -40,7 +39,7 @@ type MaybeUninitChunk<'a, T> = [&'a mut [MaybeUninit<T>]; 256];
 
 pub fn mt_lsb_sort<T>(
     src_bucket: &[T],
-    dst_bucket: &mut [MaybeUninit<T>],
+    mut dst_bucket: &mut [MaybeUninit<T>],
     tile_counts: &[RadixArray<usize>],
     tile_size: usize,
     level: usize,
@@ -48,13 +47,10 @@ pub fn mt_lsb_sort<T>(
     T: RadixKeyChecked + Sized + Send + Copy + Sync,
 {
     let tiles = tile_counts.len();
-    let minor_counts: Box<[usize]> = (0..=255u8)
-        .flat_map(|b| tile_counts.iter().map(move |tc| tc.get(b)))
-        .collect();
 
-    let mut chunks: Box<[Option<&mut [MaybeUninit<T>]>]> = dst_bucket
-        .arbitrary_chunks_mut(&minor_counts)
-        .map(Some)
+    let mut chunks: Box<[Option<&mut [MaybeUninit<T>]>]> = (0..=255u8)
+        .flat_map(|b| tile_counts.iter().map(move |tc| tc.get(b)))
+        .map(|c| dst_bucket.split_off_mut(..c))
         .collect();
 
     let collated_chunks: Box<[MaybeUninitChunk<T>]> = (0..tiles)

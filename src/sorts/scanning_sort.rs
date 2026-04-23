@@ -37,7 +37,6 @@ use crate::radix_array::RadixArray;
 use crate::radix_key::RadixKeyChecked;
 use crate::sort_utils::*;
 use crate::sorter::Sorter;
-use arbitrary_chunks::ArbitraryChunks;
 use partition::partition_index;
 use rayon::current_num_threads;
 use rayon::prelude::*;
@@ -52,7 +51,7 @@ struct ScannerBucketInner<'a, T> {
 }
 
 struct ScannerBucket<'a, T> {
-    index: usize,
+    index: u8,
     len: isize,
     inner: Mutex<ScannerBucketInner<'a, T>>,
 }
@@ -61,14 +60,15 @@ struct ScannerBucket<'a, T> {
 fn get_scanner_buckets<'a, T>(
     counts: &RadixArray<usize>,
     prefix_sums: &RadixArray<usize>,
-    bucket: &'a mut [T],
-) -> Vec<ScannerBucket<'a, T>> {
+    mut bucket: &'a mut [T],
+) -> Box<[ScannerBucket<'a, T>]> {
     let mut running_count = 0;
-    let mut out: Vec<_> = bucket
-        .arbitrary_chunks_mut(counts.inner())
+    let mut out: Box<[_]> = counts
+        .iter()
         .enumerate()
-        .map(|(index, chunk)| {
+        .map(|(index, c)| {
             let head = prefix_sums.get(index as u8) - running_count;
+            let chunk = bucket.split_off_mut(..c).unwrap();
             running_count += chunk.len();
 
             ScannerBucket {
@@ -84,8 +84,7 @@ fn get_scanner_buckets<'a, T>(
         })
         .collect();
 
-    out.sort_by_key(|b| b.len);
-    out.reverse();
+    out.sort_by_key(|b| 0 - b.len);
 
     out
 }
@@ -100,7 +99,7 @@ fn scanner_thread<T>(
 {
     let mut stash: [Vec<T>; 256] = std::array::from_fn(|_| Vec::new());
     let mut finished_count = 0;
-    let mut finished_map = [false; 256];
+    let mut finished_map = RadixArray::new(false);
 
     // Locally partition chunk into [correct bucket | incorrect bucket] in-place.
     // This provides a speed improvement when there are just a few larger outlier buckets as there
@@ -130,7 +129,7 @@ fn scanner_thread<T>(
 
     'outer: loop {
         for m in scanner_buckets {
-            if finished_map[m.index] {
+            if finished_map.get(m.index) {
                 continue;
             }
 
@@ -141,7 +140,7 @@ fn scanner_thread<T>(
 
             if guard.write_head >= m.len as usize {
                 finished_count += 1;
-                finished_map[m.index] = true;
+                *finished_map.get_mut(m.index) = true;
 
                 if finished_count == scanner_buckets.len() {
                     break 'outer;
@@ -191,7 +190,7 @@ fn scanner_thread<T>(
             }
 
             let to_write = min(
-                stash[m.index].len() as isize,
+                stash[m.index as usize].len() as isize,
                 guard.read_head as isize - guard.write_head as isize,
             );
 
@@ -200,8 +199,8 @@ fn scanner_thread<T>(
             }
 
             let to_write = to_write as usize;
-            let split = stash[m.index].len() - to_write;
-            let some = stash[m.index].split_off(split);
+            let split = stash[m.index as usize].len() - to_write;
+            let some = stash[m.index as usize].split_off(split);
             let end = guard.write_head + to_write;
             let start = guard.write_head;
 
@@ -211,7 +210,7 @@ fn scanner_thread<T>(
 
             if guard.write_head >= m.len as usize {
                 finished_count += 1;
-                finished_map[m.index] = true;
+                *finished_map.get_mut(m.index) = true;
 
                 if finished_count == scanner_buckets.len() {
                     break 'outer;

@@ -73,7 +73,14 @@ impl<'radix_array, T: Copy> Iterator for RadixArrayIter<'radix_array, T> {
             None => None,
         }
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let rem: usize = 256 - self.next.map(usize::from).unwrap_or(256);
+        (rem, Some(rem))
+    }
 }
+
+impl<'radix_array, T: Copy> ExactSizeIterator for RadixArrayIter<'radix_array, T> {}
 
 pub struct RadixArrayIterEnumerated<'radix_array, T: Copy>(RadixArrayIter<'radix_array, T>);
 
@@ -92,4 +99,11 @@ impl<'radix_array, T: Copy> Iterator for RadixArrayIterEnumerated<'radix_array, 
             None => None,
         }
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let rem: usize = 256 - self.0.next.map(usize::from).unwrap_or(256);
+        (rem, Some(rem))
+    }
 }
+
+impl<'radix_array, T: Copy> ExactSizeIterator for RadixArrayIterEnumerated<'radix_array, T> {}

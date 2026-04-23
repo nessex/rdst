@@ -27,11 +27,10 @@ use crate::radix_key::RadixKeyChecked;
 use crate::sort_utils::*;
 use crate::sorter::Sorter;
 use crate::sorts::out_of_place_sort::out_of_place_sort;
-use arbitrary_chunks::ArbitraryChunks;
 use rayon::prelude::*;
 
 pub fn recombinating_sort<T>(
-    bucket: &mut [T],
+    mut bucket: &mut [T],
     counts: &RadixArray<usize>,
     tile_counts: &[RadixArray<usize>],
     tile_size: usize,
@@ -66,8 +65,10 @@ pub fn recombinating_sort<T>(
         tmp_bucket.assume_init()
     };
 
-    bucket
-        .arbitrary_chunks_mut(counts.inner())
+    counts
+        .inner()
+        .into_iter()
+        .map(|c| bucket.split_off_mut(..*c).unwrap())
         .enumerate()
         .par_bridge()
         .for_each(|(index, global_chunk)| {
