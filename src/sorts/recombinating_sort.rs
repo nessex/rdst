@@ -66,9 +66,8 @@ pub fn recombinating_sort<T>(
     };
 
     counts
-        .inner()
-        .into_iter()
-        .map(|c| bucket.split_off_mut(..*c).unwrap())
+        .iter()
+        .map(|c| bucket.split_off_mut(..c).unwrap())
         .enumerate()
         .par_bridge()
         .for_each(|(index, global_chunk)| {

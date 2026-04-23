@@ -67,7 +67,7 @@ fn get_scanner_buckets<'a, T>(
         .iter()
         .enumerate()
         .map(|(index, c)| {
-            let head = prefix_sums.get(index as u8) - running_count;
+            let head = prefix_sums.get(index) - running_count;
             let chunk = bucket.split_off_mut(..c).unwrap();
             running_count += chunk.len();
 
@@ -119,8 +119,7 @@ fn scanner_thread<T>(
         if !guard.locally_partitioned {
             guard.locally_partitioned = true;
 
-            let index = m.index as u8;
-            let start = partition_index(guard.chunk, |v| v.get_level_checked(level) == index);
+            let start = partition_index(guard.chunk, |v| v.get_level_checked(level) == m.index);
 
             guard.read_head = start;
             guard.write_head = start;

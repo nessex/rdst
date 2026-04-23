@@ -171,9 +171,8 @@ impl<'a> Sorter<'a> {
         let threads = current_num_threads();
 
         counts
-            .inner()
-            .into_iter()
-            .map(|c| bucket.split_off_mut(..*c).unwrap())
+            .iter()
+            .map(|c| bucket.split_off_mut(..c).unwrap())
             .par_bridge()
             .for_each(|chunk| self.handle_chunk(chunk, level, parent_len, threads));
     }
@@ -191,9 +190,8 @@ impl<'a> Sorter<'a> {
         let threads = 1;
 
         counts
-            .inner()
-            .into_iter()
-            .map(|c| bucket.split_off_mut(..*c).unwrap())
+            .iter()
+            .map(|c| bucket.split_off_mut(..c).unwrap())
             .for_each(|chunk| self.handle_chunk(chunk, level, parent_len, threads));
     }
 
