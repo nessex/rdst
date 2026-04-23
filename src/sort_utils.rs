@@ -203,23 +203,31 @@ where
     #[cfg(feature = "work_profiles")]
     println!("({}) TILE_COUNT", level);
 
+    let tile_counts: Vec<RadixArray<usize>>;
+    let tile_meta: Vec<(bool, u8, u8)>;
+
     #[cfg(feature = "multi-threaded")]
-    let (tile_counts, tile_meta): (Vec<RadixArray<usize>>, Vec<(bool, u8, u8)>) = bucket
-        .par_chunks(tile_size)
-        .map(|chunk| {
-            let (c, s, start, end) = par_get_counts_with_ends(chunk, level);
-            (c, (s, start, end))
-        })
-        .unzip();
+    {
+        (tile_counts, tile_meta) = bucket
+            .par_chunks(tile_size)
+            .map(|chunk| {
+                let (c, s, start, end) = par_get_counts_with_ends(chunk, level);
+                (c, (s, start, end))
+            })
+            .unzip();
+    }
 
     #[cfg(not(feature = "multi-threaded"))]
-    let (tile_counts, tile_meta): (Vec<RadixArray<usize>>, Vec<(bool, u8, u8)>) = bucket
-        .chunks(tile_size)
-        .map(|chunk| {
-            let (c, s, start, end) = get_counts_with_ends(chunk, level);
-            (c, (s, start, end))
-        })
-        .unzip();
+    {
+        (tile_counts, tile_meta) = bucket
+            .chunks(tile_size)
+            .map(|chunk| {
+                let (c, s, start, end) = get_counts_with_ends(chunk, level);
+                (c, (s, start, end))
+            })
+            .unzip();
+    }
+
     let mut all_sorted = true;
 
     if tile_meta.len() == 1 {
