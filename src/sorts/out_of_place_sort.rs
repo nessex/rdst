@@ -63,15 +63,7 @@ pub fn out_of_place_sort<T>(
     T: RadixKeyChecked + Sized + Send + Copy + Sync,
 {
     if src_bucket.len() < 2 {
-        unsafe {
-            // SAFETY: We are writing all values
-            // of dst_bucket with an initialized
-            // array src_bucket.
-            // After the copy_from_slice, dst_bucket becomes
-            // entirely initialized.
-            dst_bucket.assume_init_mut()
-        }
-        .copy_from_slice(src_bucket);
+        dst_bucket.copy_from_slice(bucket_as_uninit(src_bucket));
         return;
     }
 
@@ -221,15 +213,7 @@ pub fn lr_out_of_place_sort<T>(
     T: RadixKeyChecked + Sized + Send + Copy + Sync,
 {
     if src_bucket.len() < 2 {
-        unsafe {
-            // SAFETY: We are writing all values
-            // of dst_bucket with an initialized
-            // array src_bucket.
-            // After the copy_from_slice, dst_bucket becomes
-            // entirely initialized.
-            dst_bucket.assume_init_mut()
-        }
-        .copy_from_slice(src_bucket);
+        dst_bucket.copy_from_slice(bucket_as_uninit(src_bucket));
         return;
     }
 

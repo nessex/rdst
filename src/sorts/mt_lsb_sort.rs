@@ -97,11 +97,7 @@ pub fn mt_lsb_sort<T>(
     let mut chunks = dst_bucket.arbitrary_chunks_mut(&minor_counts);
     for b in 0..256 {
         for coll_chunk in collated_chunks.iter_mut() {
-            unsafe {
-                // SAFETY:
-                // We are initializing values here without reading.
-                *coll_chunk[b].assume_init_mut() = chunks.next().unwrap();
-            }
+            coll_chunk[b] = MaybeUninit::new(chunks.next().unwrap());
         }
     }
 
@@ -204,16 +200,10 @@ impl<'a> Sorter<'a> {
                     unsafe {
                         // SAFETY: Invert is only `true`
                         // after the first pass when tmp_bucket
-                        // is entirely written
-                        tmp_bucket.assume_init_ref()
+                        // was entirely written
+                        assume_init_ref(&tmp_bucket)
                     },
-                    unsafe {
-                        // SAFETY: We are converting from
-                        // &mut [T] to &mut [MaybeUninit<T>]
-                        // [T] and [MaybeUninit<T>] have the same
-                        // layout.
-                        transmute::<&mut [T], &mut [std::mem::MaybeUninit<T>]>(bucket)
-                    },
+                    bucket_as_uninit_mut(bucket),
                 )
             } else {
                 (bucket, &mut tmp_bucket)

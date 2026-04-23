@@ -2,6 +2,7 @@ use crate::radix_array::RadixArray;
 use crate::radix_key::RadixKeyChecked;
 #[cfg(feature = "multi-threaded")]
 use rayon::prelude::*;
+use std::mem::MaybeUninit;
 #[cfg(feature = "multi-threaded")]
 use std::sync::mpsc::channel;
 
@@ -261,6 +262,49 @@ pub fn is_homogenous_bucket(counts: &RadixArray<usize>) -> bool {
     }
 
     true
+}
+
+#[inline(always)]
+pub const fn bucket_as_uninit<T>(src: &[T]) -> &[MaybeUninit<T>]
+where
+    T: RadixKeyChecked + Copy + Sized + Send + Sync,
+{
+    unsafe {
+        // SAFETY: We are converting from
+        // &[T] to &[MaybeUninit<T>]
+        // [T] and [MaybeUninit<T>] have the same
+        // layout and size.
+        std::mem::transmute::<&[T], &[MaybeUninit<T>]>(src)
+    }
+}
+
+#[inline(always)]
+pub const fn bucket_as_uninit_mut<T>(src: &mut [T]) -> &mut [MaybeUninit<T>]
+where
+    T: RadixKeyChecked + Copy + Sized + Send + Sync,
+{
+    unsafe {
+        // SAFETY: We are converting from
+        // &mut [T] to &mut [MaybeUninit<T>]
+        // [T] and [MaybeUninit<T>] have the same
+        // layout and size.
+        std::mem::transmute::<&mut [T], &mut [MaybeUninit<T>]>(src)
+    }
+}
+
+/// assume_init_ref matches the std method on &[MaybeUninit<T>]
+/// This was stabilized in 1.93.0, after our MSRV.
+/// This alternative can be removed when that sees broader adoption.
+///
+/// This has the same safety requirement: it's up to the caller to ensure
+/// all values in src are already fully initialized.
+#[inline(always)]
+pub const unsafe fn assume_init_ref<T>(src: &[MaybeUninit<T>]) -> &[T] {
+    // SAFETY: casting `slice` to a `*const [T]` is safe since the caller guarantees that
+    // `slice` is initialized, and `MaybeUninit` is guaranteed to have the same layout as `T`.
+    // The pointer obtained is valid since it refers to memory owned by `slice` which is a
+    // reference and thus guaranteed to be valid for reads.
+    unsafe { &*(src as *const [MaybeUninit<T>] as *const [T]) }
 }
 
 #[cfg(test)]

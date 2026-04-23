@@ -36,7 +36,7 @@ use crate::sorts::out_of_place_sort::{
     lr_out_of_place_sort, lr_out_of_place_sort_with_counts, out_of_place_sort,
     out_of_place_sort_with_counts,
 };
-use std::mem::{MaybeUninit, transmute};
+use std::mem::MaybeUninit;
 
 impl<'a> Sorter<'a> {
     pub(crate) fn lsb_sort_adapter<T>(
@@ -63,16 +63,10 @@ impl<'a> Sorter<'a> {
                     unsafe {
                         // SAFETY: Invert is only `true`
                         // after the first pass when tmp_bucket
-                        // is entirely written
-                        tmp_bucket.assume_init_ref()
+                        // was entirely written
+                        assume_init_ref(&tmp_bucket)
                     },
-                    unsafe {
-                        // SAFETY: We are converting from
-                        // &mut [T] to &mut [MaybeUninit<T>]
-                        // [T] and [MaybeUninit<T>] have the same
-                        // layout.
-                        transmute::<&mut [T], &mut [std::mem::MaybeUninit<T>]>(bucket)
-                    },
+                    bucket_as_uninit_mut(bucket),
                 )
             } else {
                 (bucket, &mut tmp_bucket)
@@ -129,7 +123,7 @@ impl<'a> Sorter<'a> {
                 // SAFETY:
                 // All values of tmp_bucket were written in the first iteration
                 // of the loop above.
-                bucket.copy_from_slice(tmp_bucket.assume_init_ref());
+                bucket.copy_from_slice(assume_init_ref(&tmp_bucket));
             }
         }
     }
