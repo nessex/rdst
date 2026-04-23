@@ -66,7 +66,7 @@ impl<'radix_array, T: Copy> Iterator for RadixArrayIter<'radix_array, T> {
                 self.next = None;
                 Some(self.array.get(u8::MAX))
             }
-            Some(i @ _) => {
+            Some(i) => {
                 self.next = Some(i + 1);
                 Some(self.array.get(i))
             }
@@ -85,7 +85,7 @@ impl<'radix_array, T: Copy> Iterator for RadixArrayIterEnumerated<'radix_array, 
                 self.0.next = None;
                 Some((u8::MAX, self.0.array.get(u8::MAX)))
             }
-            Some(i @ _) => {
+            Some(i) => {
                 self.0.next = Some(i + 1);
                 Some((i, self.0.array.get(i)))
             }

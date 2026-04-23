@@ -141,7 +141,7 @@ where
             counts_1,
             already_sorted,
             bucket[0].get_level_checked(level),
-            last as u8,
+            last,
         );
     }
 
