@@ -71,11 +71,11 @@ impl<'a> Sorter<'a> {
                         // &mut [T] to &mut [MaybeUninit<T>]
                         // [T] and [MaybeUninit<T>] have the same
                         // layout.
-                        transmute(bucket.as_mut())
+                        transmute::<&mut [T], &mut [std::mem::MaybeUninit<T>]>(bucket)
                     },
                 )
             } else {
-                (bucket.as_ref(), &mut tmp_bucket)
+                (bucket, &mut tmp_bucket)
             };
             let counts = if level == end_level {
                 last_counts.clone()
@@ -109,22 +109,16 @@ impl<'a> Sorter<'a> {
             match (lr, should_count) {
                 (true, true) => {
                     next_counts = Some(lr_out_of_place_sort_with_counts(
-                        &src_bucket,
-                        dst_bucket,
-                        &counts,
-                        level,
+                        src_bucket, dst_bucket, &counts, level,
                     ))
                 }
-                (true, false) => lr_out_of_place_sort(&src_bucket, dst_bucket, &counts, level),
+                (true, false) => lr_out_of_place_sort(src_bucket, dst_bucket, &counts, level),
                 (false, true) => {
                     next_counts = Some(out_of_place_sort_with_counts(
-                        &src_bucket,
-                        dst_bucket,
-                        &counts,
-                        level,
+                        src_bucket, dst_bucket, &counts, level,
                     ))
                 }
-                (false, false) => out_of_place_sort(&src_bucket, dst_bucket, &counts, level),
+                (false, false) => out_of_place_sort(src_bucket, dst_bucket, &counts, level),
             };
 
             invert = !invert;

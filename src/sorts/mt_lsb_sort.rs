@@ -70,7 +70,7 @@ pub fn mt_lsb_sort<T>(
 
             let mut all_true = true;
             for v in mirror {
-                if v == false {
+                if !v {
                     all_true = false;
                 }
             }
@@ -212,11 +212,11 @@ impl<'a> Sorter<'a> {
                         // &mut [T] to &mut [MaybeUninit<T>]
                         // [T] and [MaybeUninit<T>] have the same
                         // layout.
-                        transmute(bucket.as_mut())
+                        transmute::<&mut [T], &mut [std::mem::MaybeUninit<T>]>(bucket)
                     },
                 )
             } else {
-                (bucket.as_ref(), &mut tmp_bucket)
+                (bucket, &mut tmp_bucket)
             };
             let (tile_counts, already_sorted) = get_tile_counts(src_bucket, tile_size, level);
 

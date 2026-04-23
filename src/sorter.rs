@@ -41,7 +41,7 @@ impl<'a> Sorter<'a> {
                 Algorithm::Scanning => self.scanning_sort_adapter(bucket, counts, level),
                 #[cfg(feature = "multi-threaded")]
                 Algorithm::Recombinating => {
-                    self.recombinating_sort_adapter(bucket, counts, &tile_counts, tile_size, level)
+                    self.recombinating_sort_adapter(bucket, counts, tile_counts, tile_size, level)
                 }
                 Algorithm::LrLsb => self.lsb_sort_adapter(true, bucket, counts, 0, level),
                 Algorithm::Lsb => self.lsb_sort_adapter(false, bucket, counts, 0, level),
@@ -49,11 +49,11 @@ impl<'a> Sorter<'a> {
                 Algorithm::Comparative => self.comparative_sort(bucket, level),
                 #[cfg(feature = "multi-threaded")]
                 Algorithm::Regions => {
-                    self.regions_sort_adapter(bucket, counts, &tile_counts, tile_size, level)
+                    self.regions_sort_adapter(bucket, counts, tile_counts, tile_size, level)
                 }
                 #[cfg(feature = "multi-threaded")]
                 Algorithm::MtOop => {
-                    self.mt_oop_sort_adapter(bucket, level, counts, &tile_counts, tile_size)
+                    self.mt_oop_sort_adapter(bucket, level, counts, tile_counts, tile_size)
                 }
                 #[cfg(feature = "multi-threaded")]
                 Algorithm::MtLsb => self.mt_lsb_sort_adapter(bucket, 0, level, tile_size),
