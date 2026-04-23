@@ -290,7 +290,7 @@ impl<'a> Sorter<'a> {
 #[cfg(test)]
 mod tests {
     use crate::RadixKey;
-    use crate::sort_utils::{aggregate_tile_counts, cdiv, get_tile_counts};
+    use crate::sort_utils::{aggregate_tile_counts, get_tile_counts};
     use crate::sorter::Sorter;
     use crate::test_utils::{
         NumericTest, SingleAlgoTuner, sort_comparison_suite, sort_single_algorithm,
@@ -312,7 +312,7 @@ mod tests {
                 return;
             }
 
-            let tile_size = cdiv(inputs.len(), current_num_threads());
+            let tile_size = inputs.len().div_ceil(current_num_threads());
             let (tile_counts, _) = get_tile_counts(inputs, tile_size, T::LEVELS - 1);
             let counts = aggregate_tile_counts(&tile_counts);
             let sorter = Sorter::new(true, &tuner);
@@ -367,7 +367,7 @@ mod tests {
                 return;
             }
 
-            let tile_size = cdiv(inputs.len(), current_num_threads());
+            let tile_size = inputs.len().div_ceil(current_num_threads());
             let (tile_counts, _) = get_tile_counts(inputs, tile_size, u32::LEVELS - 1);
             let counts = aggregate_tile_counts(&tile_counts);
             let sorter = Sorter::new(true, &tuner);

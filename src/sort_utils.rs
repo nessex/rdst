@@ -195,11 +195,6 @@ where
 }
 
 #[inline]
-pub const fn cdiv(a: usize, b: usize) -> usize {
-    (a + b - 1) / b
-}
-
-#[inline]
 pub fn get_tile_counts<T>(
     bucket: &[T],
     tile_size: usize,

@@ -116,7 +116,7 @@ impl<'a> Sorter<'a> {
 #[cfg(test)]
 mod tests {
     use crate::RadixKey;
-    use crate::sort_utils::{aggregate_tile_counts, cdiv, get_tile_counts};
+    use crate::sort_utils::{aggregate_tile_counts, get_tile_counts};
     use crate::sorter::Sorter;
     use crate::test_utils::{
         NumericTest, SingleAlgoTuner, sort_comparison_suite, sort_single_algorithm,
@@ -135,7 +135,7 @@ mod tests {
 
         sort_comparison_suite(shift, |inputs| {
             let level = T::LEVELS - 1;
-            let tile_size = cdiv(inputs.len(), current_num_threads());
+            let tile_size = inputs.len().div_ceil(current_num_threads());
 
             if inputs.len() == 0 {
                 return;
@@ -198,7 +198,7 @@ mod tests {
 
         validate_u32_patterns(|inputs| {
             let level = u32::LEVELS - 1;
-            let tile_size = cdiv(inputs.len(), current_num_threads());
+            let tile_size = inputs.len().div_ceil(current_num_threads());
 
             if inputs.len() == 0 {
                 return;

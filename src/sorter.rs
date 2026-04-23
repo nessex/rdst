@@ -91,7 +91,7 @@ impl<'a> Sorter<'a> {
         let use_tiles =
             cfg!(feature = "multi-threaded") && self.multi_threaded && chunk.len() >= 260_000;
         let tile_size = if use_tiles {
-            max(30_000, cdiv(chunk.len(), threads))
+            max(30_000, chunk.len().div_ceil(threads))
         } else {
             chunk.len()
         };

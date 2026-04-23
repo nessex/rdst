@@ -289,7 +289,7 @@ impl<'a> Sorter<'a> {
 #[cfg(test)]
 mod tests {
     use crate::RadixKey;
-    use crate::sort_utils::{aggregate_tile_counts, cdiv, get_tile_counts};
+    use crate::sort_utils::{aggregate_tile_counts, get_tile_counts};
     use crate::sorter::Sorter;
     use crate::test_utils::{
         NumericTest, SingleAlgoTuner, sort_comparison_suite, sort_single_algorithm,
@@ -315,7 +315,7 @@ mod tests {
                 return;
             }
 
-            let tile_size = cdiv(inputs.len(), current_num_threads());
+            let tile_size = inputs.len().div_ceil(current_num_threads());
             let sorter = Sorter::new(true, &tuner);
 
             sorter.mt_lsb_sort_adapter(inputs, 0, T::LEVELS - 1, tile_size);
@@ -327,7 +327,7 @@ mod tests {
             }
 
             let level = T::LEVELS - 1;
-            let tile_size = cdiv(inputs.len(), current_num_threads());
+            let tile_size = inputs.len().div_ceil(current_num_threads());
             let sorter = Sorter::new(true, &tuner_oop);
             let (tile_counts, _) = get_tile_counts(inputs, tile_size, level);
             let counts = aggregate_tile_counts(&tile_counts);
@@ -389,7 +389,7 @@ mod tests {
                 algo: Algorithm::MtLsb,
             };
             let sorter = Sorter::new(true, &tuner);
-            let tile_size = cdiv(inputs.len(), current_num_threads());
+            let tile_size = inputs.len().div_ceil(current_num_threads());
 
             sorter.mt_lsb_sort_adapter(inputs, 0, u32::LEVELS - 1, tile_size);
         });
