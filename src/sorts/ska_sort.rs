@@ -21,10 +21,9 @@
 //! types or inputs, the memory efficiency of this algorithm can make it faster than `lsb_sort`.
 
 use crate::radix_array::RadixArray;
-use crate::sort_utils::{get_end_offsets, get_prefix_sums};
+use crate::sort_utils::{get_end_offsets, get_prefix_sums, partition_index};
 use crate::sort_value::SortValue;
 use crate::sorter::Sorter;
-use partition::partition_index;
 
 pub fn ska_sort<T>(
     bucket: &mut [T],

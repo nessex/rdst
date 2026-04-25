@@ -19,7 +19,6 @@ work_profiles = []
 
 [dependencies]
 rayon = { version = "1.11", optional = true }
-partition = "0.1.2"
 
 [dev-dependencies]
 rayon = "1.11"
@@ -54,6 +53,12 @@ test = false
 
 [[bench]]
 name = "single_algo_sort"
+harness = false
+required-features = ["multi-threaded"]
+test = false
+
+[[bench]]
+name = "partition"
 harness = false
 required-features = ["multi-threaded"]
 test = false

@@ -16,4 +16,3 @@ resolver = "3"
 [dependencies]
 rdst = { path = "../../" }
 rayon = "=1.12"
-partition = "=0.1.2"

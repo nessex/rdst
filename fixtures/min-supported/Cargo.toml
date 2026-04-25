@@ -8,4 +8,3 @@ rust-version = "1.87"
 [dependencies]
 rdst = { path = "../../" }
 rayon = "=1.11"
-partition = "=0.1.2"

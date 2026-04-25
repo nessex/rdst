@@ -34,10 +34,9 @@
 //! however, so it should not be used in all situations.
 
 use crate::radix_array::RadixArray;
-use crate::sort_utils::get_prefix_sums;
+use crate::sort_utils::{get_prefix_sums, partition_index};
 use crate::sort_value::SortValue;
 use crate::sorter::Sorter;
-use partition::partition_index;
 use rayon::current_num_threads;
 use rayon::prelude::*;
 use std::cmp::{max, min};

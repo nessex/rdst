@@ -300,6 +300,45 @@ pub const unsafe fn assume_init_ref<T>(src: &[MaybeUninit<T>]) -> &[T] {
     unsafe { &*(src as *const [MaybeUninit<T>] as *const [T]) }
 }
 
+#[inline]
+pub fn partition_index<T, P>(data: &mut [T], predicate: P) -> usize
+where
+    P: Fn(&T) -> bool,
+{
+    // iter_mut() acts as a double-ended pointer window.
+    // Originally this was a start & end cursor, but this
+    // iterator means the compiler can reason about bounds
+    // and elide bounds checks at runtime without unsafe.
+    let mut iter = data.iter_mut();
+    let mut left_count = 0;
+
+    loop {
+        // 1. Advance from the left until we find an element that FAILS the predicate
+        let left_item = loop {
+            match iter.next() {
+                Some(item) if predicate(item) => left_count += 1,
+                Some(item) => break item,
+                None => return left_count, // Pointers crossed, we are done
+            }
+        };
+
+        // 2. Retreat from the right until we find an element that PASSES the predicate
+        let right_item = loop {
+            match iter.next_back() {
+                Some(item) if !predicate(item) => continue,
+                Some(item) => break item,
+                None => return left_count, // Pointers crossed, we are done
+            }
+        };
+
+        // 3. Swap the values, left and right are both out of place
+        std::mem::swap(left_item, right_item);
+
+        // After swapping, the left successfully passes
+        left_count += 1;
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::sort_utils::get_tile_counts;

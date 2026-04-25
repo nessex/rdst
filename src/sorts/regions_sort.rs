@@ -39,11 +39,10 @@
 //! did not seem to provide any value, and have been omitted for performance reasons.
 
 use crate::radix_array::RadixArray;
-use crate::sort_utils::{get_end_offsets, get_prefix_sums};
+use crate::sort_utils::{get_end_offsets, get_prefix_sums, partition_index};
 use crate::sort_value::SortValue;
 use crate::sorter::Sorter;
 use crate::sorts::ska_sort::ska_sort;
-use partition::partition_index;
 use rayon::current_num_threads;
 use rayon::prelude::*;
 use std::cmp::{Ordering, min};

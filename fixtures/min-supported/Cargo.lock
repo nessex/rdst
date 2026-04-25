@@ -37,16 +37,9 @@ checksum = "48c757948c5ede0e46177b7add2e67155f70e33c07fea8284df6576da70b3719"
 name = "min-supported"
 version = "0.1.0"
 dependencies = [
- "partition",
  "rayon",
  "rdst",
 ]
-
-[[package]]
-name = "partition"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "947f833aaa585cf12b8ec7c0476c98784c49f33b861376ffc84ed92adebf2aba"
 
 [[package]]
 name = "rayon"
@@ -72,6 +65,5 @@ dependencies = [
 name = "rdst"
 version = "0.20.14"
 dependencies = [
- "partition",
  "rayon",
 ]
