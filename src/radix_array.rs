@@ -11,30 +11,27 @@ where
         Self([initial_value; VALUES])
     }
 
+    #[inline(always)]
     pub fn get(&self, index: u8) -> T {
-        unsafe {
-            // SAFETY: every valid u8 is a valid index
-            // into this 256 value array.
-            *self.0.get_unchecked(index as usize)
-        }
+        self.0[index as usize]
     }
 
+    #[inline(always)]
     pub fn get_mut(&mut self, index: u8) -> &mut T {
-        unsafe {
-            // SAFETY: every valid u8 is a valid index
-            // into this 256 value array.
-            self.0.get_unchecked_mut(index as usize)
-        }
+        &mut self.0[index as usize]
     }
 
+    #[inline(always)]
     pub fn iter(&self) -> RadixArrayIter<'_, T> {
         RadixArrayIter::new(self)
     }
 
+    #[inline(always)]
     pub fn inner(&self) -> &[T; VALUES] {
         &self.0
     }
 
+    #[inline(always)]
     pub fn inner_mut(&mut self) -> &mut [T; VALUES] {
         &mut self.0
     }
