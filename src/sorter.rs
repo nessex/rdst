@@ -37,14 +37,6 @@ impl<'tuner> Sorter<'tuner> {
             return;
         }
 
-        let tp = TuningParams {
-            threads,
-            level,
-            total_levels: T::LEVELS,
-            input_len: chunk.len(),
-            parent_len,
-        };
-
         #[cfg(feature = "multi-threaded")]
         let tile_size = if self.multi_threaded && chunk.len() >= 260_000 {
             chunk.len().div_ceil(threads).max(30_000)
@@ -72,7 +64,16 @@ impl<'tuner> Sorter<'tuner> {
             return;
         }
 
-        let algorithm = self.tuner.pick_algorithm(&tp, counts.inner());
+        let algorithm = self.tuner.pick_algorithm(
+            &TuningParams {
+                threads,
+                level,
+                total_levels: T::LEVELS,
+                input_len: chunk.len(),
+                parent_len,
+            },
+            counts.inner(),
+        );
 
         #[cfg(feature = "work_profiles")]
         println!("({}) PAR: {:?}", level, algorithm);
