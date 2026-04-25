@@ -49,7 +49,7 @@ where
     acc_a.cmp(&acc_b)
 }
 
-impl<'a> Sorter<'a> {
+impl Sorter<'_> {
     pub(crate) fn comparative_sort<T>(&self, bucket: &mut [T], start_level: usize)
     where
         T: RadixKeyChecked + Sized + Send + Copy + Sync,

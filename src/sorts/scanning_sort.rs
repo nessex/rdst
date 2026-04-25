@@ -242,7 +242,7 @@ where
     });
 }
 
-impl<'a> Sorter<'a> {
+impl Sorter<'_> {
     // scanning_radix_sort does a parallel MSB-first sort. Following this, depending on the number of
     // elements remaining in each bucket, it will either do an MSB-sort or an LSB-sort, making this
     // a dynamic hybrid sort.
@@ -264,7 +264,7 @@ impl<'a> Sorter<'a> {
             return;
         }
 
-        self.director(bucket, counts, level - 1);
+        self.route(bucket, counts, level - 1);
     }
 }
 

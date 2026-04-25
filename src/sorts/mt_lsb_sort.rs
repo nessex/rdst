@@ -132,7 +132,7 @@ pub fn mt_lsb_sort<T>(
         });
 }
 
-impl<'a> Sorter<'a> {
+impl Sorter<'_> {
     pub(crate) fn mt_lsb_sort_adapter<T>(
         &self,
         bucket: &mut [T],
@@ -231,7 +231,7 @@ impl<'a> Sorter<'a> {
             return;
         }
 
-        self.director(bucket, counts, level - 1);
+        self.route(bucket, counts, level - 1);
     }
 }
 

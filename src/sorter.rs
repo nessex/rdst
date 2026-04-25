@@ -8,13 +8,13 @@ use rayon::current_num_threads;
 use rayon::prelude::*;
 use std::cmp::max;
 
-pub struct Sorter<'a> {
+pub struct Sorter<'tuner> {
     multi_threaded: bool,
-    pub(crate) tuner: &'a (dyn Tuner + Send + Sync),
+    pub(crate) tuner: &'tuner (dyn Tuner + Send + Sync),
 }
 
-impl<'a> Sorter<'a> {
-    pub fn new(multi_threaded: bool, tuner: &'a (dyn Tuner + Send + Sync)) -> Self {
+impl<'tuner> Sorter<'tuner> {
+    pub fn new(multi_threaded: bool, tuner: &'tuner (dyn Tuner + Send + Sync)) -> Self {
         Self {
             multi_threaded,
             tuner,
@@ -104,7 +104,7 @@ impl<'a> Sorter<'a> {
 
         if already_sorted {
             if level != 0 {
-                self.director(chunk, counts, level - 1);
+                self.route(chunk, counts, level - 1);
             }
 
             return;
@@ -119,7 +119,7 @@ impl<'a> Sorter<'a> {
     }
 
     #[inline]
-    pub fn top_level_director<T>(&self, bucket: &mut [T])
+    pub fn route_top_level<T>(&self, bucket: &mut [T])
     where
         T: RadixKeyChecked + Sized + Send + Copy + Sync,
     {
@@ -136,7 +136,7 @@ impl<'a> Sorter<'a> {
 
     #[inline]
     #[cfg(feature = "multi-threaded")]
-    pub fn multi_threaded_director<T>(
+    pub fn route_multi_threaded<T>(
         &self,
         mut bucket: &mut [T],
         counts: &RadixArray<usize>,
@@ -155,7 +155,7 @@ impl<'a> Sorter<'a> {
     }
 
     #[inline]
-    pub fn single_threaded_director<T>(
+    pub fn route_single_threaded<T>(
         &self,
         mut bucket: &mut [T],
         counts: &RadixArray<usize>,
@@ -173,15 +173,15 @@ impl<'a> Sorter<'a> {
     }
 
     #[inline]
-    pub fn director<T>(&self, bucket: &mut [T], counts: &RadixArray<usize>, level: usize)
+    pub fn route<T>(&self, bucket: &mut [T], counts: &RadixArray<usize>, level: usize)
     where
         T: RadixKeyChecked + Send + Sync + Copy,
     {
         if cfg!(feature = "multi-threaded") && self.multi_threaded {
             #[cfg(feature = "multi-threaded")]
-            self.multi_threaded_director(bucket, counts, level);
+            self.route_multi_threaded(bucket, counts, level);
         } else {
-            self.single_threaded_director(bucket, counts, level);
+            self.route_single_threaded(bucket, counts, level);
         }
     }
 }

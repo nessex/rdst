@@ -88,7 +88,7 @@ pub fn recombinating_sort<T>(
         });
 }
 
-impl<'a> Sorter<'a> {
+impl Sorter<'_> {
     pub(crate) fn recombinating_sort_adapter<T>(
         &self,
         bucket: &mut [T],
@@ -109,7 +109,7 @@ impl<'a> Sorter<'a> {
             return;
         }
 
-        self.director(bucket, counts, level - 1);
+        self.route(bucket, counts, level - 1);
     }
 }
 

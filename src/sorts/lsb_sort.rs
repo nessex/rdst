@@ -38,7 +38,7 @@ use crate::sorts::out_of_place_sort::{
 };
 use std::mem::MaybeUninit;
 
-impl<'a> Sorter<'a> {
+impl Sorter<'_> {
     pub(crate) fn lsb_sort_adapter<T>(
         &self,
         lr: bool,
