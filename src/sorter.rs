@@ -6,9 +6,9 @@ use crate::tuner::{Algorithm, TunerRef, TuningParams};
 use rayon::current_num_threads;
 #[cfg(feature = "multi-threaded")]
 use rayon::prelude::*;
-use std::cmp::max;
 
 pub struct Sorter<'tuner> {
+    #[allow(unused)]
     multi_threaded: bool,
     pub(crate) tuner: TunerRef<'tuner>,
 }
@@ -82,16 +82,14 @@ impl<'tuner> Sorter<'tuner> {
         };
 
         #[cfg(feature = "multi-threaded")]
-        let use_tiles = self.multi_threaded && chunk.len() >= 260_000;
-
-        #[cfg(not(feature = "multi-threaded"))]
-        let use_tiles = false;
-
-        let tile_size = if use_tiles {
-            max(30_000, chunk.len().div_ceil(threads))
+        let tile_size = if self.multi_threaded && chunk.len() >= 260_000 {
+            chunk.len().div_ceil(threads).max(30_000)
         } else {
             chunk.len()
         };
+
+        #[cfg(not(feature = "multi-threaded"))]
+        let tile_size = chunk.len();
 
         let (tile_counts, already_sorted) = get_tile_counts(chunk, tile_size, level);
         let held_counts;
