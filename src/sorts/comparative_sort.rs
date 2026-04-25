@@ -32,12 +32,13 @@ where
     T: SortValue,
     PackedRepr: Ord + ShlAssign + BitOrAssign + From<u8>,
 {
-    let mut acc_a: PackedRepr = 0u8.into();
-    let mut acc_b: PackedRepr = 0u8.into();
+    let start = NUM_LEVELS - 1;
+    let mut acc_a: PackedRepr = a.get_level_checked(start).into();
+    let mut acc_b: PackedRepr = b.get_level_checked(start).into();
 
     // This loop is designed to be trivial for the
     // compiler to unroll for any given NumLevels.
-    let mut i = NUM_LEVELS;
+    let mut i = start;
     while i > 0 {
         i -= 1;
         acc_a <<= 8.into();
