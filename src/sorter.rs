@@ -177,11 +177,12 @@ impl<'tuner> Sorter<'tuner> {
     where
         T: SortValue,
     {
-        if cfg!(feature = "multi-threaded") && self.multi_threaded {
-            #[cfg(feature = "multi-threaded")]
+        #[cfg(feature = "multi-threaded")]
+        if self.multi_threaded {
             self.route_multi_threaded(bucket, counts, level);
-        } else {
-            self.route_single_threaded(bucket, counts, level);
+            return;
         }
+
+        self.route_single_threaded(bucket, counts, level);
     }
 }
