@@ -22,7 +22,7 @@ rayon = { version = "1.12", optional = true }
 
 [dev-dependencies]
 rayon = "1.12"
-criterion = { version = "0.7.0", default-features=false, features = ["rayon", "cargo_bench_support"] }
+criterion = { version = "0.8.2", default-features=false, features = ["rayon", "cargo_bench_support"] }
 block-pseudorand = "0.1.2"
 
 [profile.release]
