@@ -56,9 +56,3 @@ name = "single_algo_sort"
 harness = false
 required-features = ["multi-threaded"]
 test = false
-
-[[bench]]
-name = "partition"
-harness = false
-required-features = ["multi-threaded"]
-test = false
