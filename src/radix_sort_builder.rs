@@ -1,4 +1,4 @@
-use crate::RadixKey;
+use crate::sort_value::SortValue;
 use crate::sorter::Sorter;
 use crate::tuner::{Tuner, TunerRef};
 use crate::tuners::SingleThreadedTuner;
@@ -11,9 +11,10 @@ pub struct RadixSortBuilder<'data, T> {
     tuner: TunerRef<'data>,
 }
 
+#[allow(private_bounds)]
 impl<'a, T> RadixSortBuilder<'a, T>
 where
-    T: RadixKey + Copy + Send + Sync,
+    T: SortValue,
 {
     pub(crate) fn new(data: &'a mut [T]) -> Self {
         // TODO(nathan): Try to make this a compile-time assert

@@ -1,5 +1,5 @@
-use crate::RadixKey;
 use crate::radix_sort_builder::RadixSortBuilder;
+use crate::sort_value::SortValue;
 
 pub trait RadixSort<T> {
     /// radix_sort_unstable runs a radix sort based upon the `rdst::RadixKey` implementation
@@ -20,7 +20,7 @@ pub trait RadixSort<T> {
 
 impl<T> RadixSort<T> for Vec<T>
 where
-    T: RadixKey + Sized + Send + Copy + Sync,
+    T: SortValue,
 {
     fn radix_sort_unstable(&mut self) {
         self.radix_sort_builder().sort();
@@ -33,7 +33,7 @@ where
 
 impl<T> RadixSort<T> for [T]
 where
-    T: RadixKey + Sized + Send + Copy + Sync,
+    T: SortValue,
 {
     fn radix_sort_unstable(&mut self) {
         self.radix_sort_builder().sort();
@@ -215,6 +215,17 @@ mod tests {
         test_fp::<f64>(1_000, 10, |inputs| {
             inputs.radix_sort_unstable();
         });
+    }
+
+    #[test]
+    pub fn test_array() {
+        let mut expected: Vec<[u8; 3]> = vec![[1, 2, 3], [3, 2, 1], [3, 3, 3]];
+        let mut actual = expected.clone();
+
+        expected.sort();
+        actual.radix_sort_unstable();
+
+        assert_eq!(expected, actual);
     }
 
     #[test]

@@ -8,5 +8,6 @@ fn main() {
         .with_parallel(false)
         .with_single_threaded_tuner()
         .sort();
+
     println!("{:?}", &inputs[..]);
 }

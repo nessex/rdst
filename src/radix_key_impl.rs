@@ -80,7 +80,7 @@ impl<const N: usize> RadixKey for [u8; N] {
 
     #[inline(always)]
     fn get_level(&self, level: usize) -> u8 {
-        self[level]
+        self[Self::LEVELS - level - 1]
     }
 }
 
