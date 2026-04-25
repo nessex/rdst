@@ -243,7 +243,7 @@ pub fn regions_sort<T>(
         }
 
         // Execute all operations, swapping the paired slices (inbound/outbound edges)
-        let chunk_size = (operations.len() / threads) + 1;
+        let chunk_size = operations.len().div_ceil(threads);
         operations.par_chunks_mut(chunk_size).for_each(|chunk| {
             for Operation(o, i) in chunk {
                 i.slice.swap_with_slice(o.slice)

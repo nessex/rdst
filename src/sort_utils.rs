@@ -45,7 +45,7 @@ where
 
     let threads = rayon::current_num_threads();
     let chunk_divisor = 8;
-    let chunk_size = (bucket.len() / threads / chunk_divisor) + 1;
+    let chunk_size = bucket.len().div_ceil(threads).div_ceil(chunk_divisor);
     let chunks = bucket.par_chunks(chunk_size);
     let len = chunks.len();
     let (tx, rx) = channel();
