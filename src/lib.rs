@@ -1,6 +1,12 @@
 //! # rdst
 //!
-//! rdst is a flexible native Rust implementation of multi-threaded unstable radix sort.
+//! rdst is a flexible native Rust implementation of radix sort.
+//!
+//!  * Multi-threaded or single-threaded
+//!  * Numeric types, byte arrays or entirely custom structs (req: `Copy`)
+//!  * Low memory overhead, or high memory overhead for additional performance
+//!  * Typical byte order or completely custom byte order
+//!  * Stable or unstable sort order (default: `unstable`)
 //!
 //! ## Usage
 //!
