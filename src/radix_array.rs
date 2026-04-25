@@ -7,32 +7,32 @@ impl<T> RadixArray<T>
 where
     T: Copy + Sized,
 {
-    pub fn new(initial_value: T) -> Self {
+    pub const fn new(initial_value: T) -> Self {
         Self([initial_value; VALUES])
     }
 
     #[inline(always)]
-    pub fn get(&self, index: u8) -> T {
+    pub const fn get(&self, index: u8) -> T {
         self.0[index as usize]
     }
 
     #[inline(always)]
-    pub fn get_mut(&mut self, index: u8) -> &mut T {
+    pub const fn get_mut(&mut self, index: u8) -> &mut T {
         &mut self.0[index as usize]
     }
 
     #[inline(always)]
-    pub fn iter(&self) -> RadixArrayIter<'_, T> {
+    pub const fn iter(&self) -> RadixArrayIter<'_, T> {
         RadixArrayIter::new(self)
     }
 
     #[inline(always)]
-    pub fn inner(&self) -> &[T; VALUES] {
+    pub const fn inner(&self) -> &[T; VALUES] {
         &self.0
     }
 
     #[inline(always)]
-    pub fn inner_mut(&mut self) -> &mut [T; VALUES] {
+    pub const fn inner_mut(&mut self) -> &mut [T; VALUES] {
         &mut self.0
     }
 }
@@ -43,14 +43,14 @@ pub struct RadixArrayIter<'radix_array, T: Copy> {
 }
 
 impl<'radix_array, T: Copy> RadixArrayIter<'radix_array, T> {
-    pub fn new(array: &'radix_array RadixArray<T>) -> Self {
+    pub const fn new(array: &'radix_array RadixArray<T>) -> Self {
         Self {
             next: Some(0),
             array,
         }
     }
 
-    pub fn enumerate(self) -> RadixArrayIterEnumerated<'radix_array, T> {
+    pub const fn enumerate(self) -> RadixArrayIterEnumerated<'radix_array, T> {
         RadixArrayIterEnumerated(self)
     }
 }
