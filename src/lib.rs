@@ -93,7 +93,8 @@
 //!
 //! ## Low-memory Variant
 //!
-//! ```
+#![cfg_attr(feature = "multi-threaded", doc = r"```")]
+#![cfg_attr(not(feature = "multi-threaded"), doc = r"```ignore")]
 //! use rdst::RadixSort;
 //! let mut my_vec: Vec<usize> = vec![10, 15, 0, 22, 9];
 //! my_vec
