@@ -42,6 +42,7 @@
 //! ```
 //! use rdst::RadixKey;
 //!
+//! #[derive(Copy, Clone)]
 //! struct MyType(u32);
 //!
 //! impl RadixKey for MyType {
@@ -60,6 +61,8 @@
 //!
 //! ```
 //! use rdst::RadixKey;
+//!
+//! #[derive(Copy, Clone)]
 //! struct U32Wrapper(u32);
 //!
 //! impl RadixKey for U32Wrapper {
@@ -78,11 +81,14 @@
 //!
 //! ```
 //! use rdst::RadixKey;
+//!
+//! #[derive(Copy, Clone)]
 //! struct MyStruct {
 //!     key_1: u8,
 //!     key_2: u8,
 //!     key_3: u8,
 //! }
+//!
 //! impl RadixKey for MyStruct {
 //!     const LEVELS: usize = 3;
 //!

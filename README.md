@@ -44,6 +44,7 @@ Notes:
 ```rust
 use rdst::RadixKey;
 
+#[derive(Copy, Clone)]
 struct MyType(u32);
 
 impl RadixKey for MyType {
@@ -62,6 +63,8 @@ If you know your type has bytes that will always be zero, you can skip those byt
 
 ```rust
 use rdst::RadixKey;
+
+#[derive(Copy, Clone)]
 struct U32Wrapper(u32);
 
 impl RadixKey for U32Wrapper {
@@ -80,11 +83,14 @@ If your type has multiple values you need to search by, simply create a `RadixKe
 
 ```rust
 use rdst::RadixKey;
+
+#[derive(Copy, Clone)]
 struct MyStruct {
     key_1: u8,
     key_2: u8,
     key_3: u8,
 }
+
 impl RadixKey for MyStruct {
     const LEVELS: usize = 3;
 
