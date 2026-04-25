@@ -11,7 +11,6 @@ impl RadixKey for PackedU8 {
     #[inline(always)]
     fn get_level(&self, level: usize) -> u8 {
         // Sorts all bytes, from byte 3 down to byte 0
-        self.0[3 - level]
         // NOTE: This is lexicographic ordering
         //
         // level:  0, 1, 2, 3
@@ -24,7 +23,9 @@ impl RadixKey for PackedU8 {
         //   [5,4,3,2],
         // ]
         //
-        // By default, `rdst` sorts arrays in lexicographic order.
+        // By default, `rdst` sorts [u8; N] arrays in the same
+        // lexicographic order shown here.
+        self.0[3 - level]
     }
 }
 
