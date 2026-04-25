@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # Pinned: v6.0.2
       - name: Set rust to nightly
         run: rustup override set nightly
       - name: Install components
@@ -27,21 +27,21 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # Pinned: v6.0.2
       - name: Run tests
         run: cargo test --verbose --release
 
   test-no-default-features:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # Pinned: v6.0.2
       - name: Run tests
         run: cargo test --verbose --release --no-default-features
 
   test-min-supported:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # Pinned: v6.0.2
       - name: Run min-supported
         working-directory: fixtures/min-supported
         run: cargo run --release
@@ -49,7 +49,7 @@ jobs:
   test-max-tested:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # Pinned: v6.0.2
       - name: Run max-tested
         working-directory: fixtures/max-tested
         run: cargo run --release
@@ -57,7 +57,7 @@ jobs:
   test-profiling:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # Pinned: v6.0.2
       - name: Set rust to nightly
         run: rustup override set nightly
       - name: Run profiling script
@@ -66,7 +66,7 @@ jobs:
   test-timings:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # Pinned: v6.0.2
       - name: Set rust to nightly
         run: rustup override set nightly
       - name: Run timings script
@@ -75,7 +75,7 @@ jobs:
   test-examples:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # Pinned: v6.0.2
       - name: Run simple_usage
         run: cargo run --example simple_usage
       - name: Run single_threaded
