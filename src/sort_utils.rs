@@ -228,20 +228,21 @@ where
             .unzip();
     }
 
-    let mut all_sorted = true;
-
     if tile_meta.len() == 1 {
-        all_sorted = tile_meta[0].0;
-    } else {
-        for m in tile_meta.windows(2) {
-            if !m[0].0 || !m[1].0 || m[1].1 < m[0].2 {
-                all_sorted = false;
-                break;
-            }
+        // Tiles of length 1 are considered sorted
+        return (tile_counts, tile_meta[0].0);
+    }
+
+    for m in tile_meta.windows(2) {
+        if !m[0].0 || !m[1].0 || m[1].1 < m[0].2 {
+            // Tiles are individually sorted _and_
+            // the boundaries of tiles line up making
+            // the combined set of tiles also sorted.
+            return (tile_counts, false);
         }
     }
 
-    (tile_counts, all_sorted)
+    (tile_counts, true)
 }
 
 #[inline]
@@ -254,22 +255,6 @@ pub fn aggregate_tile_counts(tile_counts: &[RadixArray<usize>]) -> RadixArray<us
     }
 
     out
-}
-
-#[inline]
-pub fn is_homogenous_bucket(counts: &RadixArray<usize>) -> bool {
-    let mut seen = false;
-    for c in counts.iter() {
-        if c > 0 {
-            if seen {
-                return false;
-            } else {
-                seen = true;
-            }
-        }
-    }
-
-    true
 }
 
 #[inline(always)]

@@ -73,6 +73,14 @@ impl<'a> Sorter<'a> {
             return;
         }
 
+        let tp = TuningParams {
+            threads,
+            level,
+            total_levels: T::LEVELS,
+            input_len: chunk.len(),
+            parent_len,
+        };
+
         #[cfg(feature = "multi-threaded")]
         let use_tiles = self.multi_threaded && chunk.len() >= 260_000;
 
@@ -84,35 +92,19 @@ impl<'a> Sorter<'a> {
         } else {
             chunk.len()
         };
-        let tp = TuningParams {
-            threads,
-            level,
-            total_levels: T::LEVELS,
-            input_len: chunk.len(),
-            parent_len,
-        };
 
-        let mut tile_counts: Option<Vec<RadixArray<usize>>> = None;
-        let mut already_sorted = false;
-
-        if use_tiles {
-            let (tc, s) = get_tile_counts(chunk, tile_size, level);
-            tile_counts = Some(tc);
-            already_sorted = s;
-        }
-
-        let counts = if let Some(tile_counts) = &tile_counts {
-            aggregate_tile_counts(tile_counts)
+        let (tile_counts, already_sorted) = get_tile_counts(chunk, tile_size, level);
+        let held_counts;
+        let counts = if tile_counts.len() == 1 {
+            &tile_counts[0]
         } else {
-            let (counts, s) = get_counts(chunk, level);
-            already_sorted = s;
-
-            counts
+            held_counts = aggregate_tile_counts(&tile_counts);
+            &held_counts
         };
 
-        if already_sorted || (chunk.len() >= 30_000 && is_homogenous_bucket(&counts)) {
+        if already_sorted {
             if level != 0 {
-                self.director(chunk, &counts, level - 1);
+                self.director(chunk, counts, level - 1);
             }
 
             return;
@@ -123,12 +115,7 @@ impl<'a> Sorter<'a> {
         #[cfg(feature = "work_profiles")]
         println!("({}) PAR: {:?}", level, algorithm);
 
-        // Ensure tile_counts is always set when it is required
-        let tile_counts = tile_counts
-            .as_deref()
-            .unwrap_or_else(|| std::slice::from_ref(&counts));
-
-        self.run_sort(level, chunk, &counts, tile_counts, tile_size, algorithm);
+        self.run_sort(level, chunk, counts, &tile_counts, tile_size, algorithm);
     }
 
     #[inline]
