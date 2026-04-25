@@ -7,4 +7,4 @@ rust-version = "1.87"
 
 [dependencies]
 rdst = { path = "../../" }
-rayon = "=1.11"
+rayon = "=1.12"
