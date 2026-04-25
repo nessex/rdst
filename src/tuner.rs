@@ -33,3 +33,8 @@ pub enum Algorithm {
 pub trait Tuner {
     fn pick_algorithm(&self, p: &TuningParams, counts: &[usize]) -> Algorithm;
 }
+
+#[cfg(feature = "multi-threaded")]
+pub(crate) type TunerRef<'tuner> = &'tuner (dyn Tuner + Send + Sync);
+#[cfg(not(feature = "multi-threaded"))]
+pub(crate) type TunerRef<'tuner> = &'tuner dyn Tuner;

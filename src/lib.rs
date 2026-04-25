@@ -177,6 +177,7 @@ mod radix_key_impl;
 mod radix_sort;
 mod radix_sort_builder;
 mod sort_utils;
+mod sort_value;
 mod sorter;
 mod sorts;
 #[cfg(test)]

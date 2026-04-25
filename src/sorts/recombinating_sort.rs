@@ -23,8 +23,8 @@
 //! this sort, and eventually the extra allocation and freeing required eats away at the performance.
 
 use crate::radix_array::RadixArray;
-use crate::radix_key::RadixKeyChecked;
-use crate::sort_utils::*;
+use crate::sort_utils::get_prefix_sums;
+use crate::sort_value::SortValue;
 use crate::sorter::Sorter;
 use crate::sorts::out_of_place_sort::out_of_place_sort;
 use rayon::prelude::*;
@@ -36,7 +36,7 @@ pub fn recombinating_sort<T>(
     tile_size: usize,
     level: usize,
 ) where
-    T: RadixKeyChecked + Sized + Send + Copy + Sync,
+    T: SortValue,
 {
     let bucket_len = bucket.len();
     let mut tmp_bucket = Box::new_uninit_slice(bucket_len);
@@ -97,7 +97,7 @@ impl Sorter<'_> {
         tile_size: usize,
         level: usize,
     ) where
-        T: RadixKeyChecked + Sized + Send + Copy + Sync,
+        T: SortValue,
     {
         if bucket.len() < 2 {
             return;

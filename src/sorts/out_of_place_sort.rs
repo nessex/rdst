@@ -44,8 +44,8 @@
 //!  * lsb-first
 
 use crate::radix_array::RadixArray;
-use crate::radix_key::RadixKeyChecked;
-use crate::sort_utils::*;
+use crate::sort_utils::{bucket_as_uninit, get_prefix_sums};
+use crate::sort_value::SortValue;
 use std::mem::MaybeUninit;
 
 #[inline]
@@ -60,7 +60,7 @@ pub fn out_of_place_sort<T>(
     counts: &RadixArray<usize>,
     level: usize,
 ) where
-    T: RadixKeyChecked + Sized + Send + Copy + Sync,
+    T: SortValue,
 {
     if src_bucket.len() < 2 {
         dst_bucket.copy_from_slice(bucket_as_uninit(src_bucket));
@@ -120,7 +120,7 @@ pub fn out_of_place_sort_with_counts<T>(
     level: usize,
 ) -> RadixArray<usize>
 where
-    T: RadixKeyChecked + Sized + Send + Copy + Sync,
+    T: SortValue,
 {
     if src_bucket.is_empty() {
         return RadixArray::new(0);
@@ -210,7 +210,7 @@ pub fn lr_out_of_place_sort<T>(
     counts: &RadixArray<usize>,
     level: usize,
 ) where
-    T: RadixKeyChecked + Sized + Send + Copy + Sync,
+    T: SortValue,
 {
     if src_bucket.len() < 2 {
         dst_bucket.copy_from_slice(bucket_as_uninit(src_bucket));
@@ -287,7 +287,7 @@ pub fn lr_out_of_place_sort_with_counts<T>(
     level: usize,
 ) -> RadixArray<usize>
 where
-    T: RadixKeyChecked + Sized + Send + Copy + Sync,
+    T: SortValue,
 {
     if src_bucket.is_empty() {
         return RadixArray::new(0);

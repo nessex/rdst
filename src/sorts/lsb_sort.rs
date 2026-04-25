@@ -29,8 +29,8 @@
 //! some caching benefits etc., but has been benchmarked at roughly 5-15% speedup.
 
 use crate::radix_array::RadixArray;
-use crate::radix_key::RadixKeyChecked;
-use crate::sort_utils::*;
+use crate::sort_utils::{assume_init_ref, bucket_as_uninit_mut, get_counts};
+use crate::sort_value::SortValue;
 use crate::sorter::Sorter;
 use crate::sorts::out_of_place_sort::{
     lr_out_of_place_sort, lr_out_of_place_sort_with_counts, out_of_place_sort,
@@ -47,7 +47,7 @@ impl Sorter<'_> {
         start_level: usize,
         end_level: usize,
     ) where
-        T: RadixKeyChecked + Sized + Send + Copy + Sync,
+        T: SortValue,
     {
         if bucket.len() < 2 {
             return;

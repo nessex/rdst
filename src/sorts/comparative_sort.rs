@@ -21,7 +21,7 @@
 //! small inputs. However for those very small inputs it provides a significant speed-up due to
 //! having essentially no overhead (from count arrays, buffers etc.) compared to a radix sort.
 
-use crate::radix_key::RadixKeyChecked;
+use crate::sort_value::SortValue;
 use crate::sorter::Sorter;
 use std::cmp::Ordering;
 use std::ops::{BitOrAssign, ShlAssign};
@@ -29,7 +29,7 @@ use std::ops::{BitOrAssign, ShlAssign};
 #[inline(always)]
 fn cmp_packed<T, PackedRepr, const NUM_LEVELS: usize>(a: &T, b: &T) -> Ordering
 where
-    T: RadixKeyChecked + Sized + Send + Copy + Sync,
+    T: SortValue,
     PackedRepr: Ord + ShlAssign + BitOrAssign + From<u8>,
 {
     let mut acc_a: PackedRepr = 0u8.into();
@@ -52,7 +52,7 @@ where
 impl Sorter<'_> {
     pub(crate) fn comparative_sort<T>(&self, bucket: &mut [T], start_level: usize)
     where
-        T: RadixKeyChecked + Sized + Send + Copy + Sync,
+        T: SortValue,
     {
         if bucket.len() < 2 {
             return;

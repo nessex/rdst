@@ -29,8 +29,8 @@
 //! This variant uses the same algorithm as `mt_lsb_sort` but uses it in msb-first order.
 
 use crate::radix_array::RadixArray;
-use crate::radix_key::RadixKeyChecked;
-use crate::sort_utils::*;
+use crate::sort_utils::{assume_init_ref, bucket_as_uninit_mut, get_tile_counts};
+use crate::sort_value::SortValue;
 use crate::sorter::Sorter;
 use rayon::prelude::*;
 use std::mem::MaybeUninit;
@@ -44,7 +44,7 @@ pub fn mt_lsb_sort<T>(
     tile_size: usize,
     level: usize,
 ) where
-    T: RadixKeyChecked + Sized + Send + Copy + Sync,
+    T: SortValue,
 {
     let tiles = tile_counts.len();
 
@@ -140,7 +140,7 @@ impl Sorter<'_> {
         end_level: usize,
         tile_size: usize,
     ) where
-        T: RadixKeyChecked + Sized + Send + Copy + Sync,
+        T: SortValue,
     {
         if bucket.len() < 2 {
             return;
@@ -202,7 +202,7 @@ impl Sorter<'_> {
         tile_counts: &[RadixArray<usize>],
         tile_size: usize,
     ) where
-        T: RadixKeyChecked + Sized + Send + Copy + Sync,
+        T: SortValue,
     {
         if bucket.len() <= 1 {
             return;

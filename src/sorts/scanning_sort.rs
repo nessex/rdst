@@ -34,8 +34,8 @@
 //! however, so it should not be used in all situations.
 
 use crate::radix_array::RadixArray;
-use crate::radix_key::RadixKeyChecked;
-use crate::sort_utils::*;
+use crate::sort_utils::get_prefix_sums;
+use crate::sort_value::SortValue;
 use crate::sorter::Sorter;
 use partition::partition_index;
 use rayon::current_num_threads;
@@ -95,7 +95,7 @@ fn scanner_thread<T>(
     scanner_read_size: isize,
     uniform_threshold: usize,
 ) where
-    T: RadixKeyChecked + Copy,
+    T: SortValue,
 {
     let mut stash: [Vec<T>; 256] = std::array::from_fn(|_| Vec::new());
     let mut finished_count = 0;
@@ -221,7 +221,7 @@ fn scanner_thread<T>(
 
 pub fn scanning_sort<T>(bucket: &mut [T], counts: &RadixArray<usize>, level: usize)
 where
-    T: RadixKeyChecked + Sized + Send + Copy + Sync,
+    T: SortValue,
 {
     let len = bucket.len();
     let threads = current_num_threads();
@@ -252,7 +252,7 @@ impl Sorter<'_> {
         counts: &RadixArray<usize>,
         level: usize,
     ) where
-        T: RadixKeyChecked + Sized + Send + Copy + Sync,
+        T: SortValue,
     {
         if bucket.len() < 2 {
             return;

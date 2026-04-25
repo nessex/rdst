@@ -1,5 +1,5 @@
 use crate::radix_array::RadixArray;
-use crate::radix_key::RadixKeyChecked;
+use crate::sort_value::SortValue;
 #[cfg(feature = "multi-threaded")]
 use rayon::prelude::*;
 use std::mem::MaybeUninit;
@@ -36,7 +36,7 @@ pub fn get_end_offsets(
 #[cfg(feature = "multi-threaded")]
 pub fn par_get_counts_with_ends<T>(bucket: &[T], level: usize) -> (RadixArray<usize>, bool, u8, u8)
 where
-    T: RadixKeyChecked + Sized + Send + Sync,
+    T: SortValue,
 {
     #[cfg(feature = "work_profiles")]
     println!("({}) PAR_COUNT", level);
@@ -108,10 +108,10 @@ where
 }
 
 #[inline]
-pub fn get_counts_with_ends<T>(bucket: &[T], level: usize) -> (RadixArray<usize>, bool, u8, u8)
-where
-    T: RadixKeyChecked,
-{
+pub fn get_counts_with_ends<T: SortValue>(
+    bucket: &[T],
+    level: usize,
+) -> (RadixArray<usize>, bool, u8, u8) {
     #[cfg(feature = "work_profiles")]
     println!("({}) COUNT", level);
 
@@ -180,7 +180,7 @@ where
 #[inline]
 pub fn get_counts<T>(bucket: &[T], level: usize) -> (RadixArray<usize>, bool)
 where
-    T: RadixKeyChecked,
+    T: SortValue,
 {
     if bucket.is_empty() {
         return (RadixArray::new(0), true);
@@ -198,7 +198,7 @@ pub fn get_tile_counts<T>(
     level: usize,
 ) -> (Vec<RadixArray<usize>>, bool)
 where
-    T: RadixKeyChecked + Copy + Sized + Send + Sync,
+    T: SortValue,
 {
     #[cfg(feature = "work_profiles")]
     println!("({}) TILE_COUNT", level);
@@ -260,7 +260,7 @@ pub fn aggregate_tile_counts(tile_counts: &[RadixArray<usize>]) -> RadixArray<us
 #[inline(always)]
 pub const fn bucket_as_uninit<T>(src: &[T]) -> &[MaybeUninit<T>]
 where
-    T: RadixKeyChecked + Copy + Sized + Send + Sync,
+    T: SortValue,
 {
     unsafe {
         // SAFETY: We are converting from
@@ -274,7 +274,7 @@ where
 #[inline(always)]
 pub const fn bucket_as_uninit_mut<T>(src: &mut [T]) -> &mut [MaybeUninit<T>]
 where
-    T: RadixKeyChecked + Copy + Sized + Send + Sync,
+    T: SortValue,
 {
     unsafe {
         // SAFETY: We are converting from

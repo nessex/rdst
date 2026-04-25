@@ -21,8 +21,8 @@
 //! types or inputs, the memory efficiency of this algorithm can make it faster than `lsb_sort`.
 
 use crate::radix_array::RadixArray;
-use crate::radix_key::RadixKeyChecked;
-use crate::sort_utils::*;
+use crate::sort_utils::{get_end_offsets, get_prefix_sums};
+use crate::sort_value::SortValue;
 use crate::sorter::Sorter;
 use partition::partition_index;
 
@@ -32,7 +32,7 @@ pub fn ska_sort<T>(
     end_offsets: &RadixArray<usize>,
     level: usize,
 ) where
-    T: RadixKeyChecked + Sized + Send + Copy + Sync,
+    T: SortValue,
 {
     let mut finished = 0usize;
     let mut finished_map = RadixArray::new(false);
@@ -95,7 +95,7 @@ impl Sorter<'_> {
         counts: &RadixArray<usize>,
         level: usize,
     ) where
-        T: RadixKeyChecked + Sized + Send + Copy + Sync,
+        T: SortValue,
     {
         if bucket.len() < 2 {
             return;

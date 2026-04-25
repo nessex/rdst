@@ -1,7 +1,7 @@
 use crate::radix_array::RadixArray;
-use crate::radix_key::RadixKeyChecked;
-use crate::sort_utils::*;
-use crate::tuner::{Algorithm, Tuner, TuningParams};
+use crate::sort_utils::{aggregate_tile_counts, get_tile_counts};
+use crate::sort_value::SortValue;
+use crate::tuner::{Algorithm, TunerRef, TuningParams};
 #[cfg(feature = "multi-threaded")]
 use rayon::current_num_threads;
 #[cfg(feature = "multi-threaded")]
@@ -10,11 +10,11 @@ use std::cmp::max;
 
 pub struct Sorter<'tuner> {
     multi_threaded: bool,
-    pub(crate) tuner: &'tuner (dyn Tuner + Send + Sync),
+    pub(crate) tuner: TunerRef<'tuner>,
 }
 
 impl<'tuner> Sorter<'tuner> {
-    pub fn new(multi_threaded: bool, tuner: &'tuner (dyn Tuner + Send + Sync)) -> Self {
+    pub fn new(multi_threaded: bool, tuner: TunerRef<'tuner>) -> Self {
         Self {
             multi_threaded,
             tuner,
@@ -31,7 +31,7 @@ impl<'tuner> Sorter<'tuner> {
         #[allow(unused)] tile_size: usize,
         algorithm: Algorithm,
     ) where
-        T: RadixKeyChecked + Copy + Sized + Send + Sync,
+        T: SortValue,
     {
         match algorithm {
             #[cfg(feature = "multi-threaded")]
@@ -64,7 +64,7 @@ impl<'tuner> Sorter<'tuner> {
         parent_len: Option<usize>,
         threads: usize,
     ) where
-        T: RadixKeyChecked + Sized + Send + Copy + Sync,
+        T: SortValue,
     {
         if chunk.len() <= 1 {
             return;
@@ -121,7 +121,7 @@ impl<'tuner> Sorter<'tuner> {
     #[inline]
     pub fn route_top_level<T>(&self, bucket: &mut [T])
     where
-        T: RadixKeyChecked + Sized + Send + Copy + Sync,
+        T: SortValue,
     {
         #[cfg(feature = "multi-threaded")]
         let threads = current_num_threads();
@@ -142,7 +142,7 @@ impl<'tuner> Sorter<'tuner> {
         counts: &RadixArray<usize>,
         level: usize,
     ) where
-        T: RadixKeyChecked + Send + Copy + Sync,
+        T: SortValue,
     {
         let parent_len = Some(bucket.len());
         let threads = current_num_threads();
@@ -161,7 +161,7 @@ impl<'tuner> Sorter<'tuner> {
         counts: &RadixArray<usize>,
         level: usize,
     ) where
-        T: RadixKeyChecked + Send + Sync + Copy,
+        T: SortValue,
     {
         let parent_len = Some(bucket.len());
         let threads = 1;
@@ -175,7 +175,7 @@ impl<'tuner> Sorter<'tuner> {
     #[inline]
     pub fn route<T>(&self, bucket: &mut [T], counts: &RadixArray<usize>, level: usize)
     where
-        T: RadixKeyChecked + Send + Sync + Copy,
+        T: SortValue,
     {
         if cfg!(feature = "multi-threaded") && self.multi_threaded {
             #[cfg(feature = "multi-threaded")]

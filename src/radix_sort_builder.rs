@@ -1,14 +1,14 @@
 use crate::RadixKey;
 use crate::sorter::Sorter;
-use crate::tuner::Tuner;
+use crate::tuner::{Tuner, TunerRef};
 use crate::tuners::SingleThreadedTuner;
 #[cfg(feature = "multi-threaded")]
 use crate::tuners::{LowMemoryTuner, StandardTuner};
 
-pub struct RadixSortBuilder<'a, T> {
-    data: &'a mut [T],
+pub struct RadixSortBuilder<'data, T> {
+    data: &'data mut [T],
     multi_threaded: bool,
-    tuner: &'a (dyn Tuner + Send + Sync),
+    tuner: TunerRef<'data>,
 }
 
 impl<'a, T> RadixSortBuilder<'a, T>
