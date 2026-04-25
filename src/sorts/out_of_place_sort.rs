@@ -387,3 +387,38 @@ where
 
     next_counts_0
 }
+
+#[inline]
+pub fn route_out_of_place_sort<T>(
+    should_count: bool,
+    lr: bool,
+    src_bucket: &[T],
+    // XXX: After calling this function, all
+    // values in dst_bucket _must_ be considered
+    // initialized. It's up to this function
+    // to maintain that invariant for all callers
+    // that expect this behaviour.
+    dst_bucket: &mut [MaybeUninit<T>],
+    counts: &RadixArray<usize>,
+    level: usize,
+) -> Option<RadixArray<usize>>
+where
+    T: SortValue,
+{
+    match (lr, should_count) {
+        (true, true) => Some(lr_out_of_place_sort_with_counts(
+            src_bucket, dst_bucket, counts, level,
+        )),
+        (true, false) => {
+            lr_out_of_place_sort(src_bucket, dst_bucket, counts, level);
+            None
+        }
+        (false, true) => Some(out_of_place_sort_with_counts(
+            src_bucket, dst_bucket, counts, level,
+        )),
+        (false, false) => {
+            out_of_place_sort(src_bucket, dst_bucket, counts, level);
+            None
+        }
+    }
+}

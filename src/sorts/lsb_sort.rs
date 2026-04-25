@@ -32,10 +32,7 @@ use crate::radix_array::RadixArray;
 use crate::sort_utils::{assume_init_ref, bucket_as_uninit_mut, get_counts};
 use crate::sort_value::SortValue;
 use crate::sorter::Sorter;
-use crate::sorts::out_of_place_sort::{
-    lr_out_of_place_sort, lr_out_of_place_sort_with_counts, out_of_place_sort,
-    out_of_place_sort_with_counts,
-};
+use crate::sorts::out_of_place_sort::route_out_of_place_sort;
 use std::mem::MaybeUninit;
 
 impl Sorter<'_> {
@@ -43,8 +40,8 @@ impl Sorter<'_> {
         &self,
         lr: bool,
         bucket: &mut [T],
-        last_counts: &RadixArray<usize>,
-        start_level: usize,
+        end_counts: &RadixArray<usize>,
+        mut start_level: usize,
         end_level: usize,
     ) where
         T: SortValue,
@@ -55,9 +52,37 @@ impl Sorter<'_> {
 
         let mut tmp_bucket: Box<[MaybeUninit<T>]> = Box::new_uninit_slice(bucket.len());
         let mut invert = false;
-        let mut next_counts = None;
+        let mut next_counts: Option<RadixArray<usize>>;
+        let mut level_counts: &RadixArray<usize>;
 
-        'outer: for level in start_level..=end_level {
+        // Set the initial level_counts ref
+        // this allows us to reuse the already
+        // calculated end_counts if we don't
+        // find any unsorted levels before that.
+        loop {
+            if start_level == end_level {
+                level_counts = end_counts;
+                // Unlike the case below where we count
+                // again and can check if the level is already
+                // sorted... Here we assume that check has already
+                // been done prior to calling this function.
+                break;
+            } else {
+                // If we're not starting at the already counted end_level
+                // we need to count again for the current level.
+                let (counts, already_sorted) = get_counts(bucket, start_level);
+
+                if !already_sorted {
+                    next_counts = Some(counts);
+                    level_counts = next_counts.as_ref().unwrap();
+                    break;
+                }
+
+                start_level += 1;
+            }
+        }
+
+        for level in start_level..=end_level {
             let (src_bucket, dst_bucket): (&[T], &mut [MaybeUninit<T>]) = if invert {
                 (
                     unsafe {
@@ -71,54 +96,27 @@ impl Sorter<'_> {
             } else {
                 (bucket, &mut tmp_bucket)
             };
-            let counts = if level == end_level {
-                last_counts.clone()
-            } else if let Some(next_counts) = next_counts.clone() {
-                next_counts
-            } else {
-                let (counts, already_sorted) = get_counts(src_bucket, level);
 
-                if already_sorted {
-                    next_counts = None;
-                    continue 'outer;
-                }
+            next_counts = route_out_of_place_sort(
+                end_level != 0 && level < (end_level - 1),
+                lr,
+                src_bucket,
+                dst_bucket,
+                level_counts,
+                level,
+            );
 
-                counts
-            };
-
-            for c in counts.iter() {
-                if c == src_bucket.len() {
-                    next_counts = None;
-                    continue 'outer;
-                } else if c > 0 {
-                    break;
-                }
-            }
-
-            let should_count = end_level != 0 && level < (end_level - 1);
-            if !should_count {
-                next_counts = None;
-            }
-
-            match (lr, should_count) {
-                (true, true) => {
-                    next_counts = Some(lr_out_of_place_sort_with_counts(
-                        src_bucket, dst_bucket, &counts, level,
-                    ))
-                }
-                (true, false) => lr_out_of_place_sort(src_bucket, dst_bucket, &counts, level),
-                (false, true) => {
-                    next_counts = Some(out_of_place_sort_with_counts(
-                        src_bucket, dst_bucket, &counts, level,
-                    ))
-                }
-                (false, false) => out_of_place_sort(src_bucket, dst_bucket, &counts, level),
-            };
+            // The next level counts can only be:
+            // 1. The counts we just calculated during route_out_of_place_sort
+            // 2. The existing counts of the end_level
+            level_counts = next_counts.as_ref().unwrap_or(end_counts);
 
             invert = !invert;
         }
 
         if invert {
+            // We currently have our final output in tmp_bucket not bucket
+            // so we need to copy it back across.
             unsafe {
                 // SAFETY:
                 // All values of tmp_bucket were written in the first iteration

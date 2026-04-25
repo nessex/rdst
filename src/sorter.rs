@@ -21,42 +21,6 @@ impl<'tuner> Sorter<'tuner> {
         }
     }
 
-    #[inline]
-    fn run_sort<T>(
-        &self,
-        level: usize,
-        bucket: &mut [T],
-        counts: &RadixArray<usize>,
-        #[allow(unused)] tile_counts: &[RadixArray<usize>],
-        #[allow(unused)] tile_size: usize,
-        algorithm: Algorithm,
-    ) where
-        T: SortValue,
-    {
-        match algorithm {
-            #[cfg(feature = "multi-threaded")]
-            Algorithm::Scanning => self.scanning_sort_adapter(bucket, counts, level),
-            #[cfg(feature = "multi-threaded")]
-            Algorithm::Recombinating => {
-                self.recombinating_sort_adapter(bucket, counts, tile_counts, tile_size, level)
-            }
-            Algorithm::LrLsb => self.lsb_sort_adapter(true, bucket, counts, 0, level),
-            Algorithm::Lsb => self.lsb_sort_adapter(false, bucket, counts, 0, level),
-            Algorithm::Ska => self.ska_sort_adapter(bucket, counts, level),
-            Algorithm::Comparative => self.comparative_sort(bucket, level),
-            #[cfg(feature = "multi-threaded")]
-            Algorithm::Regions => {
-                self.regions_sort_adapter(bucket, counts, tile_counts, tile_size, level)
-            }
-            #[cfg(feature = "multi-threaded")]
-            Algorithm::MtOop => {
-                self.mt_oop_sort_adapter(bucket, level, counts, tile_counts, tile_size)
-            }
-            #[cfg(feature = "multi-threaded")]
-            Algorithm::MtLsb => self.mt_lsb_sort_adapter(bucket, 0, level, tile_size),
-        }
-    }
-
     fn handle_chunk<T>(
         &self,
         chunk: &mut [T],
@@ -113,7 +77,28 @@ impl<'tuner> Sorter<'tuner> {
         #[cfg(feature = "work_profiles")]
         println!("({}) PAR: {:?}", level, algorithm);
 
-        self.run_sort(level, chunk, counts, &tile_counts, tile_size, algorithm);
+        match algorithm {
+            #[cfg(feature = "multi-threaded")]
+            Algorithm::Scanning => self.scanning_sort_adapter(chunk, counts, level),
+            #[cfg(feature = "multi-threaded")]
+            Algorithm::Recombinating => {
+                self.recombinating_sort_adapter(chunk, counts, &tile_counts, tile_size, level)
+            }
+            Algorithm::LrLsb => self.lsb_sort_adapter(true, chunk, counts, 0, level),
+            Algorithm::Lsb => self.lsb_sort_adapter(false, chunk, counts, 0, level),
+            Algorithm::Ska => self.ska_sort_adapter(chunk, counts, level),
+            Algorithm::Comparative => self.comparative_sort(chunk, level),
+            #[cfg(feature = "multi-threaded")]
+            Algorithm::Regions => {
+                self.regions_sort_adapter(chunk, counts, &tile_counts, tile_size, level)
+            }
+            #[cfg(feature = "multi-threaded")]
+            Algorithm::MtOop => {
+                self.mt_oop_sort_adapter(chunk, level, counts, &tile_counts, tile_size)
+            }
+            #[cfg(feature = "multi-threaded")]
+            Algorithm::MtLsb => self.mt_lsb_sort_adapter(chunk, 0, level, tile_size),
+        }
     }
 
     #[inline]
