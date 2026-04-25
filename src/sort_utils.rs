@@ -24,10 +24,8 @@ pub fn get_end_offsets(
     counts: &RadixArray<usize>,
     prefix_sums: &RadixArray<usize>,
 ) -> RadixArray<usize> {
-    let mut end_offsets = RadixArray::new(0);
-
-    end_offsets.inner_mut()[0..=254].copy_from_slice(&prefix_sums.inner()[1..=255]);
-    *end_offsets.get_mut(255) = counts.get(255) + prefix_sums.get(255);
+    let mut end_offsets = RadixArray::from_fn(|i| prefix_sums.get(i.saturating_add(1)));
+    *end_offsets.get_mut(255) += counts.get(255);
 
     end_offsets
 }
@@ -115,6 +113,10 @@ pub fn get_counts_with_ends<T: SortValue>(
     #[cfg(feature = "work_profiles")]
     println!("({}) COUNT", level);
 
+    if bucket.is_empty() {
+        return (RadixArray::new(0), true, 0, 0);
+    }
+
     let mut already_sorted = true;
     let mut continue_from = bucket.len();
     let mut counts_1 = RadixArray::new(0);
@@ -182,10 +184,6 @@ pub fn get_counts<T>(bucket: &[T], level: usize) -> (RadixArray<usize>, bool)
 where
     T: SortValue,
 {
-    if bucket.is_empty() {
-        return (RadixArray::new(0), true);
-    }
-
     let (counts, sorted, _, _) = get_counts_with_ends(bucket, level);
 
     (counts, sorted)
@@ -247,14 +245,7 @@ where
 
 #[inline]
 pub fn aggregate_tile_counts(tile_counts: &[RadixArray<usize>]) -> RadixArray<usize> {
-    let mut out = tile_counts[0].clone();
-    for tile in tile_counts.iter().skip(1) {
-        for i in 0..=255 {
-            *out.get_mut(i) += tile.get(i);
-        }
-    }
-
-    out
+    RadixArray::from_fn(|i| tile_counts.iter().map(|t| t.get(i)).sum())
 }
 
 #[inline(always)]
